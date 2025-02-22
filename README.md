@@ -1,4 +1,4 @@
-<a href="https://www.youtube.com/@RitikPrasad-lz8fk">
+<a href="https://youtu.be/4x8h7r49IkQ?si=a0GwFux3Hr4O8Uam">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./rp_banner.jpeg" />
     <source media="(prefers-color-scheme: light)" srcset="./rp_banner.jpeg" />
@@ -10,14 +10,11 @@
 
 <div >
   <div align='center'>
-   <img  width="60" height="60"src="https://res.cloudinary.com/dtotfsciz/image/upload/v1718078871/jizurnuoxq6xqvswxwuh.png"/>
+  
   <h3 align="center">Packed with Brain JS, Lang Chain, Node JS, Express and Mongo DB</h3>
    <img src="https://skillicons.dev/icons?i=nodejs,express,mongo"/>
     </div>
   <div />
-      <div align='center'>
-   <img   width="150" height="120" src="https://res.cloudinary.com/dtotfsciz/image/upload/v1718079263/y5uezi4zxdos09gcf91f.png"/>
-           </div>
 </div>
 
 
