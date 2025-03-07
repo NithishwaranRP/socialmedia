@@ -37,13 +37,13 @@ const UserProfileScreen: FC = () => {
 
   const fetchUser = async () => {
     setLoading(true);
-    const data = await dispatch(fetchUserByUsername(userParam?.username));
+    const data = await dispatch(fetchUserByUsername());
     setUser(data);
     setLoading(false);
   };
 
   const refetchLoginUser = async () => {
-    const data = await dispatch(fetchUserByUsername(userParam?.username));
+    const data = await dispatch(fetchUserByUsername());
     setUser(
       prevState =>
         ({
@@ -108,12 +108,12 @@ const UserProfileScreen: FC = () => {
               activeColor={Colors.white}
               inactiveColor={Colors.disabled}
               tabStyle={{
-                backgroundColor: Colors.background,
+                backgroundColor: Colors.black,
               }}
               style={{
-                backgroundColor: Colors.background,
+                backgroundColor: Colors.black,
                 borderTopWidth: 1,
-                borderColor: Colors.background,
+                borderColor: Colors.black,
               }}
               indicatorStyle={styles.indicatorStyle}
               TabItemComponent={({index, name, ...rest}) => (
@@ -135,7 +135,7 @@ const UserProfileScreen: FC = () => {
             />
           )}
           containerStyle={{
-            backgroundColor: Colors.background,
+            backgroundColor: Colors.black,
             paddingVertical: 0,
             elevation: 0,
             shadowOffset: {height: 0, width: 0},
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
 
     paddingVertical: 0,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.black,
   },
   indicatorStyle: {
     backgroundColor: 'white',

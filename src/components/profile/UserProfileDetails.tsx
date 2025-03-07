@@ -55,8 +55,10 @@ const UserProfileDetails: React.FC<{
   }, [followingUsers, user.id, user.isFollowing]);
 
   const handleShareProfile = () => {
+    // const profileUrl = `${
     const profileUrl = `${
-      Platform.OS == 'android' ? 'http://localhost:3000' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://192.168.219.90:3000' : 'reelzzz:/'
+      Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
     }/share/user/${user.username}`;
     const message = `Hey, Checkout this profile: ${profileUrl}`;
     Share.share({
@@ -71,7 +73,7 @@ const UserProfileDetails: React.FC<{
   };
 
   return (
-    <View style={{backgroundColor: Colors.background}}>
+    <View style={{backgroundColor: Colors.black}}>
       <View style={styles.flexRowBetween}>
         <AvatarComponent uri={user?.userImage} />
         <View style={styles.statsContainer}>

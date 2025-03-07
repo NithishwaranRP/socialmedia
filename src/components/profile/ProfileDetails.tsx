@@ -47,7 +47,7 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
   };
 
   return (
-    <View style={{backgroundColor: Colors.background}}>
+    <View style={{backgroundColor: Colors.black}}>
       <View style={styles.flexRowBetween}>
         <AvatarComponent uri={user?.userImage} />
         <View style={styles.statsContainer}>

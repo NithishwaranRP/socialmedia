@@ -5,6 +5,7 @@ import {refetchUser} from './userAction';
 export const createReel = (data: any) => async (dispatch: any) => {
   try {
     const res = await appAxios.post('/reel', data);
+    console.log(res);
     dispatch(refetchUser());
   } catch (error) {
     console.log('REEL CREATE ERROR', error);
@@ -17,6 +18,8 @@ export const fetchFeedReel =
       const res = await appAxios.get(
         `/feed/home?limit=${limit || 25}&offset=${offset}`,
       );
+      console.log(res);
+
       return res.data.reels || [];
     } catch (error) {
       console.log('FETCH REEL ERROR', error);

@@ -81,6 +81,7 @@ export const UploadProvider: React.FC<{children: ReactNode}> = ({children}) => {
       setUploadProgress(30);
       setLoadingMessage('Uploading Video...🎞️');
       const videoResponse = await dispatch(uploadFile(file_uri, 'reel_video'));
+      console.log(videoResponse);
       if (!videoResponse) {
         throw new Error('There was an upload error');
       }

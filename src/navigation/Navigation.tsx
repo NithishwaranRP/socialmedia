@@ -11,7 +11,8 @@ const config = {
 };
 
 const linking = {
-  prefixes: ['reelzzz://', 'https://reelzzz.com', 'http://localhost:3000'],
+  prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.219.90:3000'],
   config,
 };
 

@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">Reelzzz</string>
+    <string name="googleAuthWebClientId">517832991609-n58najmkg1oub2477ep4n8emuigtulrn.apps.googleusercontent.com</string>
+
      <!-- Facebook Config Here -->
     <string name="facebook_app_id">YOUR_FB_APP_ID</string>
     <string name="fb_login_protocol_scheme">fbYOUR_FB_APP_ID</string>

@@ -60,11 +60,11 @@ const LoginScreen:FC = () => {
         backgroundColor={Colors.white}
       />
 
-      <TouchableOpacity style={styles.footerText}>
+      {/* <TouchableOpacity style={styles.footerText}>
         <CustomText variant="h8" fontFamily={FONTS.Medium}>
           Designed and developed by - Ritik Prasad
         </CustomText>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </CustomSafeAreaView>
   );
 };

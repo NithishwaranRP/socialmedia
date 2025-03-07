@@ -70,7 +70,8 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
 
   const handleShareReel = () => {
     const reelUrl = `${
-      Platform.OS == 'android' ? 'http://localhost:3000' : 'reelzzz:/'
+      Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://192.168.219.90:3000' : 'reelzzz:/'
     }/share/reel/${item._id}`;
     const message = `Hey, Checkout this reel: ${reelUrl}`;
     Share.share({

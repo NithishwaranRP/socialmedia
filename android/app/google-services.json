@@ -1,0 +1,108 @@
+{
+  "project_info": {
+    "project_number": "555301270349",
+    "project_id": "reelzzz-7342b",
+    "storage_bucket": "reelzzz-7342b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555301270349:android:fad6ba6b7827c145f83d04",
+        "android_client_info": {
+          "package_name": "com.reelzzz_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "555301270349-1ac7nj3k7m786rhlcl6c7trlactpp77a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reelzzz_app",
+            "certificate_hash": "ad82438d8099bb43fdceabff04689fd591d51911"
+          }
+        },
+        {
+          "client_id": "555301270349-aal7vf44nqkvgmeuqrn9ho5kgkbvl3t3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reelzzz_app",
+            "certificate_hash": "5f5a38f5f0ad06cc024d77b49f5d62599a87e289"
+          }
+        },
+        {
+          "client_id": "555301270349-fu81q36fntd7ce0nsnqd5564vui0nugs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reelzzz_app",
+            "certificate_hash": "f9db8e1c007883e81b46a2aae19942dd8161cfe0"
+          }
+        },
+        {
+          "client_id": "555301270349-0n83fvkce0hjp6clrln5obth6lsepm1d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUuK6HebIJ0o0NooEvopPaFsxmZJKXjzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "555301270349-0n83fvkce0hjp6clrln5obth6lsepm1d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555301270349:android:5694f775143d7585f83d04",
+        "android_client_info": {
+          "package_name": "com.reelzzz_app_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "555301270349-0t4gv837r3pvsbka8pgl7kfbt80as1j7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reelzzz_app_1",
+            "certificate_hash": "f9db8e1c007883e81b46a2aae19942dd8161cfe0"
+          }
+        },
+        {
+          "client_id": "555301270349-7a8a6uo3nmb7vhcscsegckim9j9f67vm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.reelzzz_app_1",
+            "certificate_hash": "5f5a38f5f0ad06cc024d77b49f5d62599a87e289"
+          }
+        },
+        {
+          "client_id": "555301270349-0n83fvkce0hjp6clrln5obth6lsepm1d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUuK6HebIJ0o0NooEvopPaFsxmZJKXjzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "555301270349-0n83fvkce0hjp6clrln5obth6lsepm1d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

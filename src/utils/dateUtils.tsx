@@ -39,12 +39,15 @@ export const extractTypeAndId = (url: string): {type: string; id: string} => {
   let id: string = '';
 
   // Regex patterns to match each type of URL
-  const reelPattern1 = /^http:\/\/localhost:3000\/share\/reel\/([a-f\d]{24})$/;
+  const reelPattern1 = /^http:\/\/reelzzzserverworking.vercel.app\/share\/reel\/([a-f\d]{24})$/;
+  // const reelPattern1 = /^http:\/\/192.168.219.90:3000\/share\/reel\/([a-f\d]{24})$/;
   const reelPattern2 = /^reelzzz:\/\/share\/reel\/([a-f\d]{24})$/;
   const userPattern1 =
-    /^http:\/\/localhost:3000\/share\/user\/([a-zA-Z0-9_]+)$/;
+    /^http:\/\/reelzzzserverworking.vercel.app\/share\/user\/([a-zA-Z0-9_]+)$/;
+    // /^http:\/\/192.168.219.90:3000\/share\/user\/([a-zA-Z0-9_]+)$/;
   const userPattern2 = /^reelzzz:\/\/share\/user\/([a-zA-Z0-9_]+)$/;
-
+  // http://192.168.219.90:3000
+  // https://reelzzzserverworking.vercel.app
   if (reelPattern1.test(url)) {
     type = 'reel';
     id = url.match(reelPattern1)![1];

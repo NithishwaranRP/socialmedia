@@ -14,7 +14,7 @@ const CustomView: FC<CustomViewProps> = ({children, style}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.black,
   },
 });
 

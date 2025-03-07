@@ -40,18 +40,31 @@ const handleSignInError = (error: any, data: RegisterData) => {
 
 export const signInWithGoogle = () => async (dispatch: any) => {
   try {
+    console.log('Step 1: Checking Google Play Services...');
     await GoogleSignin.hasPlayServices();
+    
+    console.log('Step 2: Signing Out (if logged in before)...');
     await GoogleSignin.signOut();
+// await GoogleSignin.revokeAccess();
+
+
+    console.log('Step 3: Attempting Google Sign-In...');
     const {idToken, user} = await GoogleSignin.signIn();
-    await axios
-      .post(LOGIN, {
+    console.log('Step 4: Google Sign-In Success:', {idToken, user});
+      
+
+
+    console.log('Step 5: Sending Token to Backend...');
+    await axios.post(LOGIN, {
         provider: 'google',
         id_token: idToken,
       })
       .then(async res => {
+        console.log('Step 6: Login API Response:', res.data);
         await handleSignInSuccess(res, dispatch);
       })
       .catch((err: any) => {
+        console.log('Step 7: Error in API Call:', err);
         const errorData = {
           email: user.email,
           name: user.name,
@@ -61,10 +74,12 @@ export const signInWithGoogle = () => async (dispatch: any) => {
         };
         handleSignInError(err, errorData as RegisterData);
       });
+
   } catch (error) {
     console.log('GOOGLE ERROR', error);
   }
 };
+
 
 export const signInWithFacebook = () => async (dispatch: any) => {
   LoginManager.logOut();

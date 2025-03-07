@@ -58,16 +58,32 @@ export const refetchUser = () => async (dispatch: any) => {
   }
 };
 
+// export const fetchUserByUsername =
+//   (username: string) => async (dispatch: any) => {
+//     try {
+//       const res = await appAxios.get(`/user/profile/${username}`);
+//       return res.data.user;
+//     } catch (error: any) {
+//       console.log('FETCH BY USERNAME ->', error);
+//       return null;
+//     }
+//   };
+
 export const fetchUserByUsername =
-  (username: string) => async (dispatch: any) => {
+  () => async (dispatch: any, getState: any) => {
     try {
-      const res = await appAxios.get(`/user/profile/${username}`);
+      const token = getState().auth.token; // Ensure you're getting the token from Redux state
+      const res = await appAxios.get(`/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       return res.data.user;
     } catch (error: any) {
-      console.log('FETCH BY USERNAME ->', error);
+      console.log('FETCH BY USERNAME ->', error.response?.data || error.message);
       return null;
     }
   };
+
+  
 
 export const toggleFollow = (userId: string) => async (dispatch: any) => {
   try {

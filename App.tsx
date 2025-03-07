@@ -11,11 +11,11 @@ import {PersistGate} from 'redux-persist/integration/react';
 
 GoogleSignin.configure({
   webClientId:
-    'YOUR_GOOGLE_WEB_CLIENT_ID',
+    // '517832991609-n58najmkg1oub2477ep4n8emuigtulrn.apps.googleusercontent.com',
+    '555301270349-0n83fvkce0hjp6clrln5obth6lsepm1d.apps.googleusercontent.com',
   forceCodeForRefreshToken: true,
   offlineAccess: false,
-  iosClientId:
-    'YOUR_GOOGLE_IOS_CLIENT_ID',
+  //   'YOUR_GOOGLE_IOS_CLIENT_ID',
 });
 
 const App = () => {

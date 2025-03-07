@@ -5,7 +5,7 @@ import {normalizeWidth, screenHeight} from '../utils/Scaling';
 
 export const bottomBarStyles = StyleSheet.create({
   customMiddleButton: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.black,
     borderRadius: 60,
     padding: normalizeWidth(8),
     shadowColor: Colors.text,
