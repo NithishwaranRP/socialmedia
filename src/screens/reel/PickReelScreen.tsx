@@ -1,4 +1,4 @@
-import React, {FC, useEffect, useState} from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,34 +14,35 @@ import {
 } from 'react-native';
 import CustomHeader from '../../components/global/CustomHeader';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {Colors} from '../../constants/Colors';
-import {RFValue} from 'react-native-responsive-fontsize';
+import { Colors } from '../../constants/Colors';
+import { RFValue } from 'react-native-responsive-fontsize';
 import CustomText from '../../components/global/CustomText';
-import {FONTS} from '../../constants/Fonts';
+import { FONTS } from '../../constants/Fonts';
 import PickerReelButton from '../../components/reel/PickerReelButton';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
-import {screenHeight} from '../../utils/Scaling';
-import {convertDurationToMMSS} from '../../utils/dateUtils';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import { screenHeight } from '../../utils/Scaling';
+import { convertDurationToMMSS } from '../../utils/dateUtils';
 import CustomView from '../../components/global/CustomView';
-import {createThumbnail} from 'react-native-create-thumbnail';
-import {navigate} from '../../utils/NavigationUtil';
+import { createThumbnail } from 'react-native-create-thumbnail';
+import { navigate } from '../../utils/NavigationUtil';
+import { StatusBar } from 'react-native';
 
 interface VideoProp {
   uri: string;
   playableDuration: number;
 }
 
-const useGallery = ({pageSize = 30}) => {
+const useGallery = ({ pageSize = 30 }) => {
   const [videos, setVideos] = useState<VideoProp[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
-  const [permissionNotGranted, setPermissionNotGranted] =
-    useState<boolean>(false);
+  const [permissionNotGranted, setPermissionNotGranted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingNextPage, setIsLoadingNextPage] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
 
   const loadNextPagePictures = async () => {
     if (!hasNextPage) return;
+
     try {
       setIsLoadingNextPage(true);
       const videoData = await CameraRoll.getPhotos({
@@ -84,29 +85,23 @@ const useGallery = ({pageSize = 30}) => {
     }
 
     const hasAndroidPermission = async () => {
-      // Perform your Android permission checks here
-      // Example:
-      if ((Platform.Version as number) >= 33) {
+      if (Number(Platform.Version) >= 33) {
         const statuses = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
           PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
           PermissionsAndroid.PERMISSIONS.CAMERA,
         ]);
         return (
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
-          statuses[PermissionsAndroid.PERMISSIONS.CAMERA] ===
-            PermissionsAndroid.RESULTS.GRANTED
+          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES] === PermissionsAndroid.RESULTS.GRANTED &&
+          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO] === PermissionsAndroid.RESULTS.GRANTED &&
+          statuses[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED
         );
       } else {
-        const status = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        );
+        const status = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
         return status === PermissionsAndroid.RESULTS.GRANTED;
       }
     };
+
     const fetchInitial = async () => {
       const hasPermission = await hasAndroidPermission();
       if (!hasPermission) {
@@ -117,7 +112,7 @@ const useGallery = ({pageSize = 30}) => {
         setIsLoading(false);
       }
     };
-    // Skip permission check for iOS
+
     if (Platform.OS === 'ios') {
       fetchVideos();
     } else {
@@ -143,55 +138,35 @@ const PickReelScreen: FC = () => {
     isLoadingNextPage,
     hasNextPage,
     permissionNotGranted,
-  } = useGallery({pageSize: 30});
+  } = useGallery({ pageSize: 30 });
 
   const handleOpenSettings = () => {
     Linking.openSettings();
   };
 
   const handleVideoSelect = async (data: any) => {
-    const {uri} = data;
+    const { uri } = data;
 
-    if (Platform.OS === 'android') {
-      createThumbnail({
+    try {
+      const response = await createThumbnail({
         url: uri || '',
         timeStamp: 100,
-      })
-        .then(response => {
-          console.log(response);
-          navigate('UploadReelScreen', {
-            thumb_uri: response.path,
-            file_uri: uri,
-          });
-        })
-        .catch(err => {
-          console.error('Thumbnail generation error', err);
-        });
-      return;
-    }
-    const fileData = await CameraRoll.iosGetImageDataById(uri);
-    createThumbnail({
-      url: fileData?.node?.image?.filepath || '',
-      timeStamp: 100,
-    })
-      .then(response => {
-        console.log(response);
-        navigate('UploadReelScreen', {
-          thumb_uri: response.path,
-          file_uri: fileData?.node?.image?.filepath,
-        });
-      })
-      .catch(err => {
-        console.error('Thumbnail generation error', err);
       });
+      navigate('UploadReelScreen', {
+        thumb_uri: response.path,
+        file_uri: uri,
+      });
+    } catch (error) {
+      console.error('Thumbnail generation error', error);
+    }
   };
 
-  const renderItem = ({item}: {item: VideoProp}) => {
+  const renderItem = ({ item }: { item: VideoProp }) => {
     return (
       <TouchableOpacity
         style={styles.videoItem}
         onPress={() => handleVideoSelect(item)}>
-        <Image source={{uri: item.uri}} style={styles.thumbnail} />
+        <Image source={{ uri: item.uri }} style={styles.thumbnail} />
         <CustomText
           variant="h8"
           fontFamily={FONTS.SemiBold}
@@ -208,11 +183,10 @@ const PickReelScreen: FC = () => {
   };
 
   return (
-    <CustomView>
-      <SafeAreaView style={styles.margin}>
-        <CustomHeader title="New Reel" />
-      </SafeAreaView>
-      <View style={styles.pad}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
+      <CustomHeader title="New Reel" />
+      <View style={styles.padding}>
         <PickerReelButton />
         <View style={styles.flexRow}>
           <CustomText variant="h6" fontFamily={FONTS.Medium}>
@@ -253,23 +227,22 @@ const PickReelScreen: FC = () => {
           )}
         </>
       )}
-    </CustomView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  pad: {
-    padding: 8,
+  container: {
+    flex: 1,  // Ensure the SafeAreaView takes up the full screen
+    backgroundColor: 'black', // Can set the background color for the screen
   },
-  margin: {
-    margin: 10,
+  padding: {
+    padding: 10, // Implement some padding for better layout
   },
   flexRow: {
-    alignItems: 'center',
     flexDirection: 'row',
-    gap: 6,
-    margin: 8,
-    marginTop: 20,
+    alignItems: 'center',
+    marginVertical: 10, // Consistent spacing
   },
   videoItem: {
     width: '33%',
@@ -294,16 +267,12 @@ const styles = StyleSheet.create({
   },
   time: {
     position: 'absolute',
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: 'rgba(0,0,0,0.7)', // Slightly darker for better visibility
+    color: 'white', // Ensure text is visible
     bottom: 3,
     right: 3,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+    padding: 5, // Adding padding for clickable area
+    borderRadius: 5, // Rounded edges for better aesthetics
   },
 });
 

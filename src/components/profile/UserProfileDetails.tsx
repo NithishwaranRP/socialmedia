@@ -57,10 +57,14 @@ const UserProfileDetails: React.FC<{
   const handleShareProfile = () => {
     // const profileUrl = `${
     const profileUrl = `${
-      // Platform.OS == 'android' ? 'https://192.168.219.90:3000' : 'reelzzz:/'
-      Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://192.168.222.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://192.168.170.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
+      Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
     }/share/user/${user.username}`;
+    
     const message = `Hey, Checkout this profile: ${profileUrl}`;
+
     Share.share({
       message: message,
     })

@@ -8,6 +8,8 @@ import CustomText from '../global/CustomText';
 import {launchCamera} from 'react-native-image-picker';
 import {createThumbnail} from 'react-native-create-thumbnail';
 import {navigate} from '../../utils/NavigationUtil';
+import { StatusBar } from 'react-native';
+import { Platform } from 'react-native';
 const PickerReelButton: FC = () => {
   const handleCamera = async () => {
     await launchCamera({
@@ -42,6 +44,8 @@ const PickerReelButton: FC = () => {
 
   return (
     <View style={styles.flexRowBetween}>
+            <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
+      
       <TouchableOpacity style={styles.btn} onPress={() => handleCamera()}>
         <Icon name="camera-outline" color={Colors.white} size={RFValue(20)} />
         <CustomText variant="h8" style={styles.btnText}>
@@ -69,7 +73,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+        marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    
   },
   btn: {
     justifyContent: 'center',

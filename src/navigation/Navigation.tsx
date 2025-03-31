@@ -11,8 +11,10 @@ const config = {
 };
 
 const linking = {
-  prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
-  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.219.90:3000'],
+  prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://recaps-backend-277610981315.asia-south1.run.app'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.170.133:8080'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.108.133:8080'],
   config,
 };
 

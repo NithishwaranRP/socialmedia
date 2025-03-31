@@ -7,7 +7,9 @@ import UserProfileScreen from '../screens/dashboard/UserProfileScreen';
 import FeedReelScrollScreen from '../screens/reel/FeedReelScrollScreen';
 import PickReelScreen from '../screens/reel/PickReelScreen';
 import ReelScrollScreen from '../screens/reel/ReelScrollScreen';
+import RemixScreen from '../screens/reel/RemixScreen';
 import UploadReelScreen from '../screens/reel/UploadReelScreen';
+import UploadRemixScreen from '../screens/reel/UploadRemixScreen';
 import BottomTab from './BottomTab';
 
 export const authStack = [
@@ -39,12 +41,20 @@ export const dashboardStack = [
     component: UploadReelScreen,
   },
   {
+    name: 'UploadRemixScreen',
+    component: UploadRemixScreen,
+  },
+  {
     name: 'FeedReelScrollScreen',
     component: FeedReelScrollScreen,
   },
   {
     name: 'ReelScrollScreen',
     component: ReelScrollScreen,
+  },
+  {
+    name: 'RemixScreen',
+    component: RemixScreen,
   },
   {
     name: 'FollowingScreen',

@@ -44,6 +44,7 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
 
   const handleLogout = () => {
     dispatch(Logout());
+    navigate('LoginScreen');
   };
 
   return (

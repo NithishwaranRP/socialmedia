@@ -2,6 +2,7 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -13,9 +14,11 @@ import {FONTS} from '../../constants/Fonts';
 interface InteractionButtonProps {
   likes: number;
   comments: number;
+  react: string;
   onLike: () => void;
   onComment: () => void;
   onShare: () => void;
+  onReact: () => void;
   onLongPressLike: () => void;
   isLiked: boolean;
 }
@@ -28,6 +31,8 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
   onShare,
   comments,
   likes,
+  react,
+  onReact,
 }) => {
   return (
     <View>
@@ -52,6 +57,15 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
         </CustomText>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.button} onPress={onReact}>
+  <Image 
+    source={require('../../assets/icons/react.png')} // Replace with your image path
+    style={styles.iconImage} 
+  />
+  <CustomText variant="h9" fontFamily={FONTS.Medium}>
+    React
+  </CustomText>
+</TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={onShare}>
         <Icon name={'share'} size={RFValue(22)} color={Colors.white} />
         <CustomText variant="h9" fontFamily={FONTS.Medium}>
@@ -67,6 +81,13 @@ const styles = StyleSheet.create({
     marginVertical: 15,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  iconImage: {
+    width: RFValue(22),  // Same size as the icon
+    height: RFValue(22),
+    resizeMode: 'contain',  // Ensures the image scales properly
+    // marginRight: 8, // Adds spacing between image and text
+    tintColor: Colors.white, // Ensures the image color matches the text color
   },
 });
 

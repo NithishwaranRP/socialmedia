@@ -1,18 +1,14 @@
-import React, {FC, useEffect, useRef, useState} from 'react';
+import React, {FC, useEffect, useState} from 'react';
 import CustomGradient from '../../components/global/CustomGradient';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView';
 import {
-  CollapsibleRef,
-  MaterialTabBar,
-  Tabs,
-} from 'react-native-collapsible-tab-view';
-import ReelListTab from '../../components/profile/ReelListTab';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  TouchableOpacity,
+  StyleSheet, 
+  TouchableOpacity, 
   View,
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
+import ReelListTab from '../../components/profile/ReelListTab';
 import {Colors} from '../../constants/Colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {RFValue} from 'react-native-responsive-fontsize';
@@ -22,28 +18,25 @@ import {useAppDispatch} from '../../redux/reduxHook';
 import {fetchUserByUsername} from '../../redux/actions/userAction';
 import {useRoute} from '@react-navigation/native';
 
+const {width} = Dimensions.get('window');
+
 const UserProfileScreen: FC = () => {
   const dispatch = useAppDispatch();
   const route = useRoute();
   const userParam = route.params as any;
-  const containerRef = useRef<CollapsibleRef>(null);
-  const [focusedIndex, setFocusedIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const [user, setUser] = useState<User>();
   const [loading, setLoading] = useState(true);
-  const handleSetIndex = (newIndex: number) => {
-    setFocusedIndex(newIndex);
-    containerRef.current?.setIndex(newIndex);
-  };
 
   const fetchUser = async () => {
     setLoading(true);
-    const data = await dispatch(fetchUserByUsername());
-    setUser(data);
+    const data = await dispatch(fetchUserByUsername(userParam?.username));
+    setUser(() => ({ ...data }));
     setLoading(false);
   };
 
   const refetchLoginUser = async () => {
-    const data = await dispatch(fetchUserByUsername());
+    const data = await dispatch(fetchUserByUsername(userParam?.username));
     setUser(
       prevState =>
         ({
@@ -60,17 +53,17 @@ const UserProfileScreen: FC = () => {
   const MyTabs = [
     {
       name: 'Reel',
-      component: loading ? <></> : <ReelListTab user={user} type="post" />,
+      component: loading ? <></> : <ReelListTab user={user} type="post" key="post" />,
       icon: 'apps-sharp',
     },
     {
       name: 'Liked',
-      component: loading ? <></> : <ReelListTab user={user} type="liked" />,
+      component: loading ? <></> : <ReelListTab user={user} type="liked" key="liked" />,
       icon: 'heart',
     },
     {
       name: 'History',
-      component: loading ? <></> : <ReelListTab user={user} type="watched" />,
+      component: loading ? <></> : <ReelListTab user={user} type="watched" key="watched" />,
       icon: 'logo-tableau',
     },
   ];
@@ -83,71 +76,51 @@ const UserProfileScreen: FC = () => {
           <ActivityIndicator size="large" color="white" />
         </View>
       ) : (
-        <Tabs.Container
-          lazy
-          cancelLazyFadeIn
-          ref={containerRef}
-          revealHeaderOnScroll={true}
-          renderHeader={() => (
+        <View style={styles.contentContainer}>
+          {/* User Profile Details */}
+          <View style={styles.headerContainer}>
             <UserProfileDetails
               refetchLoginUser={() => refetchLoginUser()}
               user={user}
             />
-          )}
-          headerContainerStyle={styles.noOpacity}
-          pagerProps={{
-            onPageSelected: event => {
-              setFocusedIndex(event.nativeEvent.position);
-            },
-            removeClippedSubviews: true,
-          }}
-          headerHeight={300}
-          renderTabBar={props => (
-            <MaterialTabBar
-              {...props}
-              activeColor={Colors.white}
-              inactiveColor={Colors.disabled}
-              tabStyle={{
-                backgroundColor: Colors.black,
-              }}
-              style={{
-                backgroundColor: Colors.black,
-                borderTopWidth: 1,
-                borderColor: Colors.black,
-              }}
-              indicatorStyle={styles.indicatorStyle}
-              TabItemComponent={({index, name, ...rest}) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.tabBar}
-                  onPress={() => handleSetIndex(index)}>
-                  <Icon
-                    name={MyTabs[index].icon}
-                    size={RFValue(20)}
-                    color={
-                      focusedIndex === index
-                        ? Colors.text
-                        : Colors.inactive_tint
-                    }
-                  />
-                </TouchableOpacity>
-              )}
-            />
-          )}
-          containerStyle={{
-            backgroundColor: Colors.black,
-            paddingVertical: 0,
-            elevation: 0,
-            shadowOffset: {height: 0, width: 0},
-            shadowColor: 'transparent',
-            shadowOpacity: 0,
-          }}>
-          {MyTabs.map((item, index) => (
-            <Tabs.Tab key={index} name={item.name}>
-              {item.component}
-            </Tabs.Tab>
-          ))}
-        </Tabs.Container>
+          </View>
+          
+          {/* Custom Tab Bar */}
+          <View style={styles.tabBarContainer}>
+            {MyTabs.map((tab, index) => (
+              <TouchableOpacity
+                key={`tab-${index}`}
+                style={styles.tabBar}
+                onPress={() => setActiveTab(index)}>
+                <Icon
+                  name={tab.icon}
+                  size={RFValue(20)}
+                  color={
+                    activeTab === index ? Colors.white : Colors.disabled
+                  }
+                />
+              </TouchableOpacity>
+            ))}
+            
+            {/* Indicator line */}
+            <View style={styles.indicatorContainer}>
+              <View 
+                style={[
+                  styles.indicatorStyle, 
+                  { 
+                    left: (width / MyTabs.length) * activeTab,
+                    width: width / MyTabs.length 
+                  }
+                ]} 
+              />
+            </View>
+          </View>
+          
+          {/* Content Area */}
+          <View style={styles.tabContentContainer}>
+            {MyTabs[activeTab].component}
+          </View>
+        </View>
       )}
       <CustomGradient position="bottom" />
     </CustomSafeAreaView>
@@ -156,26 +129,47 @@ const UserProfileScreen: FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 0,
-    overflow: 'hidden',
-
-    paddingVertical: 0,
+    flex: 1,
     backgroundColor: Colors.black,
   },
-  indicatorStyle: {
-    backgroundColor: 'white',
-    height: 0.8,
+  contentContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
-  noOpacity: {
-    shadowOpacity: 0,
-    elevation: 0,
-    borderWidth: 0,
+  headerContainer: {
+    paddingVertical: 20,
+  },
+  tabBarContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.black,
+    borderTopWidth: 1,
+    borderColor: Colors.black,
+    position: 'relative',
+    zIndex: 10,
   },
   tabBar: {
-    width: '33%',
+    width: `${100 / 3}%`, // For 3 tabs
     justifyContent: 'center',
     alignItems: 'center',
     padding: 10,
+  },
+  tabContentContainer: {
+    flex: 1,
+  },
+  indicatorContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 0.8,
+    width: '100%',
+  },
+  indicatorStyle: {
+    position: 'absolute',
+    bottom: 0,
+    height: 0.8,
+    backgroundColor: 'white',
   },
 });
 

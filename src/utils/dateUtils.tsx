@@ -37,16 +37,20 @@ export const convertDurationToMMSS = (seconds: number) => {
 export const extractTypeAndId = (url: string): {type: string; id: string} => {
   let type: string = '';
   let id: string = '';
-
+// https://recaps-backend-277610981315.asia-south1.run.app
   // Regex patterns to match each type of URL
-  const reelPattern1 = /^http:\/\/reelzzzserverworking.vercel.app\/share\/reel\/([a-f\d]{24})$/;
-  // const reelPattern1 = /^http:\/\/192.168.219.90:3000\/share\/reel\/([a-f\d]{24})$/;
+  // const reelPattern1 = /^http:\/\/reelzzzserverworking.vercel.app\/share\/reel\/([a-f\d]{24})$/;
+  const reelPattern1 = /^http:\/\/recaps-backend-277610981315.asia-south1.run.app\/share\/reel\/([a-f\d]{24})$/;
+  // const reelPattern1 = /^http:\/\/192.168.170.133:8080\/share\/reel\/([a-f\d]{24})$/;
+  // const reelPattern1 = /^http:\/\/192.168.108.133:8080\/share\/reel\/([a-f\d]{24})$/;
   const reelPattern2 = /^reelzzz:\/\/share\/reel\/([a-f\d]{24})$/;
   const userPattern1 =
-    /^http:\/\/reelzzzserverworking.vercel.app\/share\/user\/([a-zA-Z0-9_]+)$/;
-    // /^http:\/\/192.168.219.90:3000\/share\/user\/([a-zA-Z0-9_]+)$/;
+    /^http:\/\/recaps-backend-277610981315.asia-south1.run.app\/share\/user\/([a-zA-Z0-9_]+)$/;
+    // /^http:\/\/reelzzzserverworking.vercel.app\/share\/user\/([a-zA-Z0-9_]+)$/;
+    // /^http:\/\/192.168.170.133:8080\/share\/user\/([a-zA-Z0-9_]+)$/;
+    // /^http:\/\/192.168.222.133:8080\/share\/user\/([a-zA-Z0-9_]+)$/;
   const userPattern2 = /^reelzzz:\/\/share\/user\/([a-zA-Z0-9_]+)$/;
-  // http://192.168.219.90:3000
+  // http://192.168.127.90:8080:3000
   // https://reelzzzserverworking.vercel.app
   if (reelPattern1.test(url)) {
     type = 'reel';

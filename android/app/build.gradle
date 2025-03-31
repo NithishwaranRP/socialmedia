@@ -4,13 +4,21 @@ apply plugin: "com.facebook.react"
 
 react {
     project.ext.vectoricons = [
-        iconFontNames: ['MaterialCommunityIcons.ttf', 'EvilIcons.ttf', "MaterialIcons.ttf", "Ionicons.ttf", "FontAwesome.ttf", "AntDesign.ttf"]
+        iconFontNames: [
+            'MaterialCommunityIcons.ttf', 
+            'EvilIcons.ttf',
+            "MaterialIcons.ttf", 
+            "Ionicons.ttf", 
+            "FontAwesome.ttf", 
+            "AntDesign.ttf"
+        ]
     ]
     apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 }
 
 def enableProguardInReleaseBuilds = true
 def jscFlavor = 'org.webkit:android-jsc:+'
+def hermesEnabled = true // Enable Hermes
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -20,15 +28,17 @@ android {
     namespace "com.reelzzz_app"
     defaultConfig {
         applicationId "com.reelzzz_app"
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
-        multiDexEnabled true // Add this line to enable MultiDex
+        minSdkVersion 24
+        targetSdkVersion 33
+        versionCode 2 // Update as necessary
+        versionName "1.1" // Update as necessary
+        multiDexEnabled true // MultiDex support
 
         manifestPlaceholders = [
             googleAuthWebClientId: "517832991609-dsos1loeej644bjr4lj4ouumfdr8j2cs.apps.googleusercontent.com"
         ]
+        // Uncomment and replace with your actual CodePush key if needed
+        // resValue "string", "CodePushDeploymentKey", "YOUR_DEPLOYMENT_KEY"
     }
 
     signingConfigs {
@@ -47,19 +57,33 @@ android {
         release {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            shrinkResources true  // Remove unused resources
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro" // Use optimized ProGuard rules
+            ndk {
+                debugSymbolLevel 'none' // Remove debug symbols
+            }
+        }
+    }
+    
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'arm64-v8a'  // Include only the necessary ABIs
+            universalApk false
         }
     }
 }
 
 dependencies {
     implementation("com.facebook.react:react-android")
+    // Uncomment if you are using CodePush
+    // implementation "com.microsoft.codepush:code-push-react-native:6.4.0"
+
     implementation 'org.slf4j:slf4j-api:1.7.30'
-    implementation 'org.slf4j:slf4j-simple:1.7.30' // Add this line for SLF4J binding
-    implementation 'androidx.multidex:multidex:2.0.1' // Add this line for MultiDex support
-    // classpath('com.google.gms:google-services:4.3.3')
-// Google Sign-In Dependency
-    def hermesEnabled = false
+    implementation 'org.slf4j:slf4j-simple:1.7.30' // SLF4J binding
+    implementation 'androidx.multidex:multidex:2.0.1' // MultiDex support
+
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
@@ -67,5 +91,5 @@ dependencies {
     }
 }
 
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); 
+apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle");
 applyNativeModulesAppBuildGradle(project)

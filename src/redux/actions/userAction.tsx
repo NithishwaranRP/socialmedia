@@ -58,30 +58,30 @@ export const refetchUser = () => async (dispatch: any) => {
   }
 };
 
-// export const fetchUserByUsername =
-//   (username: string) => async (dispatch: any) => {
-//     try {
-//       const res = await appAxios.get(`/user/profile/${username}`);
-//       return res.data.user;
-//     } catch (error: any) {
-//       console.log('FETCH BY USERNAME ->', error);
-//       return null;
-//     }
-//   };
-
 export const fetchUserByUsername =
-  () => async (dispatch: any, getState: any) => {
+  (username: string) => async (dispatch: any) => {
     try {
-      const token = getState().auth.token; // Ensure you're getting the token from Redux state
-      const res = await appAxios.get(`/user/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await appAxios.get(`/user/profile/${username}`);
       return res.data.user;
     } catch (error: any) {
-      console.log('FETCH BY USERNAME ->', error.response?.data || error.message);
+      console.log('FETCH BY USERNAME ->', error);
       return null;
     }
   };
+
+// export const fetchUserByUsername =
+//   (username: string) => async (dispatch: any, getState: any) => {
+//     try {
+//       const token = getState().auth.token; // Ensure you're getting the token from Redux state
+//       const res = await appAxios.get(`/user/profile`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+//       return res.data.user;
+//     } catch (error: any) {
+//       console.log('FETCH BY USERNAME ->', error.response?.data || error.message);
+//       return null;
+//     }
+//   };
 
   
 
@@ -112,7 +112,7 @@ export const refetchUserLogin = () => async (dispatch: any) => {
 export const Logout = () => async (dispatch: any) => {
   await token_storage.clearAll();
   await persistor.purge();
-  resetAndNavigate('LoginScreen');
+  // resetAndNavigate('LoginScreen');
 };
 
 export const getSearchUsers = (text: string) => async (dispatch: any) => {

@@ -16,6 +16,8 @@ interface SocialButtonHorizontalProps {
   textColor: string;
   backgroundColor: string;
   onPress: () => void;
+  borderColor?: string;  // ✅ Added new optional prop
+  borderWidth?: number;  // ✅ Added new optional prop
 }
 
 const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
@@ -24,6 +26,8 @@ const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
   textColor,
   backgroundColor,
   onPress,
+  borderColor = "transparent", // ✅ Default to no border
+  borderWidth = 0, // ✅ Default to no border
 }) => {
   const textStyle: TextStyle = {
     color: textColor,
@@ -35,6 +39,8 @@ const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
         styles.container,
         {
           backgroundColor,
+          borderColor, // ✅ Apply borderColor dynamically
+          borderWidth, // ✅ Apply borderWidth dynamically
         },
       ]}
       onPress={onPress}>

@@ -8,10 +8,12 @@ interface ReelItemProps {
   user: any;
   description: string;
   likes: number;
+  react: string;
   comments: number;
   onLike: () => void;
   onComment: () => void;
   onShare: () => void;
+  onReact: () => void;
   onLongPressLike: () => void;
   isLiked: boolean;
 }
@@ -24,6 +26,8 @@ const ReelItem: React.FC<ReelItemProps> = ({
   onLike,
   onComment,
   onShare,
+  react,
+  onReact,
   isLiked,
   onLongPressLike,
 }) => {
@@ -38,11 +42,13 @@ const ReelItem: React.FC<ReelItemProps> = ({
 
       <InteractionButtons
         likes={likes}
+        react={react}
         onLongPressLike={onLongPressLike}
         comments={comments}
         onLike={onLike}
         onComment={onComment}
         onShare={onShare}
+        onReact={onReact}
         isLiked={isLiked}
       />
     </View>

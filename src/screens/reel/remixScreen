@@ -1,0 +1,923 @@
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    View,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    Platform,
+    Text,StatusBar
+} from 'react-native';
+import { Camera, useCameraDevices } from 'react-native-vision-camera';
+import Video from 'react-native-video';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { useRoute } from '@react-navigation/native';
+import RecordScreen from 'react-native-record-screen';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { navigate } from '../../utils/NavigationUtil';
+import { createThumbnail } from 'react-native-create-thumbnail';
+
+const RemixScreen = () => {
+    const [isRecording, setIsRecording] = useState(false);
+    const [hasPermission, setHasPermission] = useState(false);
+    const [device, setDevice] = useState(null);
+    const [recordedVideo, setRecordedVideo] = useState(null);
+    const [isPreview, setIsPreview] = useState(false);
+    const [playBgVideo, setPlayBgVideo] = useState(false); // NEW: Control background video playback
+    const [isMuted, setIsMuted] = useState(false);
+    const [recordingTimer, setRecordingTimer] = useState(0);
+    const [thumbnailUri, setThumbnailUri] = useState(null);
+
+    const cameraRef = useRef(null);
+    const devices = useCameraDevices();
+    const route = useRoute();
+    const { reelUri } = route.params || {}; // Get the reel video URI
+
+    const checkPermissions = async () => {
+        const cameraPermission =
+            Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
+        const microphonePermission =
+            Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
+
+        try {
+            const cameraStatus = await check(cameraPermission);
+            if (cameraStatus !== RESULTS.GRANTED) {
+                const requestResult = await request(cameraPermission);
+                if (requestResult !== RESULTS.GRANTED) {
+                    Alert.alert('Camera Permission Denied', 'Please enable camera permissions in settings.');
+                    return false;
+                }
+            }
+
+            const microphoneStatus = await check(microphonePermission);
+            if (microphoneStatus !== RESULTS.GRANTED) {
+                const requestResult = await request(microphonePermission);
+                if (requestResult !== RESULTS.GRANTED) {
+                    Alert.alert('Microphone Permission Denied', 'Please enable microphone permissions in settings.');
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Permission error:', error);
+            return false;
+        }
+    };
+
+    
+    const navigateToUploadScreen = async () => {
+      if (recordedVideo) {
+          try {
+              const thumbnail = await createThumbnail({
+                  uri: recordedVideo,
+                  timeStamp: 1000, // timestamp in milliseconds
+              });
+              setThumbnailUri(thumbnail.uri); // Set created thumbnail URI
+
+              // Navigate to the Upload screen with both video and thumbnail URIs
+              navigate('UploadReelScreen', {
+                  thumb_uri: thumbnail.uri,
+                  file_uri: recordedVideo,
+              });
+          } catch (error) {
+              console.error('Thumbnail creation error:', error);
+              Alert.alert('Error', 'Failed to create thumbnail');
+          }
+      }
+  };
+    useEffect(() => {
+        const initializePermissions = async () => {
+            const isGranted = await checkPermissions();
+            setHasPermission(isGranted);
+        };
+        initializePermissions();
+    }, []);
+
+   const frontCamera = devices.find(device => device.position === 'front');
+   
+       useEffect(() => {
+           if (frontCamera) {
+               setDevice(frontCamera); // Use the front camera by default
+           }
+       }, [devices]);
+
+    const toggleMute = () => {
+      setIsMuted(prev => !prev);
+      // setPlayBgVideo(!isMuted);
+  };
+
+  
+    const startRecording = async () => {
+        try {
+            const res = await RecordScreen.startRecording();
+            if (res === 'PermissionError') {
+                Alert.alert('Permission Error', 'Screen recording permissions are required.');
+                return;
+            }
+            setIsRecording(true);
+            setPlayBgVideo(true); // Start playing background video
+        } catch (error) {
+            console.error('Error starting screen recording:', error);
+        }
+    };
+
+    const stopRecording = async () => {
+        try {
+            const res = await RecordScreen.stopRecording();
+            console.log('Recording stopped:', res);
+
+            if (res.result.outputURL) {
+                setRecordedVideo(res.result.outputURL);
+                setIsPreview(true);
+            }
+            setIsRecording(false);
+            setPlayBgVideo(false); // Stop background video
+        } catch (error) {
+            console.error('Error stopping screen recording:', error);
+        }
+    };
+
+    const frontCamera = devices.find((d) => d.position === 'front');
+
+    useEffect(() => {
+        console.log('Available devices:', devices);
+        if (frontCamera) {
+            setDevice(frontCamera);
+        } else {
+            console.warn('No front camera detected!');
+        }
+    }, [devices]);
+
+    const onTimerPress = () => {
+      setRecordingTimer(prev => (prev === 0 ? 5 : 0)); // Toggle between 5 seconds and 0
+  };
+
+    return (
+        <View style={styles.container}>
+            {!isPreview && (
+                <Video
+                    source={{ uri: reelUri }}
+                    style={styles.video}
+                    resizeMode="cover"
+                    repeat
+                    paused={!playBgVideo} // Fix: Only play when recording
+                    muted={isMuted} // Mute background video
+                />
+            )}
+
+            {isPreview && recordedVideo && (
+                <Video
+                    source={{ uri: recordedVideo }}
+                    style={styles.video}
+                    resizeMode="cover"
+                    controls // Allows playback controls
+                />
+            )}
+
+            {!hasPermission && (
+                <Text style={styles.permissionText}>
+                    Camera & Microphone permissions are required.
+                </Text>
+            )}
+
+            {hasPermission && device && !isPreview  && (
+                <Camera
+                    ref={cameraRef}
+                    style={styles.camera}
+                    device={device}
+                    isActive={true}
+                    video={true} // Enable video mode
+                />
+            )}
+
+{(!isRecording && !isPreview) && (  // Only show IconContainer when not in preview mode
+                <View style={styles.iconContainer}>
+                    <View style={styles.iconBackground}>
+                        <TouchableOpacity onPress={toggleMute} style={styles.iconButton}>
+                            <Icon name={isMuted ? "volume-mute-outline" : "volume-high-outline"} size={30} color="white" />
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={onTimerPress} style={styles.iconButton}>
+                            <Text style={styles.timerText}>{recordingTimer}s</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity onPress={() => Alert.alert('Save Video', 'Save video functionality not implemented.')} style={styles.iconButton}>
+                            <Icon name="save-outline" size={30} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {!isPreview && (
+                <TouchableOpacity
+                    style={[styles.recordButton, isRecording && styles.recording]}
+                    onPress={isRecording ? stopRecording : startRecording}
+                />
+            )}
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'black',
+    },
+    video: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    camera: {
+        position: 'absolute',
+        bottom: 20,
+        right: 10,
+        width: 120,
+        height: 170,
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    permissionText: {
+        color: 'white',
+        fontSize: 16,
+        textAlign: 'center',
+        padding: 20,
+    },
+    recordButton: {
+        position: 'absolute',
+        bottom: 50,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'red',
+        borderWidth: 5,
+        borderColor: 'white',
+        alignSelf: 'center',
+    },
+    recording: {
+        backgroundColor: 'darkred', // Darker red while recording
+    },
+    iconBackground: {
+      backgroundColor: 'rgba(0, 0, 0, 0.6)', // Semi-transparent black
+      borderRadius: 10,
+      // padding: 5,
+      paddingHorizontal: 0,
+      paddingVertical: 20,
+      
+      alignItems: 'center',
+      // elevation: 5, // For Android shadow
+      // shadowColor: '#000', // For iOS shadow
+      // shadowOffset: { width: 0, height: 2 },
+      // shadowOpacity: 0.25,
+      // shadowRadius: 3.5,
+  },
+  iconContainer: {
+      position: 'absolute',
+      top: 100,
+      right: 10,
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+  },
+  iconButton: {
+      padding: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 50,  // Round buttons for a better look
+  },
+  timerText: {
+      color: 'white',
+      marginHorizontal: 10,
+      fontSize: 20,
+  },
+});
+
+export default RemixScreen;
+
+
+
+
+import React, { useEffect, useRef, useState } from 'react';
+import {
+    View,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+    Platform,
+    Text,Modal,ScrollView,TextInput,ProgressBarAndroid,
+    Animated,
+} from 'react-native';
+import { Camera, useCameraDevices } from 'react-native-vision-camera';
+import Video from 'react-native-video';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { useRoute } from '@react-navigation/native';
+import GradientButton from '../../components/global/GradientButton';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {useAppSelector} from '../../redux/reduxHook';
+import {selectUser} from '../../redux/reducers/userSlice';
+import { goBack, navigate } from '../../utils/NavigationUtil';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { FONTS } from '../../constants/Fonts';
+import { useRemixUpload } from '../../components/uploadservice/RemixUploadContext';
+import Toast from 'react-native-toast-message';
+import LinearGradient from 'react-native-linear-gradient'; // Add this line
+
+const RemixScreen = () => {
+    const [isRecording, setIsRecording] = useState(false);
+    const [hasPermission, setHasPermission] = useState(false);
+    const [device, setDevice] = useState(null);
+    const [recordedVideo, setRecordedVideo] = useState(null);
+    const [response, setResponse] = useState(null);
+    const [isPreview, setIsPreview] = useState(false);
+    const [playBgVideo, setPlayBgVideo] = useState(false);
+    const [playRecordedVideo, setPlayRecordedVideo] = useState(false); // For controlling the recorded video playback
+    const [isMuted, setIsMuted] = useState(false);
+    const cameraRef = useRef(null);
+    const devices = useCameraDevices();
+    const route = useRoute();
+    const [animatedValue] = useState(new Animated.Value(0));
+    const { reelUri } = route.params || {};
+    const [recordingTimer, setRecordingTimer] = useState(0);
+    const [isUploadPopupVisible, setIsUploadPopupVisible] = useState(false);
+    const [showPreviewPopup, setShowPreviewPopup] = useState(false);
+    const [isUploadInProgress, setIsUploadInProgress] = useState(false);
+    const user = useAppSelector(selectUser);
+    const videoRef = useRef(null);
+    const [caption, setCaption] = useState('');
+    const [status, setStatus] = useState(true);
+
+    const checkPermissions = async () => {
+        const cameraPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
+        const microphonePermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.MICROPHONE : PERMISSIONS.ANDROID.RECORD_AUDIO;
+
+        try {
+            const cameraStatus = await check(cameraPermission);
+            const microphoneStatus = await check(microphonePermission);
+
+            if (cameraStatus !== RESULTS.GRANTED) {
+                await request(cameraPermission);
+            }
+            if (microphoneStatus !== RESULTS.GRANTED) {
+                await request(microphonePermission);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Permission error:', error);
+            return false;
+        }
+    };
+
+    useEffect(() => {
+        const initializePermissions = async () => {
+            const isGranted = await checkPermissions();
+            setHasPermission(isGranted);
+        };
+        initializePermissions();
+    }, []);
+
+    const frontCamera = devices.find(device => device.position === 'front');
+
+    useEffect(() => {
+        if (frontCamera) {
+            setDevice(frontCamera);
+        }
+    }, [devices]);
+
+    const startRecording = async () => {
+        if (cameraRef.current) {
+            try {
+                setIsRecording(true);
+                setPlayBgVideo(true); // Start the background video during recording
+
+                await cameraRef.current.startRecording({
+                    onRecordingFinished: async (video) => {
+                        setRecordedVideo(video.path);
+                        setIsRecording(false);
+                        setIsPreview(true); // Move to preview mode
+                        setPlayBgVideo(false); // Stop playing background video when done
+                        // setIsUploadPopupVisible(true);
+                    },
+                    onRecordingError: (error) => {
+                        console.error('Recording error:', error);
+                        setIsRecording(false);
+                    },
+                });
+            } catch (error) {
+                console.error('Error starting video recording:', error);
+            }
+        }
+    };
+
+    const stopRecording = async () => {
+        if (cameraRef.current) {
+            try {
+                await cameraRef.current.stopRecording();
+                setIsRecording(false);
+                setPlayBgVideo(false); // Stop background video after recording
+                setShowPreviewPopup(true);
+            } catch (error) {
+                console.error('Error stopping video recording:', error);
+            }
+        }
+    };
+
+    const startAnimation = () => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(animatedValue, {
+                    toValue: 1,
+                    duration: 1000, // Duration for one loop
+                    useNativeDriver: true,
+                }),
+                Animated.timing(animatedValue, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ]),
+        ).start();
+    };
+    
+    const stopAnimation = () => {
+        animatedValue.stop();
+        animatedValue.setValue(0); // Reset to the original value
+    };
+
+    const uploadVideo = async () => {
+        console.log('Uploading video:', recordedVideo);
+        if (!recordedVideo) {
+            Alert.alert('No video recorded', 'Please record a video first.');
+            console.log('No video recorded', 'Please record a video first.');
+            return;
+        }
+    
+        const formData = new FormData();
+        formData.append('video', {
+            uri: Platform.OS === 'android' ? `file://${recordedVideo}` : recordedVideo,
+            type: 'video/mp4',
+            name: 'recordedVideo.mp4'
+        });
+    
+        formData.append('param1', `${reelUri.videoUri}`);
+        formData.append('caption', '#cccsaaption');
+        formData.append('userId', user?.id); 
+        formData.append('status', status); 
+        if (status === false) {
+            formData.append('_id', response.reel._id);
+        console.log('response._id', response.reel._id);
+
+        }
+        console.log('Form data:', formData);
+        console.log('Response', response);
+
+        const maxRetries = 3;
+        let attempt = 0;
+        let success = false;
+
+       while (attempt < maxRetries && !success) {
+        try {
+            setIsUploadInProgress(true);
+            startAnimation();
+            const response = await fetch('http://192.168.222.133:8080/uploadVideo', {
+                method: 'POST',
+                body: formData,
+            });
+            console.log(response);
+            const responseText = await response.text(); // Get the response as text
+            console.log('Server Response:', responseText); // Log the raw response
+            if (!response.ok) {
+                const errorResult = JSON.parse(responseText); // Parse only if the response is okay
+                Alert.alert('Upload Failed', errorResult.msg || 'Failed to upload video');
+                return;
+            }
+
+            const result = JSON.parse(responseText); // Parse the successful response
+            console.log('Upload Success', 'Video uploaded successfully:', JSON.stringify(result, null, 2));
+            setResponse(result);
+
+            if (result.msg) {
+                if (result.msg.toLowerCase().includes("video uploaded successfully")) {
+                    setIsPreview(true); // Set to false if specific condition met
+
+                    // Optionally navigate or perform other actions based on the response
+                    // navigate('UploadScreen', { reelId: result.reel._id }); 
+                } else {
+                    setIsPreview(false);  // Set to true for other messages
+                }
+                }
+            setStatus(prevStatus => !prevStatus);
+            Toast.show({
+                type: 'success',
+                text1: 'Done',
+                text2: result.msg,
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
+            success = true;
+        } catch (error) {
+            console.error('Upload error:', error.message || error);
+            if (error.response) {
+                const errorBody = await error.response.text();
+                console.error('Error Response:', errorBody);
+            }
+            attempt++;
+            if (attempt < maxRetries) {
+                console.log(`Retrying upload... Attempt ${attempt + 1} of ${maxRetries}`);
+            } else {
+                Alert.alert('Upload Error', `An error occurred while uploading the video: ${error.message || error}`);
+            }
+        } finally {
+            setIsUploadInProgress(false); // End loading
+            stopAnimation();
+        }
+    }
+};
+
+const loaderTranslateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -20], // Change -10 to the desired height for your loader effect
+});
+
+
+    const onTimerPress = () => {
+        setRecordingTimer(prev => (prev === 0 ? 5 : 0)); // Toggle between 5 seconds and 0
+    };
+
+    return (
+        <View style={styles.container}>
+                <Video
+                    ref={videoRef}
+                    source={{ uri: reelUri.videoUri }}
+                    style={styles.video}
+                    resizeMode="cover"
+                    paused={!playBgVideo} // Control for background video
+                    muted={isMuted}
+                />
+            {hasPermission && device && !isPreview && (
+                <Camera 
+                    ref={cameraRef}
+                    style={styles.overlayCamera}
+                    device={device}
+                    isActive={true}
+                    video={true}
+                />
+            )}
+
+    {isUploadInProgress && (
+    <Animated.View style={[styles.loaderContainer, { transform: [{ translateY: loaderTranslateY }] }]}>
+        <LinearGradient
+            colors={['#000000', '#434343', '#000000']}
+            style={[styles.loader]}
+        />
+        <Text style={styles.loaderText}>preparing for preview...</Text>
+    </Animated.View>
+)}
+
+            {!isRecording && !isPreview && (
+                <View style={styles.iconContainer}>
+                    <View style={styles.iconBackground}>
+                        <TouchableOpacity onPress={() => setIsMuted(prev => !prev)} style={styles.iconButton}>
+                            <Icon name={isMuted ? "volume-mute-outline" : "volume-high-outline"} size={30} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={onTimerPress} style={styles.iconButton}>
+                            <Text style={styles.timerText}>{recordingTimer}s</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {!isPreview && (
+                <TouchableOpacity
+                    style={[styles.recordButton, isRecording && styles.recording]}
+                    onPress={isRecording ? stopRecording : startRecording}
+                />
+            )}
+            {isPreview && response && (
+            <View style={styles.previewContainer}>
+                <Video
+                    source={{ uri: response.reel.videoUri }}
+                    style={styles.previewVideo}
+                    resizeMode="contain"
+                    controls={true}
+                    paused={false}
+                />
+                <View style={styles.previewButtons}>
+                    <TouchableOpacity
+                        style={styles.tickButton}
+                        onPress={() => navigate('UploadScreen')}
+                    >
+                        <Icon name="checkmark" size={30} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.crossButton}
+                        onPress={async () => {
+                            setIsPreview(false);
+                            setStatus(false);
+                            await uploadVideo();
+                            setRecordedVideo(null);
+                            // setIsPreview(false);
+                            setIsUploadPopupVisible(false);
+                            videoRef.current?.seek(0);
+                        }}
+                    >
+                        <Icon name="close" size={30} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        )}
+        <Modal visible={showPreviewPopup} transparent animationType="slide">
+    <View style={styles.popupOverlay}>
+        <View style={styles.popupContainer}>
+            <Text style={styles.popupText}>Would you like to preview or re-record?</Text>
+            <View style={styles.popupButtons}>
+                <TouchableOpacity 
+                    style={[styles.popupButton, { backgroundColor: 'green' }]} 
+                    onPress={async () => {
+                        setShowPreviewPopup(false);
+                        await uploadVideo();
+                    }}>
+                    <Text style={styles.buttonText}>Preview</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    style={[styles.popupButton, { backgroundColor: 'red' }]} 
+                    onPress={() => {
+                        setShowPreviewPopup(false);
+                        setRecordedVideo(null);
+                        setIsPreview(false);
+                        videoRef.current?.seek(0);
+                    }}>
+                    <Text style={styles.buttonText}>Re-record</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    </View>
+</Modal>
+
+    <Toast />
+            <Modal
+                transparent={true}
+                visible={isUploadPopupVisible}
+                animationType="fade"
+            >
+                    <ScrollView contentContainerStyle={styles.Uploadcontainer}>
+                           <View style={styles.flexDirectionRow}>
+                             <TextInput
+                               style={[styles.input, styles.textArea]}
+                               value={caption}
+                               placeholderTextColor={Colors.border}
+                               onChangeText={setCaption}
+                               placeholder="Enter your caption here..."
+                               multiline={true}
+                               numberOfLines={8}
+                             />
+                           </View>
+                           <GradientButton
+                             text={isUploadInProgress ? "Uploading..." : "Upload"}
+                             iconName="upload"
+                             onPress={() => {
+                                uploadVideo();
+                             }}
+                           />
+                           <GradientButton
+                                text="Re-record"
+                                iconName="refresh"  // You can use another icon if needed
+                                onPress={() => {
+                                    setRecordedVideo(null);
+                                    setIsPreview(false);
+                                    setIsUploadPopupVisible(false);
+                                    videoRef.current?.seek(0);
+                                }}
+                            />
+                         </ScrollView>
+            </Modal>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'black',
+    },
+    loaderContainer: {
+        position: 'absolute',
+        top: '50%', // Center vertically
+        // left: '50%', // Center horizontally
+        transform: [{ translateX: -50 }, { translateY: -50 }], // Offset to center properly
+        alignItems: 'center', // Center items within container
+        width: '95%', // Set width to 95%
+        height: 20, // Fixed height for the loader
+    },
+
+    loader: {
+        width: '100%', // Full width for the gradient bar
+        height: '100%', // Full height of the container
+        borderRadius: 10 // Add some border-radius to make it look smooth
+    },
+    loaderText: {
+        color: 'white',
+        fontSize: 16,
+        position: 'absolute', // Positioning the text in the center of the loader
+        textAlign: 'center', // Center the text
+        top: 2, // Offset for some visual separation (adjust as needed)
+    },
+    Uploadcontainer: {
+        flex: 1,
+        paddingHorizontal: 0,
+        
+        alignItems: 'center',
+        backgroundColor: 'black',
+    },
+    flexDirectionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 20,
+      },
+      input: {
+        height: 150,
+        borderColor: 'gray',
+        borderWidth: 1,
+        color: Colors.text,
+        borderRadius: 5,
+        fontFamily: FONTS.Medium,
+        padding: 10,
+        marginVertical: 10,
+        width: '68%',
+      },
+      img: {
+        width: '25%',
+        height: 150,
+        resizeMode: 'cover',
+        borderRadius: 10,
+      },
+      textArea: {
+        height: 150,
+        textAlignVertical: 'top',
+      },
+    video: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
+    overlayCamera: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: '30%',
+        height: '25%',
+        overflow: 'hidden',
+    },
+    recordButton: {
+        position: 'absolute',
+        bottom: 50,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'red',
+        borderWidth: 5,
+        borderColor: 'white',
+        alignSelf: 'center',
+    },
+    recording: {
+        backgroundColor: 'darkred',
+    },
+    uploadButton: {
+        position: 'absolute',
+        bottom: 50,
+        backgroundColor: 'blue',
+        padding: 15,
+        borderRadius: 10,
+    },
+    uploadButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    iconContainer: {
+        position: 'absolute',
+        top: 100,
+        right: 10,
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    iconBackground: {
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Semi-transparent black
+        borderRadius: 10,
+        paddingVertical: 20,
+        alignItems: 'center',
+    },
+    iconButton: {
+        padding: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 50,  // Round buttons for a better look
+    },
+    previewControlButton: {
+        position: 'absolute',
+        bottom: 100,
+        backgroundColor: 'green',
+        padding: 10,
+        borderRadius: 5,
+    },
+    popupContent: {
+        width: '80%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    popupText: {
+        fontSize: 16,
+        marginBottom: 20,
+        color: 'black',
+        textAlign: 'center',
+    },
+    popupButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    popupOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    },
+    popupContainer: {
+        width: '80%',
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    popupText: {
+        fontSize: 18,
+        color: 'black',
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    popupButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    popupButton: {
+        flex: 1,
+        padding: 15,
+        marginHorizontal: 5,
+        borderRadius: 5,
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    progressContainer: {
+        marginVertical: 10,
+        width: '70%',
+        alignItems: 'center',
+    },
+    progressText: {
+        color: Colors.text,
+        marginTop: 5,
+    },
+    previewContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'black',
+    },
+    previewVideo: {
+        width: '100%',
+        height: '70%',
+    },
+    previewButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+        position: 'absolute',
+        bottom: 50,
+    },
+    tickButton: {
+        backgroundColor: 'green',
+        padding: 15,
+        borderRadius: 50,
+    },
+    crossButton: {
+        backgroundColor: 'red',
+        padding: 15,
+        borderRadius: 50,
+    },
+});
+
+export default RemixScreen;
