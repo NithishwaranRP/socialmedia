@@ -12,6 +12,14 @@ import {
   PanResponder,
   Dimensions,
   PixelRatio,
+  Animated,
+  Easing,
+  TextStyle,
+  ViewStyle,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  InteractionManager,
+  findNodeHandle,
 } from 'react-native';
 
 import LinearGradient from 'react-native-linear-gradient';
@@ -25,9 +33,16 @@ import { debounce } from 'lodash';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import convertToProxyURL from 'react-native-video-cache';
+import AnimatedCaption from './AnimatedCaption';
 
 const normalizeWidth = (size: number) => PixelRatio.roundToNearestPixel(scale(size));
 const normalizeHeight = (size: number) => PixelRatio.roundToNearestPixel(verticalScale(size));
+
+// Add a type definition for the GradientText props
+interface GradientTextProps {
+  text: string;
+  style: TextStyle | TextStyle[];
+}
 
 const GlobalFeed = () => {
   const dispatch = useAppDispatch();
@@ -39,6 +54,7 @@ const GlobalFeed = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [videoProgress, setVideoProgress] = useState(new Map());
   const [isMuted, setIsMuted] = useState(false);
+  const [isBreakingNewsVisible, setIsBreakingNewsVisible] = useState(true);
   const scrollPosition = useRef(0);
   const scrollDirection = useRef(1); // 1 for right, -1 for left
   const scrollViewRef = useRef<ScrollView>(null);
@@ -52,7 +68,69 @@ const GlobalFeed = () => {
   const currentlyVisibleBreakingNewsIndex = useRef<number>(0);
   const flatListRef = useRef<FlatList>(null);
   const { user } = useAppSelector(state => state.user);
+  const breakingNewsRef = useRef<View>(null);
+  const mainScrollViewRef = useRef<ScrollView>(null);
  
+  const GradientText = ({ text, style }: GradientTextProps) => {
+    // Animation value for the flowing gradient effect
+    const animValue = useRef(new Animated.Value(0)).current;
+    
+    // Start the animation when component mounts
+    useEffect(() => {
+      Animated.loop(
+        Animated.timing(animValue, {
+          toValue: 1,
+          duration: 8000, // Slower animation (4 seconds per cycle)
+          easing: Easing.linear,
+          useNativeDriver: false,
+        })
+      ).start();
+      
+      return () => {
+        animValue.stopAnimation();
+      };
+    }, []);
+    
+    // Split text into individual characters
+    const chars = text.split('');
+    
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {chars.map((char, index) => {
+          // Calculate delay for this character based on position
+          const position = index / chars.length;
+          
+          // Create animation that factors in the character position
+          // This smaller multiplier (0.3) makes the wave move more slowly across the text
+          const colorAnim = Animated.add(
+            animValue,
+            new Animated.Value(position * 0.3)
+          );
+          
+          // Convert to modulo 1 to create the wave effect
+          const modAnim = Animated.modulo(colorAnim, 1);
+          
+          return (
+            <Animated.Text
+              key={index}
+              style={[
+                style,
+                {
+                  color: modAnim.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: ['#555555', '#ffffff', '#555555'],
+                  }),
+                },
+              ]}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </Animated.Text>
+          );
+        })}
+      </View>
+    );
+  };
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -461,6 +539,44 @@ const GlobalFeed = () => {
     });
   };
 
+  // Function to check if breaking news section is visible
+  const checkBreakingNewsVisibility = useCallback(() => {
+    if (breakingNewsRef.current && mainScrollViewRef.current) {
+      InteractionManager.runAfterInteractions(() => {
+        const handle = findNodeHandle(breakingNewsRef.current);
+        if (handle && breakingNewsRef.current) {
+          breakingNewsRef.current.measureInWindow((x, y, width, height) => {
+            const windowHeight = Dimensions.get('window').height;
+            const isVisible = y < windowHeight && y + height > 0;
+            
+            if (isBreakingNewsVisible !== isVisible) {
+              setIsBreakingNewsVisible(isVisible);
+              
+              // Auto-mute based on visibility
+              if (!isVisible && !isMuted) {
+                setIsMuted(true);
+              } else if (isVisible && isMuted) {
+                setIsMuted(false);
+              }
+            }
+          });
+        }
+      });
+    }
+  }, [isBreakingNewsVisible, isMuted]);
+
+  // Monitor scroll events to detect visibility
+  const handleScrollForVisibility = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    handleScroll(event);
+    checkBreakingNewsVisibility();
+  }, [checkBreakingNewsVisibility]);
+
+  // Run visibility check when the component mounts and on layout changes
+  useEffect(() => {
+    // Initial check after component mounts
+    const timer = setTimeout(checkBreakingNewsVisibility, 500);
+    return () => clearTimeout(timer);
+  }, [checkBreakingNewsVisibility]);
 
   const renderBreakingNewsItem = ({ item, index }: { item: any; index: number }) => {
     // Use the first uploaded video for this tag
@@ -478,6 +594,9 @@ const GlobalFeed = () => {
     // Cache the video URI for better performance
     const cachedVideoUri = convertToProxyURL(videoUri);
     const shouldRenderVideo = isActive || preload;
+
+    // Modified code to use the isBreakingNewsVisible state for muting
+    const shouldMute = !isBreakingNewsVisible || isMuted;
 
     return (
       <TouchableOpacity 
@@ -513,7 +632,7 @@ const GlobalFeed = () => {
             controls={false}
             disableFocus={true}
             hideShutterView
-            volume={isMuted ? 0 : 1}
+            volume={shouldMute ? 0 : 1}
             bufferConfig={{
               minBufferMs: 15000,
               maxBufferMs: 50000,
@@ -535,12 +654,21 @@ const GlobalFeed = () => {
         {preload && isActive === false && <View style={styles.loadingOverlay}>
           <Text style={styles.loadingText}>Loading...</Text>
         </View>}
+        
+        {/* <AnimatedCaption 
+          caption={videoItem?.caption || ''} 
+          active={isActive} 
+        /> */}
+        
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
         <View style={styles.newsContent}>
-          <Text style={styles.newsTitle1} numberOfLines={2}>{videoItem?.caption}</Text>
+          <GradientText 
+            text={getFormattedHashtagText1()}
+            style={styles.newsTitle1}
+          />
         </View>
         <TouchableOpacity style={styles.muteButton} onPress={() => setIsMuted(!isMuted)}>
-          <Image source={isMuted ? require('../../assets/icons/mute.png') : require('../../assets/icons/unmute.png')} style={styles.muteIcon} />
+          <Image source={shouldMute ? require('../../assets/icons/mute.png') : require('../../assets/icons/unmute.png')} style={styles.muteIcon} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -849,35 +977,62 @@ const handleScroll = (event: any) => {
             return acc;
           }, {} as { [key: string]: string[] });
 
-    return (
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+    // Function to format hashtag text
+    const getFormattedHashtagText1 = () => {
+      const hashtag = endlessHashtags[activeCategoryIndex] || allHashtags[activeCategoryIndex] || '';
+      if (!hashtag) return 'NEWS RECAP';
+      
+      const formattedTag = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
+      const capitalizedTag = formattedTag.toUpperCase();
+      return `${capitalizedTag} NEWS RECAP`;
+    };
+    const getFormattedHashtagText2 = () => {
+      const hashtag = endlessHashtags[activeCategoryIndex] || allHashtags[activeCategoryIndex] || '';
+      if (!hashtag) return 'RELATED VIDEOS';
+      
+      const formattedTag = hashtag.startsWith('#') ? hashtag.substring(1) : hashtag;
+      const capitalizedTag = formattedTag.toUpperCase();
+      return `${capitalizedTag} RELATED VIDEOS`;
+    };
 
+    return (
+      <ScrollView 
+        ref={mainScrollViewRef}
+        style={styles.container} 
+        showsVerticalScrollIndicator={false} 
+        nestedScrollEnabled={true}
+        onScroll={handleScrollForVisibility}
+        scrollEventThrottle={16}
+      >
         <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
         <View>
-      
-          
-          <FlatList
-            ref={flatListRefBreakingNews}
-            horizontal
-            data={[...hashedVideos.values()]}
-            renderItem={renderBreakingNewsItem}
-            keyExtractor={(item, index) => `video-${index}`}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.breakingNewsContainer}
-            pagingEnabled
-            getItemLayout={getItemLayout}
-            initialNumToRender={3} // Render fewer items initially
-            maxToRenderPerBatch={3} // Render fewer items per batch
-            windowSize={5} // Smaller window size for better performance
-            removeClippedSubviews={true} // Remove items not in view
-            updateCellsBatchingPeriod={50} // Update cells in batches
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={{
-              itemVisiblePercentThreshold: 50,
-            }}
-            onScroll={handleScrollBreakingNews}
-            onEndReachedThreshold={0.5}
-          />
+          <View
+            ref={breakingNewsRef}
+            onLayout={checkBreakingNewsVisibility}
+          >
+            <FlatList
+              ref={flatListRefBreakingNews}
+              horizontal
+              data={[...hashedVideos.values()]}
+              renderItem={renderBreakingNewsItem}
+              keyExtractor={(item, index) => `video-${index}`}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.breakingNewsContainer}
+              pagingEnabled
+              getItemLayout={getItemLayout}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={5}
+              removeClippedSubviews={true}
+              updateCellsBatchingPeriod={50}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={{
+                itemVisiblePercentThreshold: 50,
+              }}
+              onScroll={handleScrollBreakingNews}
+              onEndReachedThreshold={0.5}
+            />
+          </View>
 
           <ScrollView 
             horizontal 
@@ -950,6 +1105,12 @@ const handleScroll = (event: any) => {
           
       </ScrollView>
    
+    </View>
+    <View style={{flex:1, marginVertical: 10, marginLeft: 10}}>
+      <GradientText 
+        text={getFormattedHashtagText2()}
+        style={{fontWeight: 'bold', fontSize: 16, color: '#fff', textAlign: 'left'}}
+      />
     </View>
     <FlatList
   ref={flatListRef}
@@ -1261,12 +1422,13 @@ thumbnailContainer: {
   },
   newsContent: {
     position: 'absolute',
-    bottom: normalizeHeight(20),
-    left: normalizeWidth(20),
-    right: normalizeWidth(20),
+    top: 55,
+    left: 20,
+    right: 20,
+    zIndex: 5,
   },
   newsTitle1: {
-    fontSize: normalizeWidth(12),
+    fontSize: normalizeWidth(22),
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 5,
