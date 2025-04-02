@@ -1,4 +1,4 @@
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, StyleSheet, TouchableOpacity, Dimensions} from 'react-native';
 import React from 'react';
 import {useAppDispatch} from '../../redux/reduxHook';
 import {Colors} from '../../constants/Colors';
@@ -10,13 +10,25 @@ import {navigate, push} from '../../utils/NavigationUtil';
 import GradientButton from '../global/GradientButton';
 import {Logout} from '../../redux/actions/userAction';
 import ProfileButton from './ProfileButton';
+import LinearGradient from 'react-native-linear-gradient';
+
+const {width} = Dimensions.get('window');
 
 const AvatarComponent: React.FC<{uri: string}> = ({uri}) => {
   return (
-    <FastImage
-      source={{uri: uri, priority: FastImage.priority.high}}
-      style={styles.avatar}
-    />
+    <View style={styles.avatarContainer}>
+      <LinearGradient
+        colors={['#a9c2eb', '#7f8cff', '#f7404f']}
+        style={styles.avatarBorder}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}>
+        <FastImage
+          source={{uri: uri, priority: FastImage.priority.high}}
+          style={styles.avatar}
+          resizeMode={FastImage.resizeMode.cover}
+        />
+      </LinearGradient>
+    </View>
   );
 };
 
@@ -26,11 +38,14 @@ const StatsComponent: React.FC<{
   onPress?: () => void;
 }> = ({count, label, onPress}) => {
   return (
-    <TouchableOpacity style={styles.statsItem} onPress={onPress}>
-      <CustomText variant="h8" fontFamily={FONTS.Medium}>
+    <TouchableOpacity 
+      style={styles.statsItem} 
+      onPress={onPress}
+      activeOpacity={0.7}>
+      <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.statsCount}>
         {count}
       </CustomText>
-      <CustomText variant="h8">{label}</CustomText>
+      <CustomText variant="h9" style={styles.statsLabel}>{label}</CustomText>
     </TouchableOpacity>
   );
 };
@@ -48,11 +63,11 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
   };
 
   return (
-    <View style={{backgroundColor: Colors.black}}>
-      <View style={styles.flexRowBetween}>
+    <View style={styles.container}>
+      <View style={styles.headerSection}>
         <AvatarComponent uri={user?.userImage} />
         <View style={styles.statsContainer}>
-          <View style={styles.statsBtn}>
+          <View style={styles.statsRow}>
             <StatsComponent
               count={user?.followersCount}
               onPress={() => {
@@ -86,8 +101,9 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
           />
         </View>
       </View>
+      
       <View style={styles.bioContainer}>
-        <CustomText variant="h8" fontFamily={FONTS.Medium}>
+        <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.username}>
           {user.name}
         </CustomText>
         <CustomText
@@ -108,42 +124,75 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
-  flexRowBetween: {
+  container: {
+    backgroundColor: Colors.black,
+    paddingHorizontal: 15,
+    paddingVertical: 20,
+  },
+  headerSection: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  avatarContainer: {
+    width: RFValue(90),
+    height: RFValue(90),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarBorder: {
+    width: RFValue(88),
+    height: RFValue(88),
+    borderRadius: RFValue(44),
+    padding: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatar: {
-    width: RFValue(80),
-    height: RFValue(80),
-    borderRadius: 105,
+    width: '100%',
+    height: '100%',
+    borderRadius: RFValue(42),
+    borderWidth: 2,
+    borderColor: Colors.black,
   },
   statsContainer: {
-    width: '80%',
+    width: width * 0.65,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    top: 6,
   },
-  statsBtn: {
-    justifyContent: 'center',
+  statsRow: {
+    justifyContent: 'space-between',
     alignItems: 'center',
     flexDirection: 'row',
+    width: '100%',
+    marginBottom: 12,
   },
   statsItem: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 15,
+    flex: 1,
+  },
+  statsCount: {
+    color: Colors.white,
+    marginBottom: 2,
+  },
+  statsLabel: {
+    color: Colors.lightText,
   },
   bioContainer: {
-    margin: 10,
-    width: '70%',
+    marginVertical: 15,
+    width: '100%',
+  },
+  username: {
+    color: Colors.white,
+    marginBottom: 5,
   },
   bio: {
     color: Colors.lightText,
-    marginTop: 5,
     lineHeight: 18,
   },
 });
+
 export default ProfileDetails;

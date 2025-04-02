@@ -21,7 +21,8 @@ import {debounce} from 'lodash';
 const ReelListTab: React.FC<{
   user: ProfileUser | undefined | User;
   type: 'post' | 'liked' | 'watched';
-}> = React.memo(({user, type}) => {
+  headerComponent?: React.ReactNode;
+}> = React.memo(({user, type, headerComponent}) => {
   const [loading, setLoading] = useState(true);
   const [offsetLoading, setOffsetLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -341,6 +342,15 @@ const ReelListTab: React.FC<{
     );
   }, [offsetLoading, loading]);
 
+  // Add this function to handle header rendering
+  const ListHeaderComponentMemo = useCallback(() => {
+    // If a header component is provided, render it
+    if (headerComponent) {
+      return <>{headerComponent}</>;
+    }
+    return null;
+  }, [headerComponent]);
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -367,6 +377,7 @@ const ReelListTab: React.FC<{
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         contentContainerStyle={styles.flatlistContainer}
+        ListHeaderComponent={ListHeaderComponentMemo}
       />
     </View>
   );
