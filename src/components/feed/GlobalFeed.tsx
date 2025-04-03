@@ -817,10 +817,16 @@ const handleScroll = (event: any) => {
   scrollPosition.current = contentOffsetX; // This keeps track of the latest scroll position
 };
   
+const currentHashtag = endlessHashtags || allHashtags;
+
+
+
   const renderNewsItem = ({ item, index }: { item: any; index: number }) => {
   const isActive = activeCategoryIndex === index; // Determine if the current item is active
-  const currentHashtag = endlessHashtags[index];
+  const currentHashtag = endlessHashtags[index] || allHashtags[index];
   const thumbnails = groupedThumbnails[currentHashtag] || [];
+  // Use the last thumbnail if available
+  const lastThumbnailUri = thumbnails.length > 0 ? thumbnails[thumbnails.length - 1] : 'https://via.placeholder.com/150';
 
   const cardStyle = thumbnails.length > 1 ? styles.multiThumbnailCard : styles.singleThumbnailCard;
 
@@ -846,7 +852,7 @@ const handleScroll = (event: any) => {
       ) : (
         <TouchableOpacity onPress={() => handleNewsPress(item, index)}>
           <Image
-            source={{ uri: thumbnails[0] || 'https://via.placeholder.com/150' }}
+            source={{ uri: lastThumbnailUri || 'https://via.placeholder.com/150' }}
             style={styles.newsImage}
           />
           <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
@@ -860,56 +866,89 @@ const handleScroll = (event: any) => {
           setEndlessHashtags(prev => [...prev, ...allHashtags]);
         };
 
+        // Timer reference for auto-scroll resumption
+        const autoScrollResumeTimerRef = useRef<NodeJS.Timeout | null>(null);
+
         const startAutoScroll = () => {
           if (autoScrollIntervalRef.current) return;
-      
+
+          // Always set the scroll direction to forward (left to right)
+          scrollDirection.current = 1;
+
           autoScrollIntervalRef.current = setInterval(() => {
-            scrollPosition.current += 3 * scrollDirection.current; 
-            const hashtags = allHashtags ? endlessHashtags : allHashtags;
-            const contentOffsetX = scrollPosition.current;
+            // Always increment the scroll position (no reversing)
+            scrollPosition.current += 6 * scrollDirection.current;
+            
+            const hashtags = endlessHashtags.length > 0 ? endlessHashtags : allHashtags;
             const viewSize = 100;
             const scrollableWidth = hashtags.length * viewSize;
-      
-            if (contentOffsetX + viewSize >= scrollableWidth - 250) {
+
+            // If we're approaching the end, load more hashtags
+            if (scrollPosition.current + viewSize >= scrollableWidth - 250) {
               loadMoreHashtags(); // Load more hashtags
             }
-            if (scrollPosition.current > hashtags.length * 100) { 
-              scrollDirection.current = -1; // Change direction
-            } else if (scrollPosition.current < 0) {
-              scrollDirection.current = 1; // Reset direction
+            
+            // If we've scrolled very far to the right (beyond the current hashtags),
+            // consider resetting to the start for better performance
+            if (scrollPosition.current > scrollableWidth + 500) {
+              // Optional: reset to beginning for very long scrolls
+              // scrollPosition.current = 0;
             }
-      
+
             scrollViewRef.current?.scrollTo({ x: scrollPosition.current, animated: true });
-          }, 50); // Adjust this interval for scroll speed
+          }, 30); // 30ms interval for fast scrolling
         };
-      
+
         const stopAutoScroll = () => {
           if (autoScrollIntervalRef.current) {
             clearInterval(autoScrollIntervalRef.current);
             autoScrollIntervalRef.current = null;
           }
         };
-      
-        useEffect(() => {
-          startAutoScroll(); // Start auto-scrolling on component mount.
-      
-          return () => {
-            stopAutoScroll(); // Cleanup on unmount
-          };
-        }, [allHashtags, endlessHashtags]);
-      
+
+        // Update the touch handlers to remember the scroll position and continue from there
         const handleTouchStart = () => {
-          stopAutoScroll(); // Stop auto scroll when the user touches
+          // Clear any existing resume timer
+          if (autoScrollResumeTimerRef.current) {
+            clearTimeout(autoScrollResumeTimerRef.current);
+            autoScrollResumeTimerRef.current = null;
+          }
+          
+          // Stop auto scroll when the user touches
+          stopAutoScroll();
         };
-      
-        const handleTouchEnd = () => {
-          // Wait for 3 seconds before starting auto scroll again
-          setTimeout(() => {
-            startAutoScroll(); // Resume auto scrolling
+
+        const handleTouchEnd = (event: any) => {
+          // Clear any existing resume timer first
+          if (autoScrollResumeTimerRef.current) {
+            clearTimeout(autoScrollResumeTimerRef.current);
+          }
+          
+          // If the event contains contentOffset, update the scrollPosition reference
+          if (event && event.nativeEvent && event.nativeEvent.contentOffset) {
+            // Update the scroll position to continue from where the user stopped
+            scrollPosition.current = event.nativeEvent.contentOffset.x;
+          }
+          
+          // Set a new timer to resume auto-scrolling after 3 seconds
+          autoScrollResumeTimerRef.current = setTimeout(() => {
+            startAutoScroll();
+            autoScrollResumeTimerRef.current = null;
           }, 3000);
         };
 
+        // Start auto-scrolling on component mount
+        useEffect(() => {
+          startAutoScroll();
 
+          return () => {
+            stopAutoScroll(); // Cleanup on unmount
+            // Also clean up the resume timer
+            if (autoScrollResumeTimerRef.current) {
+              clearTimeout(autoScrollResumeTimerRef.current);
+            }
+          };
+        }, [allHashtags, endlessHashtags]);
 
         useEffect(() => {
           if (allData.length > 0) {
@@ -995,6 +1034,19 @@ const handleScroll = (event: any) => {
       return `${capitalizedTag} RELATED VIDEOS`;
     };
 
+    // Update the getDisplayNumber function to use dynamic modulo based on hashtag length
+    const getDisplayNumber = (hashtag: string, index: number, allTags: string[]) => {
+      // Get total number of hashtags (or use a minimum of 5)
+      const totalTags = allHashtags.length > 0 ? allHashtags.length : 5;
+      
+      // Sequential numbering that resets after reaching the maximum number of tags
+      // Ensure we're using 1-based numbering (index + 1)
+      // If index exceeds totalTags, it wraps around
+      const sequentialNumber = (index % totalTags) + 1;
+      
+      return sequentialNumber.toString();
+    };
+
     return (
       <ScrollView 
         ref={mainScrollViewRef}
@@ -1034,7 +1086,7 @@ const handleScroll = (event: any) => {
             />
           </View>
 
-          <ScrollView 
+          {/* <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false} 
             style={styles.thumbnailContainer}
@@ -1060,7 +1112,7 @@ const handleScroll = (event: any) => {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </ScrollView> */}
 
       <ScrollView
       ref={scrollViewRef}
@@ -1068,10 +1120,14 @@ const handleScroll = (event: any) => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
         scrollEventThrottle={16}
-        onMomentumScrollEnd={handleScrollEnd}
-        onTouchStart={handleTouchStart} // Hook the touch start event
-        onTouchEnd={handleTouchEnd} // Hook the touch end event
-        onScroll={handleScroll} 
+        onMomentumScrollEnd={(event) => {
+          handleScrollEnd(event);
+          // Also use this event for touch end to capture final position
+          handleTouchEnd(event);
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={(event) => handleTouchEnd(event)}
+        onScroll={handleScroll}
       >
         <View style={styles.categoryWrapper}>
           <View style={styles.firstRow}>
@@ -1080,24 +1136,56 @@ const handleScroll = (event: any) => {
               // Find the original index in the `allHashtags`
               const actualIndex = allHashtags.indexOf(selectedHashtag);
               const isActive = activeCategoryIndex === actualIndex; 
-               // Get the unread count for the hashtag
+              // Get the unread count for the hashtag
               const unreadCount = hashtagCounts.get(hashtag) || 0;
+              // Format the hashtag for display
+              const displayHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
+              // Display number (index + 1 to start from 1 instead of 0)
+              const displayNumber = getDisplayNumber(hashtag, index, endlessHashtags.length > 0 ? endlessHashtags : allHashtags);
+              // Get the thumbnail for this hashtag - get the last one (most recent)
+              const hashtagThumbnails = groupedThumbnails[hashtag] || [];
+              const thumbnailUri = hashtagThumbnails.length > 0 ? 
+                                   hashtagThumbnails[hashtagThumbnails.length - 1] : 
+                                   'https://via.placeholder.com/150';
 
               return (
                 <TouchableOpacity
-                key={index}
-                onPress={() => {
-                  handleCategory(index);
-                }}
-                style={[styles.categoryItem, isActive && styles.activeCategory]}
-              >
-                <Text style={[styles.categoryText, isActive && styles.activeCategoryText]}>
-                  {hashtag}
-                </Text>
-                <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
-            </View>
-              </TouchableOpacity>
+                  key={index}
+                  onPress={() => {
+                    handleCategory(index);
+                  }}
+                  style={[
+                    styles.categoryItem, 
+                    isActive && styles.activeCategory,
+                  ]}
+                >
+                  {/* Number before the thumbnail - with improved numbering logic */}
+                  <Text style={styles.numberDisplay}>
+                    {displayNumber}
+                  </Text>
+                  
+                  {/* Thumbnail image */}
+                  <Image 
+                    source={{ uri: thumbnailUri }}
+                    style={styles.thumbnailImage}
+                    resizeMode="cover"
+                  />
+                  
+                  {/* Thumbnail overlay for better contrast */}
+                  <View style={styles.thumbnailOverlay} />
+                  
+                  {/* Hashtag text container */}
+                  <View style={styles.categoryTextContainer}>
+                    <Text style={[styles.categoryText, isActive && styles.activeCategoryText]}>
+                      {displayHashtag}
+                    </Text>
+                  </View>
+                  
+                  {/* Count badge - always shown, positioned as overlay, moved to the end */}
+                  <View style={styles.badgeContainer}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -1186,9 +1274,10 @@ thumbnailContainer: {
     opacity: 1, // Highlight the active one
   },
   thumbnailImage: {
-    width: 60, // Adjust size as needed
-    height: 60,
-    borderRadius: 5,
+    width: '100%',
+    height: 100, // Slightly taller
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
   },
   inactiveThumbnail: {
     opacity: 0.5, // Reduce opacity for non-active thumbnails
@@ -1208,7 +1297,7 @@ thumbnailContainer: {
 
     breakingNewsCard: {
     width: normalizeWidth(350),
-    height: normalizeHeight(370),
+    height: normalizeHeight(450),
     borderRadius: 20,
     overflow: 'hidden',
   },
@@ -1260,12 +1349,15 @@ thumbnailContainer: {
   scrollContainer: {
     flexGrow: 1,
     flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    paddingVertical: 20,
+    paddingHorizontal: 15,
   },
   firstRow: {
-    flexDirection: 'row', // Row layout for the first row
-    marginBottom: 5, // Space between the rows
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   
   secondRow: {
@@ -1273,8 +1365,6 @@ thumbnailContainer: {
   },
   categoryWrapper: {
     flexDirection: 'column',
-    flexWrap: 'wrap',
-    gap: 8, // Space between buttons
     width: '100%',
   },
   categoriesContainer: {
@@ -1283,44 +1373,68 @@ thumbnailContainer: {
     marginTop: 10,
   },
   categoryItem: {
-  backgroundColor: '#000',
-  paddingVertical: 6,
-  borderColor: '#d2d2d2',
-  borderWidth: 0.5,
-  paddingHorizontal: 16,
-  borderRadius: 4,
-  minWidth: 90,
-  marginRight: 8,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
+    backgroundColor: '#151515',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    borderRadius: 15,
+    width: 100,
+    height: 100,
+    marginRight: 40,
+    marginLeft: 30, // Add left margin for the number
+    marginBottom: 15,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    position: 'relative',
+    overflow: 'visible',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoryTextContainer: {
+    width: '100%',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Darker background
+  },
   categoryText: {
-    fontSize: 14,
-    color: '#d2d2d2', // Light gray text
+    fontSize: 15,
+    color: '#ffffff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   activeCategory: {
-    backgroundColor: '#d2d2d2', // Slightly brighter for active category
-    borderWidth:0.5,
-  // borderColor:'grey'
+    backgroundColor: '#202020',
+    borderColor: '#4099ff',
+    borderWidth: 1,
   },
   activeCategoryText: {
-    color: '#111', // White text for active category
+    color: '#ffffff',
   },
   badgeContainer: {
     position: 'absolute',
     top: -10,
     right: -10,
-    backgroundColor: '#2999fe',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    backgroundColor: '#4099ff',
+    borderRadius: 15,
+    minWidth: 28,
+    height: 28,
+    paddingHorizontal: 6,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 3000,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 10,
   },
   badgeText: {
-    color: 'white', // Badge text color
-    fontSize: 12,
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   bellIcon: {
@@ -1410,8 +1524,7 @@ thumbnailContainer: {
     marginTop: normalizeHeight(10),
   },
   breakingNewsContainer: {
-    // paddingHorizontal: normalizeWidth(50),
-    // paddingVertical: normalizeHeight(50),
+    // Padding for the breaking news container
   },
   gradientOverlay: {
     position: 'absolute',
@@ -1468,17 +1581,17 @@ thumbnailContainer: {
     borderRadius: 10,
   },
   singleThumbnailCard: {
-    width: normalizeWidth(350), // Adjust as necessary
+    width: normalizeWidth(350),
     height: normalizeHeight(240),
     borderRadius: 10,
     overflow: 'hidden',
   },
   multiThumbnailCard: {
-    width: normalizeWidth(350), // Adjust as necessary
+    width: normalizeWidth(350),
     height: '100%',
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#000', // Background color
+    backgroundColor: '#000',
   },
   loaderContainer: {
     width: '100%',
@@ -1490,8 +1603,8 @@ thumbnailContainer: {
     backgroundColor: '#222', // Match the newsCard background color
   },
   newsImage: {
-    width: '50%', // Adjust as needed
-    height: 300, // Adjust as needed
+    width: '50%',
+    height: 300,
     borderRadius: 10,
   },
   newsTitle: {
@@ -1572,6 +1685,33 @@ thumbnailContainer: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  numberIndicator: {
+    position: 'absolute',
+    left: -10, // Move it more to the left
+    top: -20, // Move it more to the top
+    fontSize: 120, // Larger size
+    fontWeight: 'bold',
+    color: 'rgba(255,255,255,0.1)',
+    zIndex: 1,
+  },
+  thumbnailOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 130, // Match thumbnail height
+    backgroundColor: 'rgba(0,0,0,0.2)', // Subtle dark overlay
+    zIndex: 2,
+  },
+  numberDisplay: {
+    position: 'absolute',
+    left: -30,
+    top: 30,
+    fontSize: 50,
+    fontWeight: 'bold',
+    color: 'rgba(255,255,255,0.7)',
+    zIndex: 1,
   },
 });
 
