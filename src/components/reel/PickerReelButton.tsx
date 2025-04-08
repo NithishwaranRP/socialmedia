@@ -1,100 +1,19 @@
-import {View, StyleSheet, TouchableOpacity, Animated, Platform, StatusBar} from 'react-native';
-import React, {FC, useRef} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {FC} from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import {RFValue} from 'react-native-responsive-fontsize';
 import CustomText from '../global/CustomText';
 import {launchCamera} from 'react-native-image-picker';
 import {createThumbnail} from 'react-native-create-thumbnail';
 import {navigate} from '../../utils/NavigationUtil';
-import LinearGradient from 'react-native-linear-gradient';
-import {FONTS} from '../../constants/Fonts';
-
-const GamingButton = ({icon, text, onPress, color1, color2, color3, IconComponent}) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const glowAnim = useRef(new Animated.Value(0.5)).current;
-
-  // Animation for pulsing glow effect
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.5,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [glowAnim]);
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.92,
-      friction: 5,
-      tension: 100,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.buttonWrapper}>
-      <Animated.View
-        style={[
-          styles.buttonAnimContainer,
-          {
-            transform: [{scale: scaleAnim}],
-          },
-        ]}>
-        {/* Outer glow */}
-        <Animated.View
-          style={[
-            styles.glowContainer,
-            {
-              opacity: glowAnim,
-              backgroundColor: color1,
-            },
-          ]}>
-          {/* Actual button with gradient */}
-          <LinearGradient
-            colors={[color1, color2, color3]}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.gradientBtn}>
-            <IconComponent name={icon} color={Colors.white} size={RFValue(24)} />
-            <CustomText
-              variant="h8"
-              fontFamily={FONTS.SemiBold}
-              style={styles.btnText}>
-              {text}
-            </CustomText>
-          </LinearGradient>
-        </Animated.View>
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
+import { StatusBar } from 'react-native';
+import { Platform } from 'react-native';
 
 const PickerReelButton: FC = () => {
+  const colors = useThemeColors();
+  
   const handleCamera = async () => {
     await launchCamera({
       saveToPhotos: false,
@@ -127,93 +46,49 @@ const PickerReelButton: FC = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="black"
-        translucent={true}
-      />
-
-      <GamingButton
-        icon="camera-outline"
-        text="Camera"
-        onPress={handleCamera}
-        color1="#4f46e5"
-        color2="#7c3aed"
-        color3="#6366f1"
-        IconComponent={Icon}
-      />
-
-      <GamingButton
-        icon="my-library-add"
-        text="Drafts"
-        onPress={() => {}}
-        color1="#10b981"
-        color2="#059669"
-        color3="#047857"
-        IconComponent={Icon2}
-      />
-
-      <GamingButton
-        icon="auto-fix-high"
-        text="Templates"
-        onPress={() => {}}
-        color1="#f59e0b"
-        color2="#d97706"
-        color3="#b45309"
-        IconComponent={Icon2}
-      />
+    <View style={styles.flexRowBetween}>
+      {/* <StatusBar barStyle="light-content" backgroundColor= {colors.background} translucent={true} /> */}
+      
+      <TouchableOpacity style={[styles.btn, {backgroundColor: colors.lightText}]} onPress={() => handleCamera()}>
+        <Icon name="camera-outline" color={colors.white} size={RFValue(20)} />
+        <CustomText variant="h8" style={[styles.btnText, {color: colors.text}]}>
+          Camera
+        </CustomText>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.btn, {backgroundColor: colors.lightText}]}>
+        <Icon2 name="my-library-add" color={colors.white} size={RFValue(20)} />
+        <CustomText variant="h8" style={[styles.btnText, {color: colors.text}]}>
+          Drafts
+        </CustomText>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.btn, {backgroundColor: colors.lightText}]}>
+        <Icon2 name="auto-fix-high" color={colors.white} size={RFValue(20)} />
+        <CustomText variant="h8" style={[styles.btnText, {color: colors.text}]}>
+          Templates
+        </CustomText>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
+  flexRowBetween: {
     justifyContent: 'space-between',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
-    paddingHorizontal: 5,
+        marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
+    
   },
-  buttonWrapper: {
-    width: '32%',
-    alignItems: 'center',
-  },
-  buttonAnimContainer: {
-    width: '100%',
-    aspectRatio: 0.85,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.6,
-    shadowRadius: 4.65,
-    elevation: 6,
-  },
-  glowContainer: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-    padding: 2,
-    opacity: 0.7,
-  },
-  gradientBtn: {
-    flex: 1,
+  btn: {
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 10,
+    width: '30%',
+    height: 100,
     borderRadius: 10,
-    backgroundColor: '#1c1b1b',
-    padding: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   btnText: {
-    marginTop: 8,
-    color: Colors.white,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: {width: -1, height: 1},
-    textShadowRadius: 5,
+    marginTop: 5,
   },
 });
 

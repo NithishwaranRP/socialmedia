@@ -8,7 +8,7 @@ import {
 import React, {FC} from 'react';
 import {FONTS} from '../../constants/Fonts';
 import {RFValue} from 'react-native-responsive-fontsize';
-import {Colors} from '../../constants/Colors';
+import {Colors, useThemeColors} from '../../constants/Colors';
 import {SheetManager} from 'react-native-actions-sheet';
 import {navigate} from '../../utils/NavigationUtil';
 
@@ -43,6 +43,8 @@ const CustomText: FC<Props> = ({
   numberOfLines,
   onMentionPress,
 }) => {
+  const colors = useThemeColors();
+  
   let computedFontSize: number;
   switch (variant) {
     case 'h1':
@@ -124,7 +126,7 @@ const CustomText: FC<Props> = ({
             style={[
               styles.text,
               {
-                color: Colors.text,
+                color: Colors.theme,
                 fontSize: computedFontSize,
                 fontFamily: fontFamily,
               },

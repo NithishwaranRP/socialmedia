@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import CustomHeader from '../../components/global/CustomHeader';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors } from '../../constants/Colors';
+import { useThemeColors } from '../../constants/Colors';
 import { RFValue } from 'react-native-responsive-fontsize';
 import CustomText from '../../components/global/CustomText';
 import { FONTS } from '../../constants/Fonts';
@@ -131,6 +131,8 @@ const useGallery = ({ pageSize = 30 }) => {
 };
 
 const PickReelScreen: FC = () => {
+  const colors = useThemeColors();
+  
   const {
     videos,
     loadNextPagePictures,
@@ -179,33 +181,36 @@ const PickReelScreen: FC = () => {
 
   const renderFooter = () => {
     if (!isLoadingNextPage) return null;
-    return <ActivityIndicator size="small" color={Colors.theme} />;
+    return <ActivityIndicator size="small" color={colors.theme} />;
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, {backgroundColor: colors.background}]}>
       <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
       <CustomHeader title="New Reel" />
       <View style={styles.padding}>
         <PickerReelButton />
-        <View style={styles.flexRow}>
-          <CustomText variant="h6" fontFamily={FONTS.Medium}>
+        <View style={[styles.flexRow, {backgroundColor: colors.background}]}>
+          <CustomText variant="h6" fontFamily={FONTS.Medium} style={{color: colors.text}}>
             Recent
           </CustomText>
-          <Icon name="chevron-down" size={RFValue(20)} color={Colors.white} />
+          <Icon name="chevron-down" size={RFValue(20)} color={colors.white} />
         </View>
       </View>
 
       {permissionNotGranted ? (
-        <View style={styles.permissionDeniedContainer}>
-          <CustomText variant="h6" fontFamily={FONTS.Medium}>
+        <View style={[styles.permissionDeniedContainer, {backgroundColor: colors.background}]}>
+          <CustomText variant="h6" fontFamily={FONTS.Medium} style={{color: colors.text}}>
             We need permission to access your gallery.
           </CustomText>
           <TouchableOpacity onPress={handleOpenSettings}>
             <CustomText
               variant="h6"
               fontFamily={FONTS.Medium}
-              style={styles.permissionButton}>
+              style={{
+                marginTop: 16,
+                color: colors.theme,
+              }}>
               Open Settings
             </CustomText>
           </TouchableOpacity>
@@ -213,7 +218,7 @@ const PickReelScreen: FC = () => {
       ) : (
         <>
           {isLoading ? (
-            <ActivityIndicator size="small" color={Colors.white} />
+            <ActivityIndicator size="small" color={colors.white} />
           ) : (
             <FlatList
               data={videos}
@@ -260,10 +265,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-  },
-  permissionButton: {
-    marginTop: 16,
-    color: Colors.theme,
   },
   time: {
     position: 'absolute',

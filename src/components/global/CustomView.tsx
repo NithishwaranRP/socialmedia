@@ -1,6 +1,6 @@
 import {FC, ReactNode} from 'react';
 import {StyleSheet, View, ViewStyle} from 'react-native';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 
 interface CustomViewProps {
   children: ReactNode;
@@ -8,13 +8,18 @@ interface CustomViewProps {
 }
 
 const CustomView: FC<CustomViewProps> = ({children, style}) => {
-  return <View style={[styles.container, style]}>{children}</View>;
+  const colors = useThemeColors();
+  
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }, style]}>
+      {children}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.black,
   },
 });
 

@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {emojiListData} from '../../utils/staticData';
-import {Colors} from '../../constants/Colors';
-import GIFIcon from '../../assets/icons/gif.png';
+import {useThemeColors} from '../../constants/Colors';
 import CustomText from '../global/CustomText';
 import {SheetManager} from 'react-native-actions-sheet';
 import {RFValue} from 'react-native-responsive-fontsize';
@@ -39,6 +38,77 @@ const CommentInput: React.FC<commentInputProps> = ({
   const [mention, setMention] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const textInputRef = useRef<TextInput>(null);
+  const colors = useThemeColors();
+  
+  const getStyles = () => StyleSheet.create({
+    flexRowBetween: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: '#080707',
+      padding: 10,
+      borderBottomWidth: 0.5,
+      borderColor: colors.lightText,
+      justifyContent: 'space-between',
+    },
+    container: {
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      paddingVertical: 10,
+      borderTopWidth: 0.5,
+      borderTopColor: colors.lightText,
+    },
+    subContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    userImage: {
+      width: 35,
+      height: 35,
+      borderRadius: 20,
+      marginRight: 10,
+    },
+    avatar: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.lightText,
+      marginRight: 10,
+    },
+    inputContainer: {
+      borderColor: colors.lightText,
+      borderWidth: Platform.OS === 'ios' ? 0.5 : 0.8,
+      width: '88%',
+      paddingHorizontal: 2,
+      overflow: 'hidden',
+      alignItems: 'center',
+    },
+    flexRow: {
+      flexDirection: 'row',
+      padding: Platform.OS == 'ios' ? 10 : 0,
+      alignItems: 'center',
+    },
+    emojiBtn: {
+      marginTop: 4,
+      marginHorizontal: 10,
+      marginBottom: 10,
+    },
+    input: {
+      width: '86%',
+      paddingHorizontal: 2,
+      maxHeight: 100,
+      marginRight: 10,
+      bottom: Platform.OS === 'ios' ? 2 : 0,
+      color: colors.text,
+    },
+    gifIcon: {
+      width: 23,
+      height: 23,
+    },
+  });
+  
+  const styles = getStyles();
+  
   useEffect(() => {
     if (replyTo) {
       const mentionText = `@${replyTo.user.username} `;
@@ -158,13 +228,13 @@ const CommentInput: React.FC<commentInputProps> = ({
             <View style={styles.flexRowBetween}>
               <CustomText
                 variant="h9"
-                style={{color: Colors.lightText}}
+                style={{color: colors.lightText}}
                 fontFamily={FONTS.Regular}>
                 Replying to {mention}
               </CustomText>
               <Icon
                 name="close"
-                color={Colors.lightText}
+                color={colors.lightText}
                 size={RFValue(12)}
                 onPress={() => clearReplyTo()}
               />
@@ -174,7 +244,7 @@ const CommentInput: React.FC<commentInputProps> = ({
             <TextInput
               ref={textInputRef}
               style={styles.input}
-              placeholderTextColor={Colors.border}
+              placeholderTextColor={colors.text}
               placeholder="Add a comment..."
               multiline={true}
               value={comment}
@@ -189,7 +259,7 @@ const CommentInput: React.FC<commentInputProps> = ({
                 <Icon
                   name={comment ? 'send' : 'emoji-emotions'}
                   size={24}
-                  color={Colors.text}
+                  color={colors.text}
                 />
               </TouchableOpacity>
             ) : (
@@ -201,8 +271,8 @@ const CommentInput: React.FC<commentInputProps> = ({
                   }
                 }}>
                 <Image
-                  source={GIFIcon}
-                  tintColor={Colors.text}
+                  source={require('../../assets/icons/gif.png')}
+                  tintColor={colors.text}
                   style={styles.gifIcon}
                 />
               </TouchableOpacity>
@@ -213,72 +283,5 @@ const CommentInput: React.FC<commentInputProps> = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  flexRowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-    backgroundColor: '#080707',
-    padding: 10,
-    borderBottomWidth: 0.5,
-    borderColor: Colors.lightText,
-    justifyContent: 'space-between',
-  },
-  container: {
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderTopWidth: 0.5,
-    borderTopColor: Colors.lightText,
-  },
-  subContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userImage: {
-    width: 35,
-    height: 35,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: Colors.lightText,
-    marginRight: 10,
-  },
-  inputContainer: {
-    borderColor: Colors.lightText,
-    borderWidth: Platform.OS === 'ios' ? 0.5 : 0.8,
-    width: '88%',
-    paddingHorizontal: 2,
-    overflow: 'hidden',
-    alignItems: 'center',
-  },
-  flexRow: {
-    flexDirection: 'row',
-    padding: Platform.OS == 'ios' ? 10 : 0,
-    alignItems: 'center',
-  },
-  emojiBtn: {
-    marginTop: 4,
-    marginHorizontal: 10,
-    marginBottom: 10,
-  },
-  input: {
-    width: '86%',
-    paddingHorizontal: 2,
-    maxHeight: 100,
-    marginRight: 10,
-    bottom: Platform.OS === 'ios' ? 2 : 0,
-    color: Colors.text,
-  },
-  gifIcon: {
-    width: 23,
-    height: 23,
-  },
-});
 
 export default CommentInput;

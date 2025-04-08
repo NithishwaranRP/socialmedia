@@ -22,6 +22,102 @@
 		A45217EB16B94A44B0828210 /* Poppins-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A2FB8AF4F3DF44E88F6EFF87 /* Poppins-Medium.ttf */; };
 		AA0D4526185149B9B9D728FB /* Audiowide-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B1CD4FD683C048719B0343C9 /* Audiowide-Regular.ttf */; };
 		BB0EE22245A540C1BD0E6745 /* Poppins-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9B56F8C5AD5F48018F461D13 /* Poppins-Black.ttf */; };
+		402576C913DD4DA7AD3C8DDF /* playfair-display-cyrillic-400-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 2EF65CE0572B458486E7AB8E /* playfair-display-cyrillic-400-italic.woff */; };
+		4BFF9833748041D5932F1B7F /* playfair-display-cyrillic-400-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 548E9C5852914224B01A5FAA /* playfair-display-cyrillic-400-italic.woff2 */; };
+		DB930A9D73F947BEAA644DB6 /* playfair-display-cyrillic-400-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 606CC4907E4C4AA1877952A5 /* playfair-display-cyrillic-400-normal.woff */; };
+		B0B5D4FC8745464486497327 /* playfair-display-cyrillic-400-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6C0FB632DECF43BC85DD02E5 /* playfair-display-cyrillic-400-normal.woff2 */; };
+		66D62D68D0EC4C6BBC20742C /* playfair-display-cyrillic-500-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = E9D95FCD7126475EBC7BE4BF /* playfair-display-cyrillic-500-italic.woff */; };
+		791B43A65351475D9F5A30D8 /* playfair-display-cyrillic-500-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = BF4A7372812A437AB2647328 /* playfair-display-cyrillic-500-italic.woff2 */; };
+		2226C6C1C19040DA8A872BF8 /* playfair-display-cyrillic-500-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = B42BEE2575B34802B0942CC1 /* playfair-display-cyrillic-500-normal.woff */; };
+		01C7F1702C5D4CBF8DD378C5 /* playfair-display-cyrillic-500-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4D6A1ED40EB3400294257ECB /* playfair-display-cyrillic-500-normal.woff2 */; };
+		E1C0028D9CB54FC1A6A1DBCD /* playfair-display-cyrillic-600-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = AA26BC9CEFAD412D9E9E1CF3 /* playfair-display-cyrillic-600-italic.woff */; };
+		FF28ABB4D41147CCB22068A9 /* playfair-display-cyrillic-600-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 18CF714FF56148E98966EB38 /* playfair-display-cyrillic-600-italic.woff2 */; };
+		C62E0AB9AA824BDCBC9158E7 /* playfair-display-cyrillic-600-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 2623643049C2424083A8928E /* playfair-display-cyrillic-600-normal.woff */; };
+		D65CA4F5A4194EF78E20597A /* playfair-display-cyrillic-600-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F721602B4857420497C49D13 /* playfair-display-cyrillic-600-normal.woff2 */; };
+		CE85EEF937384386A680D9E6 /* playfair-display-cyrillic-700-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 4181EF2093434D0693AB7823 /* playfair-display-cyrillic-700-italic.woff */; };
+		C8E2EA6C3CBC4463BA3AEFBB /* playfair-display-cyrillic-700-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 3B5735F538AD47B7BA009948 /* playfair-display-cyrillic-700-italic.woff2 */; };
+		0CFDD6E67BF64C909120D018 /* playfair-display-cyrillic-700-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = F8D0694C46A04FA6A8C64FD6 /* playfair-display-cyrillic-700-normal.woff */; };
+		DCE81A7C62EA499ABC5E32B9 /* playfair-display-cyrillic-700-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F87738ECE49647EAACB47497 /* playfair-display-cyrillic-700-normal.woff2 */; };
+		2DEB4BBF1799485192AE1BAA /* playfair-display-cyrillic-800-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 410901DD3D0049B9A1DCD64F /* playfair-display-cyrillic-800-italic.woff */; };
+		D484CB2B9B9B4AD687BABBE8 /* playfair-display-cyrillic-800-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = DE3C21793CF04290951E4060 /* playfair-display-cyrillic-800-italic.woff2 */; };
+		CFDEF7732FD442C8A171C81D /* playfair-display-cyrillic-800-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 50712FEE9E9941778E0CCE00 /* playfair-display-cyrillic-800-normal.woff */; };
+		73BC7C18F4F44A679D09FA03 /* playfair-display-cyrillic-800-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 21A8483B8E4D4D4781822920 /* playfair-display-cyrillic-800-normal.woff2 */; };
+		3DF08A2ACC0C44E7A7C49C2A /* playfair-display-cyrillic-900-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 0ADA8DA2ADF94F95B240070F /* playfair-display-cyrillic-900-italic.woff */; };
+		AFC27399805241D58D054E03 /* playfair-display-cyrillic-900-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 48124B6E86D54BE1BFE5F047 /* playfair-display-cyrillic-900-italic.woff2 */; };
+		612E2DB890AE4C1F9D596634 /* playfair-display-cyrillic-900-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = E3F16009519A46D6BCD5D853 /* playfair-display-cyrillic-900-normal.woff */; };
+		5B784663AFBD4B37932DB500 /* playfair-display-cyrillic-900-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 7705F1525D6E4B8587451A4F /* playfair-display-cyrillic-900-normal.woff2 */; };
+		E4CDD71DEA1D4528A84A889D /* playfair-display-latin-400-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 538142EA61BF459AB6E09B9C /* playfair-display-latin-400-italic.woff */; };
+		02AE48423CBA4267948478FB /* playfair-display-latin-400-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = CE79C4CF31FC49908561022E /* playfair-display-latin-400-italic.woff2 */; };
+		E348A23699F84E26B92B904E /* playfair-display-latin-400-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = AB700F4A0A1C4A6EAE1B4985 /* playfair-display-latin-400-normal.woff */; };
+		5218998988564E97A5C11936 /* playfair-display-latin-400-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 9F9AC8CF234D47ED8167985C /* playfair-display-latin-400-normal.woff2 */; };
+		9ABF69DA29EC4CAAB151AF0F /* playfair-display-latin-500-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 0B0AC8F606304A07A5AD9881 /* playfair-display-latin-500-italic.woff */; };
+		6E0B65266B8D41AD982B394E /* playfair-display-latin-500-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 6EB1DDED86794E3E9B4A12F0 /* playfair-display-latin-500-italic.woff2 */; };
+		509B2DDC6B21449F842E0E27 /* playfair-display-latin-500-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = EEEE28E50A974C92953C93D1 /* playfair-display-latin-500-normal.woff */; };
+		4E02B89A89174758BCA6356F /* playfair-display-latin-500-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4042591284EC4C92BAC4B7D5 /* playfair-display-latin-500-normal.woff2 */; };
+		7527BFCD501640A584DFC237 /* playfair-display-latin-600-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 88C2CA6FB1E54C20BAE5D78D /* playfair-display-latin-600-italic.woff */; };
+		326AF0DC9D204A2F80DCB5DD /* playfair-display-latin-600-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 5E046DACA2294854AF751F1A /* playfair-display-latin-600-italic.woff2 */; };
+		0BA23B4C91FE472C8EF82CD4 /* playfair-display-latin-600-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 0CFD9E56C0164DB9928127A5 /* playfair-display-latin-600-normal.woff */; };
+		BAC23C9618184DF09FE00218 /* playfair-display-latin-600-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = DDB76EFFCA8A47D69E4F48FA /* playfair-display-latin-600-normal.woff2 */; };
+		E006EEAA1C3D4315BF74B401 /* playfair-display-latin-700-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = B070F2A20B514CA6A78D8A1F /* playfair-display-latin-700-italic.woff */; };
+		B7E2AB2C758D4BB4AAD823B6 /* playfair-display-latin-700-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 8F5C6ACFED17480488BBF3C2 /* playfair-display-latin-700-italic.woff2 */; };
+		C49B60DBB1CE4443ADE499C9 /* playfair-display-latin-700-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 90662F07A7DB4C37B2B527F5 /* playfair-display-latin-700-normal.woff */; };
+		6DCD6E58A5424BA6B2EE7098 /* playfair-display-latin-700-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 849B70681E944FE791B330F5 /* playfair-display-latin-700-normal.woff2 */; };
+		CD14646E44DA429180F7F024 /* playfair-display-latin-800-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 7D897271D0684151A85F2284 /* playfair-display-latin-800-italic.woff */; };
+		279EF74111F34B49A2D80D4F /* playfair-display-latin-800-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 3878FE9C8A2449E0913EB418 /* playfair-display-latin-800-italic.woff2 */; };
+		E4DD6EE14075491E9E68FD79 /* playfair-display-latin-800-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = F3D5B1C455034025982FAFA0 /* playfair-display-latin-800-normal.woff */; };
+		399F147D9EBC4DB0888EC786 /* playfair-display-latin-800-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4C50B579CC154F09BC6E7B20 /* playfair-display-latin-800-normal.woff2 */; };
+		C4CFE668DAF24E88A428566C /* playfair-display-latin-900-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = A51333A6D2DC476E8FFDE25A /* playfair-display-latin-900-italic.woff */; };
+		C326A44415384EAB90603B67 /* playfair-display-latin-900-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = C496FA1707844F44B0761C63 /* playfair-display-latin-900-italic.woff2 */; };
+		281F9AB9D6B740E18B7BDC59 /* playfair-display-latin-900-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 3F3E1682097A460C9179B4DA /* playfair-display-latin-900-normal.woff */; };
+		F47742771E3D47FD83BCC5DD /* playfair-display-latin-900-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = B4D0DA5AB6474166B1088190 /* playfair-display-latin-900-normal.woff2 */; };
+		CEA0F3B233B34BC596C1A84F /* playfair-display-latin-ext-400-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 43F4C299416E4E34B6C48F6F /* playfair-display-latin-ext-400-italic.woff */; };
+		5914B543F50E496193E8E461 /* playfair-display-latin-ext-400-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 33ACE2B1C88E4D269299C0D2 /* playfair-display-latin-ext-400-italic.woff2 */; };
+		7203CC9A154F4AD2B3A9D8B0 /* playfair-display-latin-ext-400-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 8498A910082045ACA12F1F13 /* playfair-display-latin-ext-400-normal.woff */; };
+		2EB3684B2A2E4CC7AC635D19 /* playfair-display-latin-ext-400-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = FB119FCA0226449DB2220EED /* playfair-display-latin-ext-400-normal.woff2 */; };
+		9BBA8EB8D048495BB968DE9D /* playfair-display-latin-ext-500-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 7A2AB15EC79B4DB9BFADC1DC /* playfair-display-latin-ext-500-italic.woff */; };
+		F46BFC78B2D34B1FBDC9F5BC /* playfair-display-latin-ext-500-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 998EEC83F8FD484A8571A71F /* playfair-display-latin-ext-500-italic.woff2 */; };
+		8C17D8EDF0C8400E917CD704 /* playfair-display-latin-ext-500-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 8BB69B35327C4B599E1842D7 /* playfair-display-latin-ext-500-normal.woff */; };
+		9383561687B64F449568F1CA /* playfair-display-latin-ext-500-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = EB9CA4A08A2F4FBBAFCC1C8B /* playfair-display-latin-ext-500-normal.woff2 */; };
+		3DAA3A05398C445B957EFA6F /* playfair-display-latin-ext-600-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = C862B5BBF81B474391876BD8 /* playfair-display-latin-ext-600-italic.woff */; };
+		982231CE28DF4EA295C06242 /* playfair-display-latin-ext-600-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 2413A1374E9F46589873C66D /* playfair-display-latin-ext-600-italic.woff2 */; };
+		54DCA3C793204FBCBCBD4EDC /* playfair-display-latin-ext-600-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = F666B51D5D9447F282E86E0B /* playfair-display-latin-ext-600-normal.woff */; };
+		16092281DB29492AB2ACDDB0 /* playfair-display-latin-ext-600-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 0B7894A37C5F432FA8590EA4 /* playfair-display-latin-ext-600-normal.woff2 */; };
+		5C6BA6756F6B416A99B85880 /* playfair-display-latin-ext-700-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = D9C7FBB43F3B431E88A0FF1F /* playfair-display-latin-ext-700-italic.woff */; };
+		009C6E51A18A490AABC380E9 /* playfair-display-latin-ext-700-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 5669C61BA6C34EC9AC96A1FC /* playfair-display-latin-ext-700-italic.woff2 */; };
+		E6832C7C1FF644DFAF99847D /* playfair-display-latin-ext-700-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = EA6344CBF762440598417A14 /* playfair-display-latin-ext-700-normal.woff */; };
+		30709E3548DF4A409E23E108 /* playfair-display-latin-ext-700-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 77E5E8B75C1F4188AFCF8808 /* playfair-display-latin-ext-700-normal.woff2 */; };
+		3B28DA502045470D99ED2271 /* playfair-display-latin-ext-800-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = FDBB455C161746FA82FF8EBF /* playfair-display-latin-ext-800-italic.woff */; };
+		8F3C05F056294B75A2D4BD10 /* playfair-display-latin-ext-800-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = B0CAF33F246344D695D25B20 /* playfair-display-latin-ext-800-italic.woff2 */; };
+		A51583385F7A435693B024C9 /* playfair-display-latin-ext-800-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 3818B14FCC2C452982BF123E /* playfair-display-latin-ext-800-normal.woff */; };
+		A704AD25080E4566BB615F99 /* playfair-display-latin-ext-800-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = F493F016790F454A944A36A6 /* playfair-display-latin-ext-800-normal.woff2 */; };
+		7CEE7819788D4E379CAF01BF /* playfair-display-latin-ext-900-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 70A837F6FC7448058A9B4681 /* playfair-display-latin-ext-900-italic.woff */; };
+		18890CA28F8148E2BAB5586F /* playfair-display-latin-ext-900-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 945002495E2A49CB8B929FC9 /* playfair-display-latin-ext-900-italic.woff2 */; };
+		01278B499CC449B3943A9CB1 /* playfair-display-latin-ext-900-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = C2B4A73423C847FDB4B2BA7A /* playfair-display-latin-ext-900-normal.woff */; };
+		8E4C69845E3347B38FD826F5 /* playfair-display-latin-ext-900-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 99EEB1910A4D49898358A005 /* playfair-display-latin-ext-900-normal.woff2 */; };
+		85656A1ECA464DEBABA64F56 /* playfair-display-vietnamese-400-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 9872448064AE4D8E8DF69E39 /* playfair-display-vietnamese-400-italic.woff */; };
+		176A1E8B56CB411AA26A4467 /* playfair-display-vietnamese-400-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 52D331B011504A038675680D /* playfair-display-vietnamese-400-italic.woff2 */; };
+		A0EE215D60E74457B52C0CB9 /* playfair-display-vietnamese-400-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 2821881630CD4907B6C3F315 /* playfair-display-vietnamese-400-normal.woff */; };
+		C61F73B73AD34BE991BF0F23 /* playfair-display-vietnamese-400-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = E9C54DBA32B941A8A20C16F8 /* playfair-display-vietnamese-400-normal.woff2 */; };
+		40D9573381D34570BEE04E0B /* playfair-display-vietnamese-500-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 8AED9661F12046B2BDB7958E /* playfair-display-vietnamese-500-italic.woff */; };
+		400C316FF0204753A72509DE /* playfair-display-vietnamese-500-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 1345CD790EE14482BEEB3245 /* playfair-display-vietnamese-500-italic.woff2 */; };
+		71E9CD5D600C45CBA6256F45 /* playfair-display-vietnamese-500-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 4194B3F27D554441B61DC915 /* playfair-display-vietnamese-500-normal.woff */; };
+		0A2033FAD4014F1A95B3B7B5 /* playfair-display-vietnamese-500-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 7344EAF7E4D345A9A9C51DA3 /* playfair-display-vietnamese-500-normal.woff2 */; };
+		4B555481A4D94D9CBEEC2F19 /* playfair-display-vietnamese-600-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 15A48A428EE845D7BD02181B /* playfair-display-vietnamese-600-italic.woff */; };
+		833AEBFD481C49F5A66B09BE /* playfair-display-vietnamese-600-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = B743326761FD4898AB5C9FF4 /* playfair-display-vietnamese-600-italic.woff2 */; };
+		8902D77795134F49B79AC511 /* playfair-display-vietnamese-600-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 3339912334CF4FFB8C583EBC /* playfair-display-vietnamese-600-normal.woff */; };
+		87C9644DB9A24C32BBCBDA94 /* playfair-display-vietnamese-600-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 4F8AD00AE76A46BD836550DA /* playfair-display-vietnamese-600-normal.woff2 */; };
+		1BE6A6B9AD944594977913D7 /* playfair-display-vietnamese-700-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 9EA3BA3CC6A14959A44EE975 /* playfair-display-vietnamese-700-italic.woff */; };
+		18DEEA03B40F4867A5F72A98 /* playfair-display-vietnamese-700-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 193324B76C6D46F680E47577 /* playfair-display-vietnamese-700-italic.woff2 */; };
+		D40E1225838144E6BD68802B /* playfair-display-vietnamese-700-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = E1C927CF7F5346B3820E851E /* playfair-display-vietnamese-700-normal.woff */; };
+		DCCC9BCBEFAF42E09CA0FAEA /* playfair-display-vietnamese-700-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = E042A326D600439AAB36F3F4 /* playfair-display-vietnamese-700-normal.woff2 */; };
+		59344FD785234559867E54C1 /* playfair-display-vietnamese-800-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = E60ED9AD28304AB39B414C4B /* playfair-display-vietnamese-800-italic.woff */; };
+		822F5BD862CF48408BF3FE50 /* playfair-display-vietnamese-800-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 0C04B8AFEC234CDAAF40DEF4 /* playfair-display-vietnamese-800-italic.woff2 */; };
+		015C6A80EA934C55BBC1B9AF /* playfair-display-vietnamese-800-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = FA79AECDFB5544D8A0E73DEB /* playfair-display-vietnamese-800-normal.woff */; };
+		78C4DA810F414B448783F65F /* playfair-display-vietnamese-800-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = D54325A226F445B9A92E325C /* playfair-display-vietnamese-800-normal.woff2 */; };
+		58D569E51ACF4904914E8261 /* playfair-display-vietnamese-900-italic.woff in Resources */ = {isa = PBXBuildFile; fileRef = 47ABE718A2804238BB8A492C /* playfair-display-vietnamese-900-italic.woff */; };
+		F2B1EB6A7F8949088CFDB540 /* playfair-display-vietnamese-900-italic.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 92FFA1826BF346BFACA8FBBD /* playfair-display-vietnamese-900-italic.woff2 */; };
+		589EF19487B949369000314C /* playfair-display-vietnamese-900-normal.woff in Resources */ = {isa = PBXBuildFile; fileRef = 7551520ECA78489F877D0426 /* playfair-display-vietnamese-900-normal.woff */; };
+		35420860743D4489B5292EC3 /* playfair-display-vietnamese-900-normal.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = 91BACB33A0E84AA888E92498 /* playfair-display-vietnamese-900-normal.woff2 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +156,102 @@
 		B1CD4FD683C048719B0343C9 /* Audiowide-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Audiowide-Regular.ttf"; path = "../src/assets/fonts/Audiowide-Regular.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FA2EE11E7A3A4327BF5774EC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = reelzzz_app/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2EF65CE0572B458486E7AB8E /* playfair-display-cyrillic-400-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-400-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		548E9C5852914224B01A5FAA /* playfair-display-cyrillic-400-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-400-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		606CC4907E4C4AA1877952A5 /* playfair-display-cyrillic-400-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-400-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		6C0FB632DECF43BC85DD02E5 /* playfair-display-cyrillic-400-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-400-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E9D95FCD7126475EBC7BE4BF /* playfair-display-cyrillic-500-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-500-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		BF4A7372812A437AB2647328 /* playfair-display-cyrillic-500-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-500-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B42BEE2575B34802B0942CC1 /* playfair-display-cyrillic-500-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-500-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4D6A1ED40EB3400294257ECB /* playfair-display-cyrillic-500-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-500-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		AA26BC9CEFAD412D9E9E1CF3 /* playfair-display-cyrillic-600-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-600-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		18CF714FF56148E98966EB38 /* playfair-display-cyrillic-600-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-600-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2623643049C2424083A8928E /* playfair-display-cyrillic-600-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-600-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F721602B4857420497C49D13 /* playfair-display-cyrillic-600-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-600-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4181EF2093434D0693AB7823 /* playfair-display-cyrillic-700-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-700-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		3B5735F538AD47B7BA009948 /* playfair-display-cyrillic-700-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-700-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F8D0694C46A04FA6A8C64FD6 /* playfair-display-cyrillic-700-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-700-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F87738ECE49647EAACB47497 /* playfair-display-cyrillic-700-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-700-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		410901DD3D0049B9A1DCD64F /* playfair-display-cyrillic-800-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-800-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		DE3C21793CF04290951E4060 /* playfair-display-cyrillic-800-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-800-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		50712FEE9E9941778E0CCE00 /* playfair-display-cyrillic-800-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-800-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		21A8483B8E4D4D4781822920 /* playfair-display-cyrillic-800-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-800-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0ADA8DA2ADF94F95B240070F /* playfair-display-cyrillic-900-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-900-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		48124B6E86D54BE1BFE5F047 /* playfair-display-cyrillic-900-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-900-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E3F16009519A46D6BCD5D853 /* playfair-display-cyrillic-900-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-900-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7705F1525D6E4B8587451A4F /* playfair-display-cyrillic-900-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-cyrillic-900-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		538142EA61BF459AB6E09B9C /* playfair-display-latin-400-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-400-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		CE79C4CF31FC49908561022E /* playfair-display-latin-400-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-400-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		AB700F4A0A1C4A6EAE1B4985 /* playfair-display-latin-400-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-400-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		9F9AC8CF234D47ED8167985C /* playfair-display-latin-400-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-400-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0B0AC8F606304A07A5AD9881 /* playfair-display-latin-500-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-500-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		6EB1DDED86794E3E9B4A12F0 /* playfair-display-latin-500-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-500-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		EEEE28E50A974C92953C93D1 /* playfair-display-latin-500-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-500-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4042591284EC4C92BAC4B7D5 /* playfair-display-latin-500-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-500-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		88C2CA6FB1E54C20BAE5D78D /* playfair-display-latin-600-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-600-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		5E046DACA2294854AF751F1A /* playfair-display-latin-600-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-600-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0CFD9E56C0164DB9928127A5 /* playfair-display-latin-600-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-600-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		DDB76EFFCA8A47D69E4F48FA /* playfair-display-latin-600-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-600-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B070F2A20B514CA6A78D8A1F /* playfair-display-latin-700-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-700-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		8F5C6ACFED17480488BBF3C2 /* playfair-display-latin-700-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-700-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		90662F07A7DB4C37B2B527F5 /* playfair-display-latin-700-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-700-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		849B70681E944FE791B330F5 /* playfair-display-latin-700-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-700-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7D897271D0684151A85F2284 /* playfair-display-latin-800-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-800-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		3878FE9C8A2449E0913EB418 /* playfair-display-latin-800-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-800-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F3D5B1C455034025982FAFA0 /* playfair-display-latin-800-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-800-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4C50B579CC154F09BC6E7B20 /* playfair-display-latin-800-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-800-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		A51333A6D2DC476E8FFDE25A /* playfair-display-latin-900-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-900-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C496FA1707844F44B0761C63 /* playfair-display-latin-900-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-900-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		3F3E1682097A460C9179B4DA /* playfair-display-latin-900-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-900-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B4D0DA5AB6474166B1088190 /* playfair-display-latin-900-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-900-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		43F4C299416E4E34B6C48F6F /* playfair-display-latin-ext-400-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-400-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		33ACE2B1C88E4D269299C0D2 /* playfair-display-latin-ext-400-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-400-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		8498A910082045ACA12F1F13 /* playfair-display-latin-ext-400-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-400-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		FB119FCA0226449DB2220EED /* playfair-display-latin-ext-400-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-400-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7A2AB15EC79B4DB9BFADC1DC /* playfair-display-latin-ext-500-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-500-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		998EEC83F8FD484A8571A71F /* playfair-display-latin-ext-500-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-500-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		8BB69B35327C4B599E1842D7 /* playfair-display-latin-ext-500-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-500-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		EB9CA4A08A2F4FBBAFCC1C8B /* playfair-display-latin-ext-500-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-500-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C862B5BBF81B474391876BD8 /* playfair-display-latin-ext-600-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-600-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2413A1374E9F46589873C66D /* playfair-display-latin-ext-600-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-600-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F666B51D5D9447F282E86E0B /* playfair-display-latin-ext-600-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-600-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0B7894A37C5F432FA8590EA4 /* playfair-display-latin-ext-600-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-600-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		D9C7FBB43F3B431E88A0FF1F /* playfair-display-latin-ext-700-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-700-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		5669C61BA6C34EC9AC96A1FC /* playfair-display-latin-ext-700-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-700-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		EA6344CBF762440598417A14 /* playfair-display-latin-ext-700-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-700-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		77E5E8B75C1F4188AFCF8808 /* playfair-display-latin-ext-700-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-700-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		FDBB455C161746FA82FF8EBF /* playfair-display-latin-ext-800-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-800-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B0CAF33F246344D695D25B20 /* playfair-display-latin-ext-800-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-800-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		3818B14FCC2C452982BF123E /* playfair-display-latin-ext-800-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-800-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		F493F016790F454A944A36A6 /* playfair-display-latin-ext-800-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-800-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		70A837F6FC7448058A9B4681 /* playfair-display-latin-ext-900-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-900-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		945002495E2A49CB8B929FC9 /* playfair-display-latin-ext-900-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-900-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C2B4A73423C847FDB4B2BA7A /* playfair-display-latin-ext-900-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-900-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		99EEB1910A4D49898358A005 /* playfair-display-latin-ext-900-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-latin-ext-900-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		9872448064AE4D8E8DF69E39 /* playfair-display-vietnamese-400-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-400-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		52D331B011504A038675680D /* playfair-display-vietnamese-400-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-400-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2821881630CD4907B6C3F315 /* playfair-display-vietnamese-400-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-400-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E9C54DBA32B941A8A20C16F8 /* playfair-display-vietnamese-400-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-400-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		8AED9661F12046B2BDB7958E /* playfair-display-vietnamese-500-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-500-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		1345CD790EE14482BEEB3245 /* playfair-display-vietnamese-500-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-500-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4194B3F27D554441B61DC915 /* playfair-display-vietnamese-500-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-500-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7344EAF7E4D345A9A9C51DA3 /* playfair-display-vietnamese-500-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-500-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		15A48A428EE845D7BD02181B /* playfair-display-vietnamese-600-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-600-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		B743326761FD4898AB5C9FF4 /* playfair-display-vietnamese-600-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-600-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		3339912334CF4FFB8C583EBC /* playfair-display-vietnamese-600-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-600-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4F8AD00AE76A46BD836550DA /* playfair-display-vietnamese-600-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-600-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		9EA3BA3CC6A14959A44EE975 /* playfair-display-vietnamese-700-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-700-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		193324B76C6D46F680E47577 /* playfair-display-vietnamese-700-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-700-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E1C927CF7F5346B3820E851E /* playfair-display-vietnamese-700-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-700-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E042A326D600439AAB36F3F4 /* playfair-display-vietnamese-700-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-700-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E60ED9AD28304AB39B414C4B /* playfair-display-vietnamese-800-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-800-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		0C04B8AFEC234CDAAF40DEF4 /* playfair-display-vietnamese-800-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-800-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		FA79AECDFB5544D8A0E73DEB /* playfair-display-vietnamese-800-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-800-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		D54325A226F445B9A92E325C /* playfair-display-vietnamese-800-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-800-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		47ABE718A2804238BB8A492C /* playfair-display-vietnamese-900-italic.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-900-italic.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-italic.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		92FFA1826BF346BFACA8FBBD /* playfair-display-vietnamese-900-italic.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-900-italic.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-italic.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		7551520ECA78489F877D0426 /* playfair-display-vietnamese-900-normal.woff */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-900-normal.woff"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-normal.woff"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		91BACB33A0E84AA888E92498 /* playfair-display-vietnamese-900-normal.woff2 */ = {isa = PBXFileReference; name = "playfair-display-vietnamese-900-normal.woff2"; path = "../node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-normal.woff2"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -165,6 +357,102 @@
 				A2FB8AF4F3DF44E88F6EFF87 /* Poppins-Medium.ttf */,
 				259A1C1278D34BB597D10542 /* Poppins-Regular.ttf */,
 				58B94938FADB4F10BB65B552 /* Poppins-SemiBold.ttf */,
+				2EF65CE0572B458486E7AB8E /* playfair-display-cyrillic-400-italic.woff */,
+				548E9C5852914224B01A5FAA /* playfair-display-cyrillic-400-italic.woff2 */,
+				606CC4907E4C4AA1877952A5 /* playfair-display-cyrillic-400-normal.woff */,
+				6C0FB632DECF43BC85DD02E5 /* playfair-display-cyrillic-400-normal.woff2 */,
+				E9D95FCD7126475EBC7BE4BF /* playfair-display-cyrillic-500-italic.woff */,
+				BF4A7372812A437AB2647328 /* playfair-display-cyrillic-500-italic.woff2 */,
+				B42BEE2575B34802B0942CC1 /* playfair-display-cyrillic-500-normal.woff */,
+				4D6A1ED40EB3400294257ECB /* playfair-display-cyrillic-500-normal.woff2 */,
+				AA26BC9CEFAD412D9E9E1CF3 /* playfair-display-cyrillic-600-italic.woff */,
+				18CF714FF56148E98966EB38 /* playfair-display-cyrillic-600-italic.woff2 */,
+				2623643049C2424083A8928E /* playfair-display-cyrillic-600-normal.woff */,
+				F721602B4857420497C49D13 /* playfair-display-cyrillic-600-normal.woff2 */,
+				4181EF2093434D0693AB7823 /* playfair-display-cyrillic-700-italic.woff */,
+				3B5735F538AD47B7BA009948 /* playfair-display-cyrillic-700-italic.woff2 */,
+				F8D0694C46A04FA6A8C64FD6 /* playfair-display-cyrillic-700-normal.woff */,
+				F87738ECE49647EAACB47497 /* playfair-display-cyrillic-700-normal.woff2 */,
+				410901DD3D0049B9A1DCD64F /* playfair-display-cyrillic-800-italic.woff */,
+				DE3C21793CF04290951E4060 /* playfair-display-cyrillic-800-italic.woff2 */,
+				50712FEE9E9941778E0CCE00 /* playfair-display-cyrillic-800-normal.woff */,
+				21A8483B8E4D4D4781822920 /* playfair-display-cyrillic-800-normal.woff2 */,
+				0ADA8DA2ADF94F95B240070F /* playfair-display-cyrillic-900-italic.woff */,
+				48124B6E86D54BE1BFE5F047 /* playfair-display-cyrillic-900-italic.woff2 */,
+				E3F16009519A46D6BCD5D853 /* playfair-display-cyrillic-900-normal.woff */,
+				7705F1525D6E4B8587451A4F /* playfair-display-cyrillic-900-normal.woff2 */,
+				538142EA61BF459AB6E09B9C /* playfair-display-latin-400-italic.woff */,
+				CE79C4CF31FC49908561022E /* playfair-display-latin-400-italic.woff2 */,
+				AB700F4A0A1C4A6EAE1B4985 /* playfair-display-latin-400-normal.woff */,
+				9F9AC8CF234D47ED8167985C /* playfair-display-latin-400-normal.woff2 */,
+				0B0AC8F606304A07A5AD9881 /* playfair-display-latin-500-italic.woff */,
+				6EB1DDED86794E3E9B4A12F0 /* playfair-display-latin-500-italic.woff2 */,
+				EEEE28E50A974C92953C93D1 /* playfair-display-latin-500-normal.woff */,
+				4042591284EC4C92BAC4B7D5 /* playfair-display-latin-500-normal.woff2 */,
+				88C2CA6FB1E54C20BAE5D78D /* playfair-display-latin-600-italic.woff */,
+				5E046DACA2294854AF751F1A /* playfair-display-latin-600-italic.woff2 */,
+				0CFD9E56C0164DB9928127A5 /* playfair-display-latin-600-normal.woff */,
+				DDB76EFFCA8A47D69E4F48FA /* playfair-display-latin-600-normal.woff2 */,
+				B070F2A20B514CA6A78D8A1F /* playfair-display-latin-700-italic.woff */,
+				8F5C6ACFED17480488BBF3C2 /* playfair-display-latin-700-italic.woff2 */,
+				90662F07A7DB4C37B2B527F5 /* playfair-display-latin-700-normal.woff */,
+				849B70681E944FE791B330F5 /* playfair-display-latin-700-normal.woff2 */,
+				7D897271D0684151A85F2284 /* playfair-display-latin-800-italic.woff */,
+				3878FE9C8A2449E0913EB418 /* playfair-display-latin-800-italic.woff2 */,
+				F3D5B1C455034025982FAFA0 /* playfair-display-latin-800-normal.woff */,
+				4C50B579CC154F09BC6E7B20 /* playfair-display-latin-800-normal.woff2 */,
+				A51333A6D2DC476E8FFDE25A /* playfair-display-latin-900-italic.woff */,
+				C496FA1707844F44B0761C63 /* playfair-display-latin-900-italic.woff2 */,
+				3F3E1682097A460C9179B4DA /* playfair-display-latin-900-normal.woff */,
+				B4D0DA5AB6474166B1088190 /* playfair-display-latin-900-normal.woff2 */,
+				43F4C299416E4E34B6C48F6F /* playfair-display-latin-ext-400-italic.woff */,
+				33ACE2B1C88E4D269299C0D2 /* playfair-display-latin-ext-400-italic.woff2 */,
+				8498A910082045ACA12F1F13 /* playfair-display-latin-ext-400-normal.woff */,
+				FB119FCA0226449DB2220EED /* playfair-display-latin-ext-400-normal.woff2 */,
+				7A2AB15EC79B4DB9BFADC1DC /* playfair-display-latin-ext-500-italic.woff */,
+				998EEC83F8FD484A8571A71F /* playfair-display-latin-ext-500-italic.woff2 */,
+				8BB69B35327C4B599E1842D7 /* playfair-display-latin-ext-500-normal.woff */,
+				EB9CA4A08A2F4FBBAFCC1C8B /* playfair-display-latin-ext-500-normal.woff2 */,
+				C862B5BBF81B474391876BD8 /* playfair-display-latin-ext-600-italic.woff */,
+				2413A1374E9F46589873C66D /* playfair-display-latin-ext-600-italic.woff2 */,
+				F666B51D5D9447F282E86E0B /* playfair-display-latin-ext-600-normal.woff */,
+				0B7894A37C5F432FA8590EA4 /* playfair-display-latin-ext-600-normal.woff2 */,
+				D9C7FBB43F3B431E88A0FF1F /* playfair-display-latin-ext-700-italic.woff */,
+				5669C61BA6C34EC9AC96A1FC /* playfair-display-latin-ext-700-italic.woff2 */,
+				EA6344CBF762440598417A14 /* playfair-display-latin-ext-700-normal.woff */,
+				77E5E8B75C1F4188AFCF8808 /* playfair-display-latin-ext-700-normal.woff2 */,
+				FDBB455C161746FA82FF8EBF /* playfair-display-latin-ext-800-italic.woff */,
+				B0CAF33F246344D695D25B20 /* playfair-display-latin-ext-800-italic.woff2 */,
+				3818B14FCC2C452982BF123E /* playfair-display-latin-ext-800-normal.woff */,
+				F493F016790F454A944A36A6 /* playfair-display-latin-ext-800-normal.woff2 */,
+				70A837F6FC7448058A9B4681 /* playfair-display-latin-ext-900-italic.woff */,
+				945002495E2A49CB8B929FC9 /* playfair-display-latin-ext-900-italic.woff2 */,
+				C2B4A73423C847FDB4B2BA7A /* playfair-display-latin-ext-900-normal.woff */,
+				99EEB1910A4D49898358A005 /* playfair-display-latin-ext-900-normal.woff2 */,
+				9872448064AE4D8E8DF69E39 /* playfair-display-vietnamese-400-italic.woff */,
+				52D331B011504A038675680D /* playfair-display-vietnamese-400-italic.woff2 */,
+				2821881630CD4907B6C3F315 /* playfair-display-vietnamese-400-normal.woff */,
+				E9C54DBA32B941A8A20C16F8 /* playfair-display-vietnamese-400-normal.woff2 */,
+				8AED9661F12046B2BDB7958E /* playfair-display-vietnamese-500-italic.woff */,
+				1345CD790EE14482BEEB3245 /* playfair-display-vietnamese-500-italic.woff2 */,
+				4194B3F27D554441B61DC915 /* playfair-display-vietnamese-500-normal.woff */,
+				7344EAF7E4D345A9A9C51DA3 /* playfair-display-vietnamese-500-normal.woff2 */,
+				15A48A428EE845D7BD02181B /* playfair-display-vietnamese-600-italic.woff */,
+				B743326761FD4898AB5C9FF4 /* playfair-display-vietnamese-600-italic.woff2 */,
+				3339912334CF4FFB8C583EBC /* playfair-display-vietnamese-600-normal.woff */,
+				4F8AD00AE76A46BD836550DA /* playfair-display-vietnamese-600-normal.woff2 */,
+				9EA3BA3CC6A14959A44EE975 /* playfair-display-vietnamese-700-italic.woff */,
+				193324B76C6D46F680E47577 /* playfair-display-vietnamese-700-italic.woff2 */,
+				E1C927CF7F5346B3820E851E /* playfair-display-vietnamese-700-normal.woff */,
+				E042A326D600439AAB36F3F4 /* playfair-display-vietnamese-700-normal.woff2 */,
+				E60ED9AD28304AB39B414C4B /* playfair-display-vietnamese-800-italic.woff */,
+				0C04B8AFEC234CDAAF40DEF4 /* playfair-display-vietnamese-800-italic.woff2 */,
+				FA79AECDFB5544D8A0E73DEB /* playfair-display-vietnamese-800-normal.woff */,
+				D54325A226F445B9A92E325C /* playfair-display-vietnamese-800-normal.woff2 */,
+				47ABE718A2804238BB8A492C /* playfair-display-vietnamese-900-italic.woff */,
+				92FFA1826BF346BFACA8FBBD /* playfair-display-vietnamese-900-italic.woff2 */,
+				7551520ECA78489F877D0426 /* playfair-display-vietnamese-900-normal.woff */,
+				91BACB33A0E84AA888E92498 /* playfair-display-vietnamese-900-normal.woff2 */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -283,6 +571,102 @@
 				A45217EB16B94A44B0828210 /* Poppins-Medium.ttf in Resources */,
 				92CA2904EE9A4905A6A8AE44 /* Poppins-Regular.ttf in Resources */,
 				74D138086AAE46D49A8B9E39 /* Poppins-SemiBold.ttf in Resources */,
+				402576C913DD4DA7AD3C8DDF /* playfair-display-cyrillic-400-italic.woff in Resources */,
+				4BFF9833748041D5932F1B7F /* playfair-display-cyrillic-400-italic.woff2 in Resources */,
+				DB930A9D73F947BEAA644DB6 /* playfair-display-cyrillic-400-normal.woff in Resources */,
+				B0B5D4FC8745464486497327 /* playfair-display-cyrillic-400-normal.woff2 in Resources */,
+				66D62D68D0EC4C6BBC20742C /* playfair-display-cyrillic-500-italic.woff in Resources */,
+				791B43A65351475D9F5A30D8 /* playfair-display-cyrillic-500-italic.woff2 in Resources */,
+				2226C6C1C19040DA8A872BF8 /* playfair-display-cyrillic-500-normal.woff in Resources */,
+				01C7F1702C5D4CBF8DD378C5 /* playfair-display-cyrillic-500-normal.woff2 in Resources */,
+				E1C0028D9CB54FC1A6A1DBCD /* playfair-display-cyrillic-600-italic.woff in Resources */,
+				FF28ABB4D41147CCB22068A9 /* playfair-display-cyrillic-600-italic.woff2 in Resources */,
+				C62E0AB9AA824BDCBC9158E7 /* playfair-display-cyrillic-600-normal.woff in Resources */,
+				D65CA4F5A4194EF78E20597A /* playfair-display-cyrillic-600-normal.woff2 in Resources */,
+				CE85EEF937384386A680D9E6 /* playfair-display-cyrillic-700-italic.woff in Resources */,
+				C8E2EA6C3CBC4463BA3AEFBB /* playfair-display-cyrillic-700-italic.woff2 in Resources */,
+				0CFDD6E67BF64C909120D018 /* playfair-display-cyrillic-700-normal.woff in Resources */,
+				DCE81A7C62EA499ABC5E32B9 /* playfair-display-cyrillic-700-normal.woff2 in Resources */,
+				2DEB4BBF1799485192AE1BAA /* playfair-display-cyrillic-800-italic.woff in Resources */,
+				D484CB2B9B9B4AD687BABBE8 /* playfair-display-cyrillic-800-italic.woff2 in Resources */,
+				CFDEF7732FD442C8A171C81D /* playfair-display-cyrillic-800-normal.woff in Resources */,
+				73BC7C18F4F44A679D09FA03 /* playfair-display-cyrillic-800-normal.woff2 in Resources */,
+				3DF08A2ACC0C44E7A7C49C2A /* playfair-display-cyrillic-900-italic.woff in Resources */,
+				AFC27399805241D58D054E03 /* playfair-display-cyrillic-900-italic.woff2 in Resources */,
+				612E2DB890AE4C1F9D596634 /* playfair-display-cyrillic-900-normal.woff in Resources */,
+				5B784663AFBD4B37932DB500 /* playfair-display-cyrillic-900-normal.woff2 in Resources */,
+				E4CDD71DEA1D4528A84A889D /* playfair-display-latin-400-italic.woff in Resources */,
+				02AE48423CBA4267948478FB /* playfair-display-latin-400-italic.woff2 in Resources */,
+				E348A23699F84E26B92B904E /* playfair-display-latin-400-normal.woff in Resources */,
+				5218998988564E97A5C11936 /* playfair-display-latin-400-normal.woff2 in Resources */,
+				9ABF69DA29EC4CAAB151AF0F /* playfair-display-latin-500-italic.woff in Resources */,
+				6E0B65266B8D41AD982B394E /* playfair-display-latin-500-italic.woff2 in Resources */,
+				509B2DDC6B21449F842E0E27 /* playfair-display-latin-500-normal.woff in Resources */,
+				4E02B89A89174758BCA6356F /* playfair-display-latin-500-normal.woff2 in Resources */,
+				7527BFCD501640A584DFC237 /* playfair-display-latin-600-italic.woff in Resources */,
+				326AF0DC9D204A2F80DCB5DD /* playfair-display-latin-600-italic.woff2 in Resources */,
+				0BA23B4C91FE472C8EF82CD4 /* playfair-display-latin-600-normal.woff in Resources */,
+				BAC23C9618184DF09FE00218 /* playfair-display-latin-600-normal.woff2 in Resources */,
+				E006EEAA1C3D4315BF74B401 /* playfair-display-latin-700-italic.woff in Resources */,
+				B7E2AB2C758D4BB4AAD823B6 /* playfair-display-latin-700-italic.woff2 in Resources */,
+				C49B60DBB1CE4443ADE499C9 /* playfair-display-latin-700-normal.woff in Resources */,
+				6DCD6E58A5424BA6B2EE7098 /* playfair-display-latin-700-normal.woff2 in Resources */,
+				CD14646E44DA429180F7F024 /* playfair-display-latin-800-italic.woff in Resources */,
+				279EF74111F34B49A2D80D4F /* playfair-display-latin-800-italic.woff2 in Resources */,
+				E4DD6EE14075491E9E68FD79 /* playfair-display-latin-800-normal.woff in Resources */,
+				399F147D9EBC4DB0888EC786 /* playfair-display-latin-800-normal.woff2 in Resources */,
+				C4CFE668DAF24E88A428566C /* playfair-display-latin-900-italic.woff in Resources */,
+				C326A44415384EAB90603B67 /* playfair-display-latin-900-italic.woff2 in Resources */,
+				281F9AB9D6B740E18B7BDC59 /* playfair-display-latin-900-normal.woff in Resources */,
+				F47742771E3D47FD83BCC5DD /* playfair-display-latin-900-normal.woff2 in Resources */,
+				CEA0F3B233B34BC596C1A84F /* playfair-display-latin-ext-400-italic.woff in Resources */,
+				5914B543F50E496193E8E461 /* playfair-display-latin-ext-400-italic.woff2 in Resources */,
+				7203CC9A154F4AD2B3A9D8B0 /* playfair-display-latin-ext-400-normal.woff in Resources */,
+				2EB3684B2A2E4CC7AC635D19 /* playfair-display-latin-ext-400-normal.woff2 in Resources */,
+				9BBA8EB8D048495BB968DE9D /* playfair-display-latin-ext-500-italic.woff in Resources */,
+				F46BFC78B2D34B1FBDC9F5BC /* playfair-display-latin-ext-500-italic.woff2 in Resources */,
+				8C17D8EDF0C8400E917CD704 /* playfair-display-latin-ext-500-normal.woff in Resources */,
+				9383561687B64F449568F1CA /* playfair-display-latin-ext-500-normal.woff2 in Resources */,
+				3DAA3A05398C445B957EFA6F /* playfair-display-latin-ext-600-italic.woff in Resources */,
+				982231CE28DF4EA295C06242 /* playfair-display-latin-ext-600-italic.woff2 in Resources */,
+				54DCA3C793204FBCBCBD4EDC /* playfair-display-latin-ext-600-normal.woff in Resources */,
+				16092281DB29492AB2ACDDB0 /* playfair-display-latin-ext-600-normal.woff2 in Resources */,
+				5C6BA6756F6B416A99B85880 /* playfair-display-latin-ext-700-italic.woff in Resources */,
+				009C6E51A18A490AABC380E9 /* playfair-display-latin-ext-700-italic.woff2 in Resources */,
+				E6832C7C1FF644DFAF99847D /* playfair-display-latin-ext-700-normal.woff in Resources */,
+				30709E3548DF4A409E23E108 /* playfair-display-latin-ext-700-normal.woff2 in Resources */,
+				3B28DA502045470D99ED2271 /* playfair-display-latin-ext-800-italic.woff in Resources */,
+				8F3C05F056294B75A2D4BD10 /* playfair-display-latin-ext-800-italic.woff2 in Resources */,
+				A51583385F7A435693B024C9 /* playfair-display-latin-ext-800-normal.woff in Resources */,
+				A704AD25080E4566BB615F99 /* playfair-display-latin-ext-800-normal.woff2 in Resources */,
+				7CEE7819788D4E379CAF01BF /* playfair-display-latin-ext-900-italic.woff in Resources */,
+				18890CA28F8148E2BAB5586F /* playfair-display-latin-ext-900-italic.woff2 in Resources */,
+				01278B499CC449B3943A9CB1 /* playfair-display-latin-ext-900-normal.woff in Resources */,
+				8E4C69845E3347B38FD826F5 /* playfair-display-latin-ext-900-normal.woff2 in Resources */,
+				85656A1ECA464DEBABA64F56 /* playfair-display-vietnamese-400-italic.woff in Resources */,
+				176A1E8B56CB411AA26A4467 /* playfair-display-vietnamese-400-italic.woff2 in Resources */,
+				A0EE215D60E74457B52C0CB9 /* playfair-display-vietnamese-400-normal.woff in Resources */,
+				C61F73B73AD34BE991BF0F23 /* playfair-display-vietnamese-400-normal.woff2 in Resources */,
+				40D9573381D34570BEE04E0B /* playfair-display-vietnamese-500-italic.woff in Resources */,
+				400C316FF0204753A72509DE /* playfair-display-vietnamese-500-italic.woff2 in Resources */,
+				71E9CD5D600C45CBA6256F45 /* playfair-display-vietnamese-500-normal.woff in Resources */,
+				0A2033FAD4014F1A95B3B7B5 /* playfair-display-vietnamese-500-normal.woff2 in Resources */,
+				4B555481A4D94D9CBEEC2F19 /* playfair-display-vietnamese-600-italic.woff in Resources */,
+				833AEBFD481C49F5A66B09BE /* playfair-display-vietnamese-600-italic.woff2 in Resources */,
+				8902D77795134F49B79AC511 /* playfair-display-vietnamese-600-normal.woff in Resources */,
+				87C9644DB9A24C32BBCBDA94 /* playfair-display-vietnamese-600-normal.woff2 in Resources */,
+				1BE6A6B9AD944594977913D7 /* playfair-display-vietnamese-700-italic.woff in Resources */,
+				18DEEA03B40F4867A5F72A98 /* playfair-display-vietnamese-700-italic.woff2 in Resources */,
+				D40E1225838144E6BD68802B /* playfair-display-vietnamese-700-normal.woff in Resources */,
+				DCCC9BCBEFAF42E09CA0FAEA /* playfair-display-vietnamese-700-normal.woff2 in Resources */,
+				59344FD785234559867E54C1 /* playfair-display-vietnamese-800-italic.woff in Resources */,
+				822F5BD862CF48408BF3FE50 /* playfair-display-vietnamese-800-italic.woff2 in Resources */,
+				015C6A80EA934C55BBC1B9AF /* playfair-display-vietnamese-800-normal.woff in Resources */,
+				78C4DA810F414B448783F65F /* playfair-display-vietnamese-800-normal.woff2 in Resources */,
+				58D569E51ACF4904914E8261 /* playfair-display-vietnamese-900-italic.woff in Resources */,
+				F2B1EB6A7F8949088CFDB540 /* playfair-display-vietnamese-900-italic.woff2 in Resources */,
+				589EF19487B949369000314C /* playfair-display-vietnamese-900-normal.woff in Resources */,
+				35420860743D4489B5292EC3 /* playfair-display-vietnamese-900-normal.woff2 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

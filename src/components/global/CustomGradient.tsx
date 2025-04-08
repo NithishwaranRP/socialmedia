@@ -1,6 +1,8 @@
 import {View, Text, ViewStyle} from 'react-native';
 import React from 'react';
 import LinearGradient from 'react-native-linear-gradient';
+import {useSelector} from 'react-redux';
+import {RootState} from '../../redux/store';
 
 interface CustomGradientProps {
   position: 'top' | 'bottom';
@@ -11,7 +13,10 @@ const CustomGradient: React.FC<CustomGradientProps> = ({
   position = 'top',
   style,
 }) => {
-  const darkColors = [
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
+
+  // Dark mode gradient colors
+  const darkGradientColors = [
     'rgba(0,0,0,0.9)',
     'rgba(0,0,0,0.8)',
     'rgba(0,0,0,0.8)',
@@ -21,17 +26,19 @@ const CustomGradient: React.FC<CustomGradientProps> = ({
     'rgba(0,0,0,0)',
   ];
 
-  const lightColors = [
-    'rgba(255,255,255,0.3)',
-    'rgba(255,255,255,0.2)',
-    'rgba(255,255,255,0.1)',
-    'rgba(255,255,255,0.0)',
-    'rgba(255,255,255,0.02)',
-    'rgba(255,255,255,0.004)',
-    'rgba(255,255,255,0)',
+  // Light mode gradient colors
+  const lightGradientColors = [
+    'rgba(0,0,0,0.4)',
+    'rgba(0,0,0,0.3)',
+    'rgba(0,0,0,0.2)',
+    'rgba(0,0,0,0.1)',
+    'rgba(0,0,0,0.05)',
+    'rgba(0,0,0,0.02)',
+    'rgba(0,0,0,0)',
   ];
 
-  const bottomColors = [...darkColors].reverse();
+  const gradientColors = isDarkMode ? darkGradientColors : lightGradientColors;
+  const bottomColors = [...gradientColors].reverse();
 
   const gradientStyle: ViewStyle = {
     position: 'absolute',
@@ -44,7 +51,7 @@ const CustomGradient: React.FC<CustomGradientProps> = ({
 
   return (
     <LinearGradient
-      colors={position === 'top' ? darkColors : bottomColors}
+      colors={position === 'top' ? gradientColors : bottomColors}
       style={[gradientStyle, style]}
     />
   );

@@ -2,42 +2,23 @@ import React, {useMemo} from 'react';
 import {
   View,
   StyleSheet,
+  Image,
   TouchableOpacity,
   Share,
   Platform,
-  Dimensions,
 } from 'react-native';
 import {RFValue} from 'react-native-responsive-fontsize';
 import CustomText from '../global/CustomText';
 import {FONTS} from '../../constants/Fonts';
-import {Colors} from '../../constants/Colors';
+import {Colors, useThemeColors} from '../../constants/Colors';
 import {selectUser} from '../../redux/reducers/userSlice';
 import {useAppDispatch, useAppSelector} from '../../redux/reduxHook';
 import {toggleFollow} from '../../redux/actions/userAction';
 import {selectFollowings} from '../../redux/reducers/followingSlice';
 import {navigate, push} from '../../utils/NavigationUtil';
-import FastImage from 'react-native-fast-image';
-import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Ionicons';
-
-const {width} = Dimensions.get('window');
 
 const AvatarComponent: React.FC<{uri: string}> = ({uri}) => {
-  return (
-    <View style={styles.avatarContainer}>
-      <LinearGradient
-        colors={['#a9c2eb', '#7f8cff', '#f7404f']}
-        style={styles.avatarBorder}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}>
-        <FastImage
-          source={{uri}}
-          style={styles.avatar}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-      </LinearGradient>
-    </View>
-  );
+  return <Image source={{uri}} style={styles.avatar} />;
 };
 
 const StatsComponent: React.FC<{
@@ -46,14 +27,11 @@ const StatsComponent: React.FC<{
   onPress?: () => void;
 }> = ({count, label, onPress}) => {
   return (
-    <TouchableOpacity 
-      style={styles.statsItem} 
-      onPress={onPress}
-      activeOpacity={0.7}>
-      <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.statsCount}>
+    <TouchableOpacity style={styles.statsItem} onPress={onPress}>
+      <CustomText variant="h8" fontFamily={FONTS.Medium}>
         {count}
       </CustomText>
-      <CustomText variant="h9" style={styles.statsLabel}>{label}</CustomText>
+      <CustomText variant="h8">{label}</CustomText>
     </TouchableOpacity>
   );
 };
@@ -62,6 +40,7 @@ const UserProfileDetails: React.FC<{
   user: any;
   refetchLoginUser: () => void;
 }> = ({user, refetchLoginUser}) => {
+  const colors = useThemeColors();
   const loggedInUser = useAppSelector(selectUser);
   const followingUsers = useAppSelector(selectFollowings);
   const dispatch = useAppDispatch();
@@ -77,7 +56,11 @@ const UserProfileDetails: React.FC<{
   }, [followingUsers, user.id, user.isFollowing]);
 
   const handleShareProfile = () => {
+    // const profileUrl = `${
     const profileUrl = `${
+      // Platform.OS == 'android' ? 'https://192.168.222.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://192.168.170.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
     }/share/user/${user.username}`;
     
@@ -95,11 +78,11 @@ const UserProfileDetails: React.FC<{
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerSection}>
+    <View style={{backgroundColor: colors.background}}>
+      <View style={styles.flexRowBetween}>
         <AvatarComponent uri={user?.userImage} />
         <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
+          <View style={styles.statsBtn}>
             <StatsComponent
               onPress={() =>
                 push('FollowingScreen', {
@@ -124,76 +107,51 @@ const UserProfileDetails: React.FC<{
           </View>
         </View>
       </View>
-      
       <View style={styles.bioContainer}>
-        <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.username}>
+        <CustomText variant="h8" fontFamily={FONTS.Medium} style={[{color: colors.text}]}>
           {user?.name}
         </CustomText>
         <CustomText
           variant="h8"
-          style={styles.bio}
+          style={[styles.bio, {color: colors.lightText}]}
           fontFamily={FONTS.Medium}
           numberOfLines={5}>
           {user?.bio}
         </CustomText>
       </View>
-      
       <View style={styles.btnContainer}>
         <TouchableOpacity
-          style={styles.buttonContainer}
+          style={[
+            styles.btn,
+            {
+              backgroundColor:
+                loggedInUser?.id == user?.id || isFollowing
+                  ? colors.card
+                  : Colors.fbColor,
+            },
+          ]}
           onPress={
             loggedInUser?.id == user?.id
               ? () => {
                   //go to edit profile screen
                 }
               : () => handleFollow()
-          }
-          activeOpacity={0.8}>
-          <LinearGradient
-            colors={
-              loggedInUser?.id == user?.id || isFollowing
-                ? ['#2c2c2c', '#1c1b1b']
-                : ['#1560e6', '#1877F2']
-            }
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.gradientBtn}>
-            <Icon 
-              name={
-                loggedInUser?.id == user?.id
-                  ? "pencil"
-                  : isFollowing
-                  ? "person-remove"
-                  : "person-add"
-              } 
-              size={16} 
-              color={Colors.white} 
-              style={styles.buttonIcon} 
-            />
-            <CustomText variant="h9" fontFamily={FONTS.Medium}>
-              {loggedInUser?.id == user?.id
-                ? 'Edit Profile'
-                : isFollowing
-                ? 'Unfollow'
-                : 'Follow'}
-            </CustomText>
-          </LinearGradient>
+          }>
+          <CustomText variant="h9" fontFamily={FONTS.Medium}>
+            {loggedInUser?.id == user?.id
+              ? 'Edit Profile'
+              : isFollowing
+              ? 'Unfollow'
+              : 'Follow'}
+          </CustomText>
         </TouchableOpacity>
-        
         <TouchableOpacity 
-          style={styles.buttonContainer} 
+          style={[styles.btn, {backgroundColor: colors.card}]} 
           onPress={handleShareProfile}
-          activeOpacity={0.8}>
-          <LinearGradient
-            colors={['#162640', '#223a5e']}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.gradientBtn}>
-            <Icon name="share-social" size={16} color={Colors.white} style={styles.buttonIcon} />
-            <CustomText variant="h9" fontFamily={FONTS.Medium}>
-              Share Profile
-            </CustomText>
-          </LinearGradient>
+        >
+          <CustomText variant="h9" fontFamily={FONTS.Medium}>
+            Share Profile
+          </CustomText>
         </TouchableOpacity>
       </View>
     </View>
@@ -201,102 +159,52 @@ const UserProfileDetails: React.FC<{
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.black,
-    paddingHorizontal: 15,
-    paddingVertical: 15,
-  },
-  headerSection: {
+  flexRowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   btnContainer: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 5,
-    paddingHorizontal: 2,
-  },
-  buttonContainer: {
-    width: '48%',
-    height: 40,
-    borderRadius: 10,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-  },
-  gradientBtn: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
-    height: '100%',
+    margin: 10,
+  },
+  btn: {
+    padding: 8,
     borderRadius: 10,
-  },
-  buttonIcon: {
-    marginRight: 6,
-  },
-  avatarContainer: {
-    width: RFValue(90),
-    height: RFValue(90),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarBorder: {
-    width: RFValue(88),
-    height: RFValue(88),
-    borderRadius: RFValue(44),
-    padding: 3,
+    width: '48%',
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: RFValue(42),
-    borderWidth: 2,
-    borderColor: Colors.black,
+    width: RFValue(80),
+    height: RFValue(80),
+    borderRadius: 105,
   },
   statsContainer: {
-    width: width * 0.65,
+    width: '80%',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
+    top: 6,
   },
-  statsRow: {
-    justifyContent: 'space-between',
+  statsBtn: {
+    justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    width: '100%',
   },
   statsItem: {
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-  },
-  statsCount: {
-    color: Colors.white,
-    marginBottom: 2,
-  },
-  statsLabel: {
-    color: Colors.lightText,
+    marginHorizontal: 15,
   },
   bioContainer: {
-    marginVertical: 15,
-    width: '100%',
-  },
-  username: {
-    color: Colors.white,
-    marginBottom: 5,
+    margin: 10,
+    width: '70%',
   },
   bio: {
-    color: Colors.lightText,
+    marginTop: 5,
     lineHeight: 18,
   },
 });

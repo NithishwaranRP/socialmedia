@@ -1,7 +1,7 @@
-import {View, StyleSheet, TouchableOpacity, Dimensions} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import React from 'react';
 import {useAppDispatch} from '../../redux/reduxHook';
-import {Colors} from '../../constants/Colors';
+import {Colors, useThemeColors} from '../../constants/Colors';
 import {RFValue} from 'react-native-responsive-fontsize';
 import FastImage from 'react-native-fast-image';
 import CustomText from '../global/CustomText';
@@ -10,25 +10,13 @@ import {navigate, push} from '../../utils/NavigationUtil';
 import GradientButton from '../global/GradientButton';
 import {Logout} from '../../redux/actions/userAction';
 import ProfileButton from './ProfileButton';
-import LinearGradient from 'react-native-linear-gradient';
-
-const {width} = Dimensions.get('window');
 
 const AvatarComponent: React.FC<{uri: string}> = ({uri}) => {
   return (
-    <View style={styles.avatarContainer}>
-      <LinearGradient
-        colors={['#a9c2eb', '#7f8cff', '#f7404f']}
-        style={styles.avatarBorder}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}>
-        <FastImage
-          source={{uri: uri, priority: FastImage.priority.high}}
-          style={styles.avatar}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-      </LinearGradient>
-    </View>
+    <FastImage
+      source={{uri: uri, priority: FastImage.priority.high}}
+      style={styles.avatar}
+    />
   );
 };
 
@@ -38,19 +26,17 @@ const StatsComponent: React.FC<{
   onPress?: () => void;
 }> = ({count, label, onPress}) => {
   return (
-    <TouchableOpacity 
-      style={styles.statsItem} 
-      onPress={onPress}
-      activeOpacity={0.7}>
-      <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.statsCount}>
+    <TouchableOpacity style={styles.statsItem} onPress={onPress}>
+      <CustomText variant="h8" fontFamily={FONTS.Medium}>
         {count}
       </CustomText>
-      <CustomText variant="h9" style={styles.statsLabel}>{label}</CustomText>
+      <CustomText variant="h8">{label}</CustomText>
     </TouchableOpacity>
   );
 };
 
 const ProfileDetails: React.FC<{user: User}> = ({user}) => {
+  const colors = useThemeColors();
   const dispatch = useAppDispatch();
 
   const handleEditProfile = () => {
@@ -63,11 +49,11 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerSection}>
+    <View style={{backgroundColor: colors.background}}>
+      <View style={styles.flexRowBetween}>
         <AvatarComponent uri={user?.userImage} />
         <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
+          <View style={styles.statsBtn}>
             <StatsComponent
               count={user?.followersCount}
               onPress={() => {
@@ -101,14 +87,13 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
           />
         </View>
       </View>
-      
       <View style={styles.bioContainer}>
-        <CustomText variant="h7" fontFamily={FONTS.Medium} style={styles.username}>
+        <CustomText variant="h8"  style={[{color: colors.lightText}]} fontFamily={FONTS.Medium}>
           {user.name}
         </CustomText>
         <CustomText
           variant="h8"
-          style={styles.bio}
+          style={[styles.bio, {color: colors.lightText}]}
           fontFamily={FONTS.Medium}
           numberOfLines={5}>
           {user?.bio}
@@ -124,75 +109,42 @@ const ProfileDetails: React.FC<{user: User}> = ({user}) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.black,
-    paddingHorizontal: 15,
-    paddingVertical: 20,
-  },
-  headerSection: {
+  flexRowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  avatarContainer: {
-    width: RFValue(90),
-    height: RFValue(90),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarBorder: {
-    width: RFValue(88),
-    height: RFValue(88),
-    borderRadius: RFValue(44),
-    padding: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: RFValue(42),
-    borderWidth: 2,
-    borderColor: Colors.black,
+    width: RFValue(80),
+    height: RFValue(80),
+    borderRadius: 105,
   },
   statsContainer: {
-    width: width * 0.65,
+    width: '80%',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
+    top: 6,
   },
-  statsRow: {
-    justifyContent: 'space-between',
+  statsBtn: {
+    justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-    width: '100%',
-    marginBottom: 12,
   },
   statsItem: {
     justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-  },
-  statsCount: {
-    color: Colors.white,
-    marginBottom: 2,
-  },
-  statsLabel: {
-    color: Colors.lightText,
+    marginHorizontal: 15,
   },
   bioContainer: {
-    marginVertical: 15,
-    width: '100%',
-  },
-  username: {
-    color: Colors.white,
-    marginBottom: 5,
+    margin: 10,
+    width: '70%',
   },
   bio: {
     color: Colors.lightText,
+    marginTop: 5,
     lineHeight: 18,
   },
 });
-
 export default ProfileDetails;

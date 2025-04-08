@@ -1055,6 +1055,11 @@
 "@eslint/js@8.57.0":
   version "8.57.0"
 
+"@expo-google-fonts/archivo-narrow@^0.3.0":
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/@expo-google-fonts/archivo-narrow/-/archivo-narrow-0.3.0.tgz"
+  integrity sha512-qNK8zHwNvJyl1pCXuvrju5RUhtz7E3C0CLu4hFsiv2tx7PoI7BlckFCe1tOC2LRk8vWvGdVPEj04FnMyb6xPYQ==
+
 "@expo/bunyan@^4.0.0":
   version "4.0.1"
   resolved "https://registry.npmjs.org/@expo/bunyan/-/bunyan-4.0.1.tgz"
@@ -1148,10 +1153,10 @@
     node-forge "^1.2.1"
     nullthrows "^1.1.1"
 
-"@expo/config-plugins@~9.0.15":
-  version "9.0.16"
-  resolved "https://registry.npmjs.org/@expo/config-plugins/-/config-plugins-9.0.16.tgz"
-  integrity sha512-AnJzmFB7ztM0JZBn+Ut6BQYC2WeGDzfIhBZVOIPMQbdBqvwJ7TmFEsGTGSxdwU/VqJaJK2sWxyt1zbWkpIYCEA==
+"@expo/config-plugins@~9.0.15", "@expo/config-plugins@~9.0.17":
+  version "9.0.17"
+  resolved "https://registry.npmjs.org/@expo/config-plugins/-/config-plugins-9.0.17.tgz"
+  integrity sha512-m24F1COquwOm7PBl5wRbkT9P9DviCXe0D7S7nQsolfbhdCWuvMkfXeoWmgjtdhy7sDlOyIgBrAdnB6MfsWKqIg==
   dependencies:
     "@expo/config-types" "^52.0.5"
     "@expo/json-file" "~9.0.2"
@@ -1173,14 +1178,14 @@
   resolved "https://registry.npmjs.org/@expo/config-types/-/config-types-52.0.5.tgz"
   integrity sha512-AMDeuDLHXXqd8W+0zSjIt7f37vUd/BP8p43k68NHpyAvQO+z8mbQZm3cNQVAMySeayK2XoPigAFB1JF2NFajaA==
 
-"@expo/config@~10.0.10":
-  version "10.0.10"
-  resolved "https://registry.npmjs.org/@expo/config/-/config-10.0.10.tgz"
-  integrity sha512-wI9/iam3Irk99ADGM/FyD7YrrEibIZXR4huSZiU5zt9o3dASOKhqepiNJex4YPiktLfKhYrpSEJtwno1g0SrgA==
+"@expo/config@~10.0.10", "@expo/config@~10.0.11":
+  version "10.0.11"
+  resolved "https://registry.npmjs.org/@expo/config/-/config-10.0.11.tgz"
+  integrity sha512-nociJ4zr/NmbVfMNe9j/+zRlt7wz/siISu7PjdWE4WE+elEGxWWxsGzltdJG0llzrM+khx8qUiFK5aiVcdMBww==
   dependencies:
     "@babel/code-frame" "~7.10.4"
-    "@expo/config-plugins" "~9.0.15"
-    "@expo/config-types" "^52.0.4"
+    "@expo/config-plugins" "~9.0.17"
+    "@expo/config-types" "^52.0.5"
     "@expo/json-file" "^9.0.2"
     deepmerge "^4.3.1"
     getenv "^1.0.0"
@@ -1384,6 +1389,11 @@
     chalk "^4.1.0"
     find-up "^5.0.0"
     js-yaml "^4.1.0"
+
+"@fontsource/playfair-display@^5.2.5":
+  version "5.2.5"
+  resolved "https://registry.npmjs.org/@fontsource/playfair-display/-/playfair-display-5.2.5.tgz"
+  integrity sha512-4PsPkErCP0M5TikYzdhPGaCAU09qFux9ZlrNFA89KTCdQcZKGV0LJXVOSX8UFuo9xEgdTmth+k+j2nQA761fTg==
 
 "@hapi/hoek@^9.0.0", "@hapi/hoek@^9.3.0":
   version "9.3.0"
@@ -1823,6 +1833,11 @@
   version "12.2.1"
   resolved "https://registry.npmjs.org/@react-native-google-signin/google-signin/-/google-signin-12.2.1.tgz"
   integrity sha512-qt2Cb+bN2NS8BBT06M3UbLVS1gaSYTenNh4uZtPNmyJC23xZAynLkuhvsC6gmeEnxcj0wLVUn1Es+LSHw0OhVQ==
+
+"@react-native-masked-view/masked-view@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.npmjs.org/@react-native-masked-view/masked-view/-/masked-view-0.3.2.tgz"
+  integrity sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ==
 
 "@react-native/assets-registry@0.74.84":
   version "0.74.84"
@@ -4093,22 +4108,22 @@ expect@^29.7.0:
     jest-message-util "^29.7.0"
     jest-util "^29.7.0"
 
-expo-asset@~11.0.4:
-  version "11.0.4"
-  resolved "https://registry.npmjs.org/expo-asset/-/expo-asset-11.0.4.tgz"
-  integrity sha512-CdIywU0HrR3wsW5c3n0cT3jW9hccZdnqGsRqY+EY/RWzJbDXtDfAQVEiFHO3mDK7oveUwrP2jK/6ZRNek41/sg==
+expo-asset@^11.0.5, expo-asset@~11.0.4:
+  version "11.0.5"
+  resolved "https://registry.npmjs.org/expo-asset/-/expo-asset-11.0.5.tgz"
+  integrity sha512-TL60LmMBGVzs3NQcO8ylWqBumMh4sx0lmeJsn7+9C88fylGDhyyVnKZ1PyTXo9CVDBkndutZx2JUEQWM9BaiXw==
   dependencies:
     "@expo/image-utils" "^0.6.5"
-    expo-constants "~17.0.7"
+    expo-constants "~17.0.8"
     invariant "^2.2.4"
     md5-file "^3.2.3"
 
-expo-constants@~17.0.7:
-  version "17.0.7"
-  resolved "https://registry.npmjs.org/expo-constants/-/expo-constants-17.0.7.tgz"
-  integrity sha512-sp5NUiV17I3JblVPIBDgoxgt7JIZS30vcyydCYHxsEoo+aKaeRYXxGYilCvb9lgI6BBwSL24sQ6ZjWsCWoF1VA==
+expo-constants@~17.0.7, expo-constants@~17.0.8:
+  version "17.0.8"
+  resolved "https://registry.npmjs.org/expo-constants/-/expo-constants-17.0.8.tgz"
+  integrity sha512-XfWRyQAf1yUNgWZ1TnE8pFBMqGmFP5Gb+SFSgszxDdOoheB/NI5D4p7q86kI2fvGyfTrxAe+D+74nZkfsGvUlg==
   dependencies:
-    "@expo/config" "~10.0.10"
+    "@expo/config" "~10.0.11"
     "@expo/env" "~0.4.2"
 
 expo-file-system@~18.0.11:
@@ -4118,7 +4133,7 @@ expo-file-system@~18.0.11:
   dependencies:
     web-streams-polyfill "^3.3.2"
 
-expo-font@~13.0.4:
+expo-font@^13.0.4, expo-font@~13.0.4:
   version "13.0.4"
   resolved "https://registry.npmjs.org/expo-font/-/expo-font-13.0.4.tgz"
   integrity sha512-eAP5hyBgC8gafFtprsz0HMaB795qZfgJWqTmU0NfbSin1wUuVySFMEPMOrTkTgmazU73v4Cb4x7p86jY1XXYUw==
@@ -6784,7 +6799,7 @@ react-native-vision-camera@^4.6.4:
   resolved "https://registry.npmjs.org/react-native-vision-camera/-/react-native-vision-camera-4.6.4.tgz"
   integrity sha512-d998uTHsGJ9bTlsClgT37RK1sK7ZQekv5y6ylynds3vmdK6YbFQJUoi2cvMrFN4dp9qvSlCjEfwekjMIz3guQA==
 
-react-native-webview@*, react-native-webview@^13.13.5:
+react-native-webview@*:
   version "13.13.5"
   resolved "https://registry.npmjs.org/react-native-webview/-/react-native-webview-13.13.5.tgz"
   integrity sha512-MfC2B+woL4Hlj2WCzcb1USySKk+SteXnUKmKktOk/H/AQy5+LuVdkPKm8SknJ0/RxaxhZ48WBoTRGaqgR137hw==
@@ -6799,7 +6814,7 @@ react-native-worklets-core@*:
   dependencies:
     string-hash-64 "^1.0.3"
 
-react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", react-native@>=0.35, react-native@>=0.42.0, react-native@>=0.46, react-native@>=0.48.4, react-native@>=0.59, react-native@>=0.59.0, react-native@>=0.60.0, react-native@>=0.70.0, react-native@>=0.71.0, react-native@0.74.2:
+react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", react-native@>=0.35, react-native@>=0.42.0, react-native@>=0.46, react-native@>=0.48.4, react-native@>=0.57, react-native@>=0.59, react-native@>=0.59.0, react-native@>=0.60.0, react-native@>=0.70.0, react-native@>=0.71.0, react-native@0.74.2:
   version "0.74.2"
   dependencies:
     "@jest/create-cache-key-function" "^29.6.3"
@@ -6864,7 +6879,7 @@ react-test-renderer@18.2.0:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.23.0"
 
-react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.9.0 || ^17.0.0 || ^18", "react@^17 || ^18", react@^18.0, react@^18.2.0, react@>=16.8, react@>=16.8.0, react@>=17.0.0, react@>=18.1.0, react@18.2.0:
+react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.9.0 || ^17.0.0 || ^18", "react@^17 || ^18", react@^18.0, react@^18.2.0, react@>=16, react@>=16.8, react@>=16.8.0, react@>=17.0.0, react@>=18.1.0, react@18.2.0:
   version "18.2.0"
   dependencies:
     loose-envify "^1.1.0"

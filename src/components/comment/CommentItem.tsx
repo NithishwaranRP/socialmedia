@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import CustomText from '../global/CustomText';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import LinearGradient from 'react-native-linear-gradient';
 import CommentSingleItem from './CommentSingleItem';
 import {useAppDispatch} from '../../redux/reduxHook';
@@ -29,6 +29,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   scrollToChildComment,
 }) => {
   const dispatch = useAppDispatch();
+  const colors = useThemeColors();
 
   const [replies, setReplies] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,14 +109,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <LinearGradient
                   colors={[
                     'rgba(0, 0, 0, 0)',
-                    Colors.disabled,
+                    colors.disabled,
                     'rgba(0, 0, 0, 0)',
                   ]}
                   style={styles.linearGradient}
                   start={{x: 0, y: 0.5}}
                   end={{x: 1, y: 0.5}}
                 />
-                <CustomText variant="h9" style={styles.viewRepliesText}>
+                <CustomText variant="h9" style={{
+                  color: colors.lightText,
+                  marginTop: 5,
+                }}>
                   Show {comment?.repliesCount - replies.length}{' '}
                   {comment?.repliesCount - replies.length > 1
                     ? 'replies'
@@ -132,14 +136,17 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 <LinearGradient
                   colors={[
                     'rgba(0, 0, 0, 0)',
-                    Colors.disabled,
+                    colors.disabled,
                     'rgba(0, 0, 0, 0)',
                   ]}
                   style={styles.linearGradient}
                   start={{x: 0, y: 0.5}}
                   end={{x: 1, y: 0.5}}
                 />
-                <CustomText variant="h9" style={styles.viewRepliesText}>
+                <CustomText variant="h9" style={{
+                  color: colors.lightText,
+                  marginTop: 5,
+                }}>
                   Hide Replies
                 </CustomText>
               </TouchableOpacity>
@@ -148,7 +155,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             {loading && (
               <ActivityIndicator
                 style={{alignSelf: 'flex-start'}}
-                color={Colors.disabled}
+                color={colors.disabled}
                 size="small"
               />
             )}
@@ -176,10 +183,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 1,
     top: 2,
-  },
-  viewRepliesText: {
-    color: Colors.lightText,
-    marginTop: 5,
   },
 });
 

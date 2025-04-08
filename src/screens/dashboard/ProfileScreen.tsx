@@ -1,5 +1,4 @@
-import React, {useRef, useState, useEffect} from 'react';
-import CustomGradient from '../../components/global/CustomGradient';
+import React, {useState} from 'react';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView';
 import {
   StyleSheet, 
@@ -7,44 +6,31 @@ import {
   View,
   Dimensions,
   ActivityIndicator,
-  Animated,
-  Text,
 } from 'react-native';
-import {Colors} from '../../constants/Colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {useAppSelector, useAppDispatch} from '../../redux/reduxHook';
 import {selectUser} from '../../redux/reducers/userSlice';
-import ProfileDetails from '../../components/profile/ProfileDetails';
+import MinimalProfileDetails from '../../components/profile/MinimalProfileDetails';
 import ReelListTab from '../../components/profile/ReelListTab';
 import {refetchUser} from '../../redux/actions/userAction';
 import {FONTS} from '../../constants/Fonts';
 import CustomText from '../../components/global/CustomText';
-import LinearGradient from 'react-native-linear-gradient';
+import {useThemeColors} from '../../constants/Colors';
+import MinimalButton from '../../components/global/MinimalButton';
 
 const {width} = Dimensions.get('window');
 
 const ProfileScreen = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  
+  const [error, setError] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser) as User;
+  const colors = useThemeColors();
 
   // Check if user has valid data
   const hasValidUserData = user && user.id;
-
-  // Animation for tab indicator
-  useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: activeTab,
-      duration: 250,
-      useNativeDriver: false,
-    }).start();
-  }, [activeTab]);
 
   // Handle refresh
   const handleRefresh = async () => {
@@ -63,139 +49,120 @@ const ProfileScreen = () => {
     }
   };
 
-  // Profile header component containing profile details and tabs
-  const ProfileHeaderComponent = () => (
-    <>
-      <View style={styles.profileSection}>
-        <ProfileDetails user={user} />
-      </View>
-      
-      {/* Tab Bar with Animation */}
-      <View style={styles.tabBarContainer}>
-        {MyTabs.map((tab, index) => (
-          <TouchableOpacity
-            key={`tab-${index}`}
-            style={styles.tabBar}
-            activeOpacity={0.7}
-            onPress={() => setActiveTab(index)}>
-            <Icon
-              name={tab.icon}
-              size={RFValue(20)}
-              color={
-                activeTab === index ? Colors.white : Colors.disabled
-              }
-            />
-            <CustomText 
-              variant="h9" 
-              fontFamily={FONTS.Medium} 
-              style={{
-                color: activeTab === index ? Colors.white : Colors.disabled,
-                marginTop: 4,
-              }}>
-              {tab.name}
-            </CustomText>
-          </TouchableOpacity>
-        ))}
-        
-        {/* Animated Indicator */}
-        <Animated.View 
-          style={[
-            styles.indicatorStyle, 
-            { 
-              left: slideAnim.interpolate({
-                inputRange: [0, 1, 2],
-                outputRange: [0, width / 3, (width / 3) * 2]
-              })
-            }
-          ]} 
-        >
-          <LinearGradient 
-            colors={['#a9c2eb', '#7f8cff']}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 0}}
-            style={styles.gradientIndicator}
-          />
-        </Animated.View>
-      </View>
-    </>
-  );
-
   const MyTabs = [
     {
       name: 'Reels',
       component: hasValidUserData ? (
-        <ReelListTab 
-          user={user} 
-          type="post" 
-          key="post" 
-          headerComponent={<ProfileHeaderComponent />}
-        />
+        <ReelListTab user={user} type="post" key="post" />
       ) : null,
-      icon: 'apps-sharp',
+      icon: 'grid-outline',
     },
     {
       name: 'Liked',
       component: hasValidUserData ? (
-        <ReelListTab 
-          user={user} 
-          type="liked" 
-          key="liked" 
-          headerComponent={<ProfileHeaderComponent />}
-        />
+        <ReelListTab user={user} type="liked" key="liked" />
       ) : null,
-      icon: 'heart',
+      icon: 'heart-outline',
     },
     {
       name: 'History',
       component: hasValidUserData ? (
-        <ReelListTab 
-          user={user} 
-          type="watched" 
-          key="watched" 
-          headerComponent={<ProfileHeaderComponent />}
-        />
+        <ReelListTab user={user} type="watched" key="watched" />
       ) : null,
-      icon: 'logo-tableau',
+      icon: 'time-outline',
     },
   ];
 
   if (!hasValidUserData) {
     return (
-      <CustomSafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['rgba(0,0,0,0.9)', 'rgba(2,11,23,0.95)']}
-          style={styles.errorContainer}>
-          <Icon name="alert-circle-outline" size={RFValue(50)} color={Colors.white} />
-          <CustomText fontFamily={FONTS.Medium} variant="h6" style={styles.errorText}>
-            Could not load user profile
-          </CustomText>
-          <TouchableOpacity 
-            style={styles.retryButton}
+      <CustomSafeAreaView style={{
+        ...styles.errorContainer,
+        backgroundColor: colors.background
+      }}>
+        <Icon 
+          name="alert-circle-outline" 
+          size={RFValue(50)} 
+          color={colors.text}
+        />
+        <CustomText 
+          fontFamily={FONTS.Medium} 
+          variant="h6" 
+          style={[styles.errorText, { color: colors.text }]}
+        >
+          Could not load user profile
+        </CustomText>
+        
+        <View style={styles.retryButtonContainer}>
+          <MinimalButton
+            text="Retry"
+            variant="outline"
+            size="md"
             onPress={handleRefresh}
-            activeOpacity={0.7}>
-            <LinearGradient
-              colors={['#162640', '#223a5e']}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}
-              style={styles.retryGradient}>
-              <CustomText fontFamily={FONTS.Medium} variant="h8" style={styles.retryButtonText}>
-                Retry
-              </CustomText>
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
+          />
+        </View>
       </CustomSafeAreaView>
     );
   }
 
   return (
-    <CustomSafeAreaView style={styles.container}>
-      {/* Directly render the active tab component which includes the header */}
-      <View style={styles.contentContainer}>
-        {MyTabs[activeTab].component}
+    <CustomSafeAreaView style={{
+      ...styles.container,
+      backgroundColor: colors.background
+    }}>
+      <View style={[styles.profileSection, { backgroundColor: colors.background }]}>
+        <MinimalProfileDetails user={user} />
       </View>
       
-      <CustomGradient position="bottom" />
+      {/* Tab Bar */}
+      <View style={[styles.tabBarContainer, { 
+        backgroundColor: colors.background,
+        borderColor: colors.border
+      }]}>
+        {MyTabs.map((tab, index) => (
+          <TouchableOpacity
+            key={`tab-${index}`}
+            style={[
+              styles.tabItem,
+              activeTab === index && [
+                styles.activeTabItem,
+                {borderBottomColor: colors.text}
+              ]
+            ]}
+            onPress={() => setActiveTab(index)}>
+            <Icon
+              name={tab.icon}
+              size={RFValue(20)}
+              color={
+                activeTab === index 
+                ? colors.text
+                : colors.inactive_tint
+              }
+              style={styles.tabIcon}
+            />
+            <CustomText
+              variant="h8"
+              fontFamily={FONTS.Medium}
+              style={{
+                color: activeTab === index 
+                  ? colors.text
+                  : colors.inactive_tint
+              }}>
+              {tab.name}
+            </CustomText>
+          </TouchableOpacity>
+        ))}
+      </View>
+      
+      {/* Content Area */}
+      <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
+        {refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={colors.text} />
+          </View>
+        ) : (
+          MyTabs[activeTab].component
+        )}
+      </View>
     </CustomSafeAreaView>
   );
 };
@@ -203,40 +170,27 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.black,
   },
   profileSection: {
-    paddingBottom: 5,
   },
   tabBarContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.black,
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    borderColor: '#333',
-    position: 'relative',
-    zIndex: 10,
-    height: 70,
-    marginBottom: 5,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    height: 56,
   },
-  tabBar: {
-    width: `${100 / 3}%`, // For 3 tabs
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 12,
   },
-  indicatorStyle: {
-    position: 'absolute',
-    bottom: 0,
-    width: width / 3,
-    height: 3,
+  activeTabItem: {
+    borderBottomWidth: 2,
   },
-  gradientIndicator: {
-    height: '100%',
-    width: '50%',
-    marginLeft: '25%',
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
+  tabIcon: {
+    marginRight: 6,
   },
   contentContainer: {
     flex: 1,
@@ -248,31 +202,16 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   errorText: {
-    color: Colors.white,
     textAlign: 'center',
-    marginTop: 15,
-    marginBottom: 10,
+    marginVertical: 20,
   },
-  retryButton: {
+  retryButtonContainer: {
     marginTop: 20,
-    borderRadius: 25,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
   },
-  retryGradient: {
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-  },
-  retryButtonText: {
-    color: Colors.white,
+  loadingContainer: {
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

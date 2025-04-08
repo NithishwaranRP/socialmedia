@@ -12,10 +12,9 @@ import {FONTS} from '../../constants/Fonts';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FastImage from 'react-native-fast-image';
 import {getRelativeTime} from '../../utils/dateUtils';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {SheetManager} from 'react-native-actions-sheet';
-import GIFLoader from '../../assets/animations/giphy.gif';
 import {navigate} from '../../utils/NavigationUtil';
 import {useAppDispatch, useAppSelector} from '../../redux/reduxHook';
 import {
@@ -43,6 +42,7 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
   scrollToComment,
 }) => {
   const dispatch = useAppDispatch();
+  const colors = useThemeColors();
 
   const likedComment = useAppSelector(selectLikedComment);
   const LikedReply = useAppSelector(selectLikedReply);
@@ -91,7 +91,7 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
 
   const backgroundColorInterpolate = backgroundColor.interpolate({
     inputRange: [0, 1],
-    outputRange: ['transparent', Colors.black],
+    outputRange: ['transparent', colors.black],
   });
 
   const likeComment = async () => {
@@ -141,6 +141,53 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
     })
     .runOnJS(true);
 
+  const getStyles = () => StyleSheet.create({
+    commentContainer: {
+      flexDirection: 'row',
+      paddingVertical: 10,
+      borderRadius: 10,
+      paddingHorizontal: 6,
+    },
+    button: {
+      position: 'absolute',
+      right: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      top: 12,
+    },
+    userImage: {
+      width: 30,
+      height: 30,
+      borderRadius: 20,
+      marginRight: 10,
+    },
+    textContainer: {
+      flex: 1,
+    },
+    flexRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 5,
+    },
+    username: {},
+    commentText: {
+      marginVertical: 3,
+      color: colors.text,
+    },
+    timestamp: {
+      color: colors.lightText,
+    },
+    gifImage: {
+      width: RFValue(170),
+      height: RFValue(100),
+      marginBottom: 5,
+      aspectRatio: 4 / 3,
+      borderRadius: 10,
+    },
+  });
+  
+  const styles = getStyles();
+
   return (
     <GestureDetector gesture={Gesture.Exclusive(doubleTap, longPress)}>
       <Animated.View
@@ -165,13 +212,13 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
             <CustomText
               fontFamily={FONTS.SemiBold}
               variant="h9"
-              style={styles.username}>
+              style={[styles.username, {color: colors.text}]}>
               {comment?.user?.username}
             </CustomText>
             <CustomText
               variant="h9"
               fontFamily={FONTS.Medium}
-              style={styles.timestamp}>
+              style={[styles.timestamp, {color: colors.lightText}]}>
               {getRelativeTime(comment.timestamp)}
             </CustomText>
             {comment?.isPinned && (
@@ -217,7 +264,7 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
                 uri: comment?.gifUrl,
                 priority: FastImage.priority.high,
               }}
-              defaultSource={GIFLoader}
+              defaultSource={require('../../assets/animations/giphy.gif')}
               style={styles.gifImage}
               resizeMode="cover"
             />
@@ -272,13 +319,13 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
               color={
                 (isReply && replyMeta.isLiked) ||
                 (!isReply && commentMeta.isLiked)
-                  ? Colors.like
-                  : Colors.lightText
+                  ? colors.like
+                  : colors.lightText
               }
             />
             <CustomText
               variant="h9"
-              style={{color: Colors.lightText}}
+              style={{color: colors.lightText}}
               fontFamily={FONTS.Medium}>
               {isReply
                 ? replyMeta.likesCount || ''
@@ -290,50 +337,5 @@ const CommentSingleItem: React.FC<CommentSingleItemProps> = ({
     </GestureDetector>
   );
 };
-
-const styles = StyleSheet.create({
-  commentContainer: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    borderRadius: 10,
-    paddingHorizontal: 6,
-  },
-  button: {
-    position: 'absolute',
-    right: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    top: 12,
-  },
-
-  userImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  flexRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 5,
-  },
-  username: {},
-  commentText: {
-    marginVertical: 3,
-  },
-  timestamp: {
-    color: Colors.lightText,
-  },
-  gifImage: {
-    width: RFValue(170),
-    height: RFValue(100),
-    marginBottom: 5,
-    aspectRatio: 4 / 3,
-    borderRadius: 10,
-  },
-});
 
 export default CommentSingleItem;

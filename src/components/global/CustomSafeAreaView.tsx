@@ -1,8 +1,10 @@
 import React, {FC, ReactNode} from 'react';
 import {SafeAreaView, StyleSheet, View, ViewStyle} from 'react-native';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import { StatusBar } from 'react-native';
 import { Platform } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
 
 interface CustomSafeAreaViewProps {
   children: ReactNode;
@@ -10,11 +12,20 @@ interface CustomSafeAreaViewProps {
 }
 
 const CustomSafeAreaView: FC<CustomSafeAreaViewProps> = ({children, style}) => {
+  const colors = useThemeColors();
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
+  
   return (
-    <SafeAreaView style={[styles.container, style]}>
-                  <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }, style]}>
+      <StatusBar 
+        barStyle={isDarkMode ? "light-content" : "dark-content"} 
+        backgroundColor={colors.background} 
+        translucent={true} 
+      />
       
-      <View style={[styles.container, style]}>{children}</View>
+      <View style={[styles.container, { backgroundColor: colors.background }, style]}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 };
@@ -22,8 +33,6 @@ const CustomSafeAreaView: FC<CustomSafeAreaViewProps> = ({children, style}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // padding: 10,
-    backgroundColor: Colors.black,
     marginTop: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
   },
 });

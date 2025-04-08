@@ -25,7 +25,7 @@ const App = () => {
     const clearSelectiveStorage = async () => {
       try {
         // Define keys to preserve (navigation state keys)
-        const keysToPreserve = ['lastActiveCategoryIndex'];
+        const keysToPreserve = ['lastActiveCategoryIndex', 'persist:root'];
         
         // Get the values to preserve
         const preservedValues: Record<string, string | null> = {};

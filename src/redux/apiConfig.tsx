@@ -20,18 +20,26 @@ appAxios.interceptors.response.use(
   response => response,
   async error => {
     if (error.response && error.response.status === 401) {
+      console.log('Received 401 error, attempting to refresh token');
       try {
         const newAccessToken = await refresh_tokens();
         if (newAccessToken) {
+          console.log('Refreshed token, retrying request');
           error.config.headers.Authorization = `Bearer ${newAccessToken}`;
           return axios(error.config);
+        } else {
+          console.log('Token refresh failed, redirecting to login');
+          // Token refresh failed, handle the failure by redirecting to login
+          return Promise.reject(error);
         }
-      } catch (error) {
-        console.log('Error Refreshing Token');
+      } catch (refreshError) {
+        console.log('Error refreshing token:', refreshError);
+        // If refresh token fails, redirect to login
+        return Promise.reject(error);
       }
     }
 
-    if (error.response && error.response.status != 401) {
+    if (error.response && error.response.status !== 401) {
       const errorMessage = error.response.data.msg || 'something went wrong';
       Alert.alert(errorMessage);
     }
@@ -42,6 +50,14 @@ appAxios.interceptors.response.use(
 export const refresh_tokens = async () => {
   try {
     const refresh_token = token_storage.getString('refresh_token');
+    if (!refresh_token) {
+      console.log('REFRESH TOKEN ERROR: No refresh token found');
+      token_storage.clearAll();
+      resetAndNavigate('LoginScreen');
+      return null;
+    }
+    
+    console.log('Attempting to refresh token with:', refresh_token.substring(0, 10) + '...');
     const response = await axios.post(REFRESH_TOKEN, {
       refresh_token,
     });
@@ -49,10 +65,18 @@ export const refresh_tokens = async () => {
     const new_refresh_token = response.data.refresh_token;
     token_storage.set('access_token', new_access_token);
     token_storage.set('refresh_token', new_refresh_token);
+    console.log('Token refresh successful');
     return new_access_token;
   } catch (error) {
     console.log('REFRESH TOKEN ERROR');
+    if (axios.isAxiosError(error)) {
+      console.log('Status:', error.response?.status);
+      console.log('Error data:', JSON.stringify(error.response?.data));
+    } else {
+      console.log('Error details:', error);
+    }
     token_storage.clearAll();
     resetAndNavigate('LoginScreen');
+    return null;
   }
 };

@@ -4,7 +4,7 @@ import ActionSheet, {
   SheetManager,
   SheetProps,
 } from 'react-native-actions-sheet';
-import {Colors} from '../constants/Colors';
+import {useThemeColors} from '../constants/Colors';
 import {screenHeight} from '../utils/Scaling';
 import CustomText from '../components/global/CustomText';
 import {FONTS} from '../constants/Fonts';
@@ -26,6 +26,7 @@ import {emitEvent} from '../components/comment/eventHandler';
 const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
+  const colors = useThemeColors();
   const [replyTo, setReplyTo] = useState<Comment | SubReply | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [offset, setOffset] = useState<number>(0);
@@ -195,20 +196,32 @@ const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
         SheetManager.hide(props.sheetId);
       }}
       drawUnderStatusBar={false}
-      containerStyle={styles.container}
+      containerStyle={{
+        backgroundColor: colors.background,
+        height: screenHeight * 0.8,
+      }}
       gestureEnabled={Platform.OS === 'ios' ? true : false}
       enableGesturesInScrollView={Platform.OS === 'ios' ? true : false}
       keyboardHandlerEnabled={true}
-      indicatorStyle={styles.indicator}
+      indicatorStyle={{
+        height: 4,
+        width: 40,
+        top: 4,
+        backgroundColor: colors.border,
+      }}
       animated>
       <CustomText
         variant="h7"
         fontFamily={FONTS.SemiBold}
-        style={styles.header}>
+        style={[styles.header, {color: colors.text}]}>
         Comments
       </CustomText>
 
-      <View style={styles.divider} />
+      <View style={{
+        height: 0.2,
+        backgroundColor: colors.border,
+        width: '100%',
+      }} />
       {mentionSearchWord != null ? (
         <FlatList
           data={filterData || []}
@@ -240,11 +253,11 @@ const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
                     alignItems: 'center',
                     gap: 4,
                   }}>
-                  <CustomText variant="h9" style={{color: Colors.lightText}}>
+                  <CustomText variant="h9" style={{color: colors.text}}>
                     {mentionSearchWord != '' &&
                       `Searching for ${mentionSearchWord}`}
                   </CustomText>
-                  <ActivityIndicator color={Colors.border} size="small" />
+                  <ActivityIndicator color={colors.border} size="small" />
                 </View>
               )}
             </>
@@ -269,7 +282,7 @@ const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
             }
             return (
               <View style={{marginTop: 20}}>
-                <ActivityIndicator color={Colors.white} size="small" />
+                <ActivityIndicator color={colors.white} size="small" />
               </View>
             );
           }}
@@ -290,7 +303,7 @@ const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
                   alignItems: 'center',
                   paddingTop: 40,
                 }}>
-                <CustomText>No Comments yet!</CustomText>
+                <CustomText style={{color: colors.text}}>No Comments yet!</CustomText>
               </View>
             );
           }}
@@ -331,21 +344,6 @@ const CommentSheet = (props: SheetProps<'comment-sheet'>) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#121212',
-    height: screenHeight * 0.8,
-  },
-  indicator: {
-    height: 4,
-    width: 40,
-    top: 4,
-    backgroundColor: Colors.border,
-  },
-  divider: {
-    height: 0.2,
-    backgroundColor: Colors.border,
-    width: '100%',
-  },
   header: {
     alignSelf: 'center',
     marginVertical: 8,

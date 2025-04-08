@@ -76,7 +76,7 @@ const FollowingScreen: FC = () => {
 
   return (
     <CustomSafeAreaView>
-      <CustomHeader title={paramData.type} onInfoPress={() => {}} />
+      <CustomHeader title={paramData.type} />
       <View style={styles.inputContainer}>
         <Icon name={'magnify'} size={RFValue(14)} color={Colors.border} />
         <TextInput
@@ -149,9 +149,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
   },
   inputContainer: {
-    backgroundColor: '#1f1e1e',
+    // backgroundColor: '#1f1e1e',
     flexDirection: 'row',
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
     paddingVertical: Platform.OS === 'ios' ? 10 : 0,
     paddingHorizontal: 8,
     marginVertical: 20,
@@ -162,7 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 2,
     marginHorizontal: 10,
-    color: Colors.text,
+    color: Colors.lightText,
   },
   loading: {
     marginTop: 20,

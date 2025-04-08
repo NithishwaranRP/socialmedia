@@ -8,8 +8,11 @@ import {
   Alert,
   PermissionsAndroid,
   TextInput,
+  StatusBar,
+  Animated,
+  Easing,
 } from 'react-native';
-import React, {FC, useEffect, useState} from 'react';
+import React, {FC, useEffect, useState, useRef} from 'react';
 import CustomSafeAreaView from '../../components/global/CustomSafeAreaView';
 import {Colors} from '../../constants/Colors';
 import {FONTS} from '../../constants/Fonts';
@@ -28,7 +31,6 @@ import {useRoute} from '@react-navigation/native';
 import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {uploadFile} from '../../redux/actions/fileAction';
-import GradientButton from '../../components/global/GradientButton';
 import {useAppDispatch} from '../../redux/reduxHook';
 interface initialData {
   id_token: string;
@@ -37,6 +39,153 @@ interface initialData {
   email: string;
   userImage: string;
 }
+
+// Add styles at the beginning of component to ensure we have a complete styles object
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    backgroundColor: Colors.black,
+  },
+  container: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  scrollViewContainer: {
+    paddingBottom: 120,
+    paddingTop: Platform.OS === 'android' ? 30 : 0,
+    paddingHorizontal: RFValue(20),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  titleContainer: {
+    // width: '100%',
+    marginBottom: RFValue(30),
+    marginTop: RFValue(80),
+  },
+  titleText: {
+    color: '#FAFAFA',
+    fontSize: RFValue(24),
+    textAlign: 'center',
+    fontFamily: 'PlayfairDisplay-Regular',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: RFValue(15),
+    position: 'relative',
+  },
+  imageWrapper: {
+    width: RFValue(120),
+    height: RFValue(120),
+    borderRadius: RFValue(60),
+    borderWidth: 1,
+    borderColor: '#27272A',
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#3B82F6',
+    width: RFValue(36),
+    height: RFValue(36),
+    borderRadius: RFValue(18),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#09090B',
+  },
+  nameDisplayContainer: {
+    alignItems: 'center',
+    marginBottom: RFValue(20),
+  },
+  nameText: {
+    color: '#FAFAFA',
+    fontSize: RFValue(18),
+    fontFamily: 'PlayfairDisplay-Regular',
+
+  },
+  formContainer: {
+    width: '100%',
+  },
+  formGroup: {
+    marginBottom: RFValue(20),
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: RFValue(8),
+  },
+  label: {
+    color: '#FAFAFA',
+    fontFamily: 'PlayfairDisplay-Regular',
+
+    fontSize: RFValue(14),
+  },
+  requiredStar: {
+    color: '#EF4444',
+    fontWeight: 'bold',
+  },
+  optionalText: {
+    color: '#A1A1AA',
+    fontFamily: 'PlayfairDisplay-Regular',
+
+    fontSize: RFValue(12),
+  },
+  availabilityText: {
+    fontFamily: 'PlayfairDisplay-Regular',
+
+    fontSize: RFValue(12),
+  },
+  input: {
+    backgroundColor: 'rgba(24, 24, 27, 0.6)',
+    borderWidth: 1,
+    borderColor: '#27272A',
+    borderRadius: 8,
+    color: '#FAFAFA',
+    fontFamily: 'PlayfairDisplay-Regular',
+    fontSize: RFValue(14),
+    padding: RFValue(12),
+    width: '100%',
+  },
+  textArea: {
+    height: RFValue(100),
+    textAlignVertical: 'top',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: RFValue(20),
+  },
+  loadingText: {
+    color: '#FAFAFA',
+  },
+  buttonContainer: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 8,
+    width: '100%',
+    padding: RFValue(14),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: RFValue(20),
+  },
+  buttonText: {
+    color: '#09090B',
+    fontFamily: 'PlayfairDisplay-Regular',
+    fontSize: RFValue(16),
+  },
+});
 
 const RegisterScreen: FC = () => {
   const data = useRoute();
@@ -53,6 +202,37 @@ const RegisterScreen: FC = () => {
   const [fullName, setFullName] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [imageUri, setImageUri] = useState<string>('');
+
+  // Create animation values for the flowing gradient
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  
+  // Start the animation when component mounts
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 10000, // 10 seconds for a full cycle
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    ).start();
+    
+    // Clean up animation when component unmounts
+    return () => {
+      animatedValue.stopAnimation();
+    };
+  }, []);
+  
+  // Interpolate animation values for gradient movement
+  const translateX = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -300],
+  });
+  
+  const translateY = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -300],
+  });
 
   useEffect(() => {
     if (item) {
@@ -137,10 +317,9 @@ const RegisterScreen: FC = () => {
     if (
       !trimmedUsername ||
       !trimmedFullName ||
-      !trimmedBio ||
       !usernameAvailable
     ) {
-      Alert.alert('Please fill valid details');
+      Alert.alert('Please fill required fields', 'Username is required and must be available.');
       setLoading(false);
       setLoadingMessage('');
       return;
@@ -161,8 +340,8 @@ const RegisterScreen: FC = () => {
     }
     setLoadingMessage('Preparing Dashboard...✨✨');
     const registerData = {
-      name: fullName,
-      bio,
+      name: trimmedFullName,
+      bio: trimmedBio || 'Hi there! I am using Recaps.',  // Default bio if empty
       userImage,
       email: item?.email,
       provider: item?.provider,
@@ -174,180 +353,145 @@ const RegisterScreen: FC = () => {
   };
 
   return (
-    <CustomSafeAreaView>
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.scrollViewContainer}
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={false}
-        enableOnAndroid={true}
-        enableAutomaticScroll={true}
-        extraScrollHeight={Platform.select({
-          ios: 120,
-          android: 120,
-        })}>
-        <View style={styles.titleContainer}>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+      <View style={styles.background}>
+        <Animated.View 
+          style={[
+            StyleSheet.absoluteFill, 
+            { transform: [{ translateX }, { translateY }] }
+          ]}
+        >
           <LinearGradient
-            colors={['rgba(0, 0, 0, 0)', Colors.text, 'rgba(0, 0, 0, 0)']}
-            style={styles.linearGradient}
-            start={{x: 0, y: 0.5}}
-            end={{x: 1, y: 0.5}}
+            colors={[
+              '#62a0ff', 
+              '#b47aff', 
+              '#7092ff', 
+              '#8b4dff', 
+              '#62c1ff', 
+              '#b47aff', 
+              '#7092ff'
+            ]}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            locations={[0, 0.15, 0.3, 0.5, 0.7, 0.85, 1]}
+            style={[StyleSheet.absoluteFill, { width: '200%', height: '200%' }]}
           />
-          <CustomText variant="h4" fontFamily={FONTS.Reelz}>
-            Complete your profile
-          </CustomText>
-          <LinearGradient
-            colors={['rgba(0, 0, 0, 0)', Colors.text, 'rgba(0, 0, 0, 0)']}
-            style={styles.linearGradient}
-            start={{x: 0, y: 0.5}}
-            end={{x: 1, y: 0.5}}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.imageContainer}
-          onPress={handleImagePicker}>
-          <Image
-            source={
-              imageUri
-                ? {uri: imageUri}
-                : require('../../assets/images/placeholder.png')
-            }
-            style={styles.image}
-          />
-          <View style={styles.cameraIcon}>
-            <Icon name="camera-alt" color="white" size={RFValue(20)} />
-          </View>
-        </TouchableOpacity>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-          }}>
-          <CustomText style={styles.label}>Username</CustomText>
-          {usernameAvailable != null && (
-            <CustomText
-              variant="h8"
-              fontFamily={FONTS.SemiBold}
-              style={[styles.label, {alignSelf: 'flex-end'}]}>
-              {usernameAvailable ? '✅ Available' : '❌ Not Available'}
+        </Animated.View>
+      
+        <KeyboardAwareScrollView
+          contentContainerStyle={styles.scrollViewContainer}
+          scrollEnabled={true}
+          showsVerticalScrollIndicator={false}
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          extraScrollHeight={Platform.select({
+            ios: 120,
+            android: 120,
+          })}>
+          <View style={styles.titleContainer}>
+            <CustomText variant="h4" fontFamily={FONTS.SemiBold} style={styles.titleText}>
+              Complete Your Profile
             </CustomText>
+          </View>
+
+          <TouchableOpacity
+            style={styles.imageContainer}
+            onPress={handleImagePicker}>
+            <View style={styles.imageWrapper}>
+              <Image
+                source={
+                  imageUri
+                    ? {uri: imageUri}
+                    : require('../../assets/images/placeholder.png')
+                }
+                style={styles.image}
+              />
+            </View>
+            <View style={styles.cameraIcon}>
+              <Icon name="camera-alt" color="#FAFAFA" size={RFValue(20)} />
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.nameDisplayContainer}>
+            <CustomText variant="h6" fontFamily={FONTS.SemiBold} style={styles.nameText}>
+              {fullName}
+            </CustomText>
+          </View>
+
+          <View style={styles.formContainer}>
+            <View style={styles.formGroup}>
+              <View style={styles.labelContainer}>
+                <CustomText style={styles.label}>Username <Text style={styles.requiredStar}>*</Text></CustomText>
+                {usernameAvailable != null && (
+                  <CustomText
+                    variant="h8"
+                    fontFamily={FONTS.Medium}
+                    style={[
+                      styles.availabilityText, 
+                      {color: usernameAvailable ? '#10B981' : '#EF4444'}
+                    ]}>
+                    {usernameAvailable ? 'Available' : 'Not Available'}
+                  </CustomText>
+                )}
+              </View>
+              <TextInput
+                style={styles.input}
+                returnKeyType="next"
+                value={username}
+                placeholderTextColor="#A1A1AA"
+                onChangeText={setUsername}
+                onEndEditing={async () => {
+                  await checkUsername();
+                }}
+                placeholder="Enter unique username"
+              />
+            </View>
+            
+            <View style={styles.formGroup}>
+              <View style={styles.labelContainer}>
+                <CustomText style={styles.label}>Short Bio</CustomText>
+                <CustomText 
+                  variant="h8" 
+                  fontFamily={FONTS.Medium} 
+                  style={styles.optionalText}>
+                  Optional
+                </CustomText>
+              </View>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={bio}
+                placeholderTextColor="#A1A1AA"
+                onChangeText={setBio}
+                placeholder="Tell us a bit about yourself"
+                multiline={true}
+                numberOfLines={4}
+              />
+            </View>
+          </View>
+
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#FAFAFA" />
+              <CustomText 
+                variant="h8" 
+                fontFamily={FONTS.Medium} 
+                style={styles.loadingText}>
+                {loadingMessage || 'Loading...'}
+              </CustomText>
+            </View>
+          ) : (
+            <TouchableOpacity 
+              style={styles.buttonContainer}
+              onPress={handleSubmit}
+            >
+              <Text style={styles.buttonText}>Create Account</Text>
+            </TouchableOpacity>
           )}
-        </View>
-
-        <TextInput
-          style={styles.input}
-          returnKeyType="next"
-          value={username}
-          placeholderTextColor={Colors.border}
-          onChangeText={setUsername}
-          onEndEditing={async () => {
-            await checkUsername();
-          }}
-          placeholder="Enter Unique username"
-        />
-
-        <CustomText style={styles.label}>Full Name</CustomText>
-        <TextInput
-          style={styles.input}
-          returnKeyType="next"
-          value={fullName}
-          placeholderTextColor={Colors.border}
-          onChangeText={setFullName}
-          placeholder="Enter your full name"
-        />
-        <CustomText style={styles.label}>Short Bio</CustomText>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={bio}
-          placeholderTextColor={Colors.border}
-          onChangeText={setBio}
-          placeholder="Enter your bio"
-          multiline={true}
-          numberOfLines={4}
-        />
-
-        {loading ? (
-          <View style={styles.flexRow}>
-            <ActivityIndicator size="small" color={Colors.text} />
-            <CustomText variant="h8" fontFamily={FONTS.Medium}>
-              {loadingMessage || 'Loading....'}
-            </CustomText>
-          </View>
-        ) : (
-          <GradientButton
-            text="Let's Dive in"
-            iconName="swim"
-            onPress={handleSubmit}
-          />
-        )}
-      </KeyboardAwareScrollView>
-    </CustomSafeAreaView>
+        </KeyboardAwareScrollView>
+      </View>
+    </>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollViewContainer: {
-    paddingBottom: 120,
-    paddingTop: Platform.OS === 'android' ? 30 : 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  label: {
-    alignSelf: 'flex-start',
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  linearGradient: {
-    flex: 1,
-    height: 1,
-  },
-  cameraIcon: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 10,
-    borderRadius: 100,
-    position: 'absolute',
-    right: 10,
-    bottom: 0,
-  },
-  flexRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 30,
-  },
-  imageContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  image: {
-    width: 150,
-    height: 150,
-    borderColor: Colors.white,
-    borderWidth: 2,
-    borderRadius: 200,
-    marginBottom: 10,
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    color: Colors.text,
-    borderRadius: 5,
-    fontFamily: FONTS.Medium,
-    padding: 10,
-    marginVertical: 10,
-    width: '100%',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-});
 
 export default RegisterScreen;

@@ -9,15 +9,17 @@ import {
 import React, {FC} from 'react';
 import CustomText from './CustomText';
 import {FONTS} from '../../constants/Fonts';
+import {useThemeColors} from '../../constants/Colors';
 
 interface SocialButtonHorizontalProps {
   icon: React.ReactNode;
   text: string;
-  textColor: string;
-  backgroundColor: string;
+  textColor?: string;
+  backgroundColor?: string;
   onPress: () => void;
-  borderColor?: string;  // ✅ Added new optional prop
-  borderWidth?: number;  // ✅ Added new optional prop
+  borderColor?: string;  
+  borderWidth?: number;  
+  useThemeColors?: boolean;
 }
 
 const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
@@ -26,11 +28,18 @@ const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
   textColor,
   backgroundColor,
   onPress,
-  borderColor = "transparent", // ✅ Default to no border
-  borderWidth = 0, // ✅ Default to no border
+  borderColor,
+  borderWidth = 0,
+  useThemeColors: useThemeColorsFlag = false,
 }) => {
+  const themeColors = useThemeColors();
+  
+  const finalTextColor = useThemeColorsFlag ? themeColors.text : textColor;
+  const finalBackgroundColor = useThemeColorsFlag ? themeColors.card : backgroundColor;
+  const finalBorderColor = useThemeColorsFlag ? themeColors.border : (borderColor || 'transparent');
+  
   const textStyle: TextStyle = {
-    color: textColor,
+    color: finalTextColor,
   };
 
   return (
@@ -38,9 +47,9 @@ const SocialButtonHorizontal: FC<SocialButtonHorizontalProps> = ({
       style={[
         styles.container,
         {
-          backgroundColor,
-          borderColor, // ✅ Apply borderColor dynamically
-          borderWidth, // ✅ Apply borderWidth dynamically
+          backgroundColor: finalBackgroundColor,
+          borderColor: finalBorderColor,
+          borderWidth,
         },
       ]}
       onPress={onPress}>

@@ -12,7 +12,7 @@ import {fetchReel} from '../../redux/actions/reelAction';
 import CustomText from '../global/CustomText';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
-import {Colors} from '../../constants/Colors';
+import {Colors, useThemeColors} from '../../constants/Colors';
 import {FONTS} from '../../constants/Fonts';
 import {navigate} from '../../utils/NavigationUtil';
 import {screenWidth} from '../../utils/Scaling';
@@ -21,8 +21,8 @@ import {debounce} from 'lodash';
 const ReelListTab: React.FC<{
   user: ProfileUser | undefined | User;
   type: 'post' | 'liked' | 'watched';
-  headerComponent?: React.ReactNode;
-}> = React.memo(({user, type, headerComponent}) => {
+}> = React.memo(({user, type}) => {
+  const colors = useThemeColors();
   const [loading, setLoading] = useState(true);
   const [offsetLoading, setOffsetLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -305,7 +305,7 @@ const ReelListTab: React.FC<{
     if (loading) {
       return (
         <View style={styles.emptyContainer}>
-          <ActivityIndicator color={Colors.white} size="large" />
+          <ActivityIndicator color={colors.text} size="large" />
         </View>
       );
     }
@@ -313,7 +313,7 @@ const ReelListTab: React.FC<{
     if (error) {
       return (
         <View style={styles.emptyContainer}>
-          <Icon name="error-outline" size={RFValue(35)} color={Colors.white} />
+          <Icon name="error-outline" size={RFValue(35)} color={colors.text} />
           <CustomText fontFamily={FONTS.Medium} variant="h6" style={styles.errorText}>
             {error}
           </CustomText>
@@ -323,13 +323,13 @@ const ReelListTab: React.FC<{
     
     return (
       <View style={styles.emptyContainer}>
-        <Icon name="play-circle-outline" size={RFValue(35)} color={Colors.white} />
+        <Icon name="play-circle-outline" size={RFValue(35)} color={colors.text} />
         <CustomText fontFamily={FONTS.Medium} variant="h6">
           No {type} Reels here!
         </CustomText>
       </View>
     );
-  }, [loading, error, type]);
+  }, [loading, error, type, colors]);
 
   const ListFooterComponent = useCallback(() => {
     if (!offsetLoading || loading) {
@@ -337,22 +337,13 @@ const ReelListTab: React.FC<{
     }
     return (
       <View style={styles.loadingFooter}>
-        <ActivityIndicator color={Colors.white} size="small" />
+        <ActivityIndicator color={colors.text} size="small" />
       </View>
     );
-  }, [offsetLoading, loading]);
-
-  // Add this function to handle header rendering
-  const ListHeaderComponentMemo = useCallback(() => {
-    // If a header component is provided, render it
-    if (headerComponent) {
-      return <>{headerComponent}</>;
-    }
-    return null;
-  }, [headerComponent]);
+  }, [offsetLoading, loading, colors]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
         data={memoizedData}
         renderItem={renderItem}
@@ -370,14 +361,13 @@ const ReelListTab: React.FC<{
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[Colors.white]}
-            tintColor={Colors.white}
+            colors={[colors.text]}
+            tintColor={colors.text}
           />
         }
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         contentContainerStyle={styles.flatlistContainer}
-        ListHeaderComponent={ListHeaderComponentMemo}
       />
     </View>
   );
@@ -386,7 +376,6 @@ const ReelListTab: React.FC<{
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.black,
   },
   flatlistContainer: {
     paddingVertical: 20,

@@ -65,7 +65,7 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>Let me use your media library</string>
 	<key>NSCameraUsageDescription</key>

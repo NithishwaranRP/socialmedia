@@ -7,7 +7,7 @@ import {selectUser} from '../../redux/reducers/userSlice';
 import {toggleFollow} from '../../redux/actions/userAction';
 import FastImage from 'react-native-fast-image';
 import {RFValue} from 'react-native-responsive-fontsize';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import {FONTS} from '../../constants/Fonts';
 import { SheetManager } from 'react-native-actions-sheet';
 import { push } from '../../utils/NavigationUtil';
@@ -16,6 +16,7 @@ const UserItem: FC<{
   user: User;
   onPress?: () => void;
 }> = ({user, onPress}) => {
+  const colors = useThemeColors();
   const followingUsers = useAppSelector(selectFollowings);
   const me = useAppSelector(selectUser);
   const dispatch = useAppDispatch();
@@ -32,7 +33,7 @@ const UserItem: FC<{
 
   return (
     <TouchableOpacity
-      style={styles.userContainer}
+      style={[styles.userContainer, {backgroundColor: colors.background}]}
       onPress={() => {
         if (onPress) {
           onPress();
@@ -48,13 +49,13 @@ const UserItem: FC<{
         style={styles.avatar}
       />
       <View style={styles.userInfo}>
-        <CustomText variant="h8" fontFamily={FONTS.Medium}>
+        <CustomText variant="h8" fontFamily={FONTS.Medium} style={[{color: colors.text}]}>
           {user?.name}
         </CustomText>
         <CustomText
           variant="h8"
           fontFamily={FONTS.Medium}
-          style={{color: Colors.lightText}}>
+          style={{color: colors.lightText}}>
           @{user?.username}
         </CustomText>
       </View>
@@ -64,9 +65,9 @@ const UserItem: FC<{
           style={[
             styles.followButton,
             {
-              backgroundColor: isFollowing ? 'transparent' : 'white',
+              backgroundColor: isFollowing ? 'transparent' : colors.card,
               borderWidth: isFollowing ? 1 : 0,
-              borderColor: Colors.text,
+              borderColor: colors.text,
             },
           ]}>
           <CustomText
@@ -75,7 +76,7 @@ const UserItem: FC<{
             style={[
               styles.followButtonText,
               {
-                color: isFollowing ? Colors.text : Colors.border,
+                color: isFollowing ? colors.text : colors.border,
               },
             ]}>
             {isFollowing ? 'Unfollow' : 'Follow'}
@@ -104,17 +105,13 @@ const styles = StyleSheet.create({
   },
   handler: {
     fontSize: RFValue(14),
-    color: Colors.text,
   },
   followButton: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: Colors.white,
     borderRadius: 20,
   },
-  followButtonText: {
-    color: Colors.border,
-  },
+  followButtonText: {},
 });
 
 export default UserItem;

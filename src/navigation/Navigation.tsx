@@ -1,7 +1,10 @@
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import MainNavigator from './MainNavigator';
 import {navigationRef} from '../utils/NavigationUtil';
+import {useSelector} from 'react-redux';
+import {RootState} from '../redux/store';
+import {useThemeColors} from '../constants/Colors';
 
 const config = {
   screens: {
@@ -19,8 +22,24 @@ const linking = {
 };
 
 const Navigation: React.FC = () => {
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
+  const colors = useThemeColors();
+  
+  // Custom theme based on current mode
+  const customTheme = {
+    dark: isDarkMode,
+    colors: {
+      primary: colors.theme,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.like,
+    },
+  };
+
   return (
-    <NavigationContainer linking={linking} ref={navigationRef}>
+    <NavigationContainer theme={customTheme} linking={linking} ref={navigationRef}>
       <MainNavigator />
     </NavigationContainer>
   );

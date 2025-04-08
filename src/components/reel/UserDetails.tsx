@@ -3,7 +3,7 @@ import {View, TouchableOpacity, StyleSheet} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import CustomText from '../../components/global/CustomText';
 import {FONTS} from '../../constants/Fonts';
-import {Colors} from '../../constants/Colors';
+import {useThemeColors} from '../../constants/Colors';
 import {push} from '../../utils/NavigationUtil';
 import {selectUser} from '../../redux/reducers/userSlice';
 import {selectFollowings} from '../../redux/reducers/followingSlice';
@@ -15,6 +15,7 @@ interface UserDetailsProps {
 }
 
 const UserDetails: React.FC<UserDetailsProps> = React.memo(({user}) => {
+  const colors = useThemeColors();
   const loggedInUser = useAppSelector(selectUser);
   const followingUsers = useAppSelector(selectFollowings);
   const dispatch = useAppDispatch();
@@ -55,16 +56,16 @@ const UserDetails: React.FC<UserDetailsProps> = React.memo(({user}) => {
             style={[
               styles.follow,
               {
-                backgroundColor: isFollowing ? 'transparent' : 'white',
+                backgroundColor: isFollowing ? 'transparent' : colors.card,
                 borderWidth: isFollowing ? 1 : 0,
-                borderColor: isFollowing ? Colors.disabled : 'white',
+                borderColor: isFollowing ? colors.border : colors.card,
               },
             ]}
             onPress={handleFollow}>
             <CustomText
               variant="h9"
               fontFamily={FONTS.Medium}
-              style={{color: isFollowing ? 'white' : 'black'}}>
+              style={{color: isFollowing ? colors.text : colors.text}}>
               {isFollowing ? 'Unfollow' : 'Follow'}
             </CustomText>
           </TouchableOpacity>
@@ -81,11 +82,8 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   follow: {
-    borderWidth: 1,
-    borderColor: Colors.text,
     padding: 5,
     paddingHorizontal: 10,
-    backgroundColor: 'white',
     borderRadius: 50,
   },
   flexRow: {

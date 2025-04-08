@@ -1,7 +1,6 @@
 import {View, Text, StyleSheet, Animated, Alert, Linking} from 'react-native';
 import React, {FC, useEffect, useState} from 'react';
-import {Colors} from '../../constants/Colors';
-import Logo from '../../assets/icons/logo_recaps.png';
+import {useThemeColors} from '../../constants/Colors';
 import CustomText from '../../components/global/CustomText';
 import {FONTS} from '../../constants/Fonts';
 import {token_storage} from '../../redux/storage';
@@ -14,12 +13,16 @@ import {extractTypeAndId} from '../../utils/dateUtils';
 import {getReelById} from '../../redux/actions/reelAction';
 import { Platform } from 'react-native';
 import { StatusBar } from 'react-native';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../redux/store';
 
 interface DecodedToken {
   exp: number;
 }
 
 const SplashScreen: FC = () => {
+  const colors = useThemeColors();
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   const [isStop, setIsStop] = useState(false);
   const scale = new Animated.Value(1);
   const dispatch = useAppDispatch();
@@ -132,11 +135,18 @@ const SplashScreen: FC = () => {
   }, [isStop]);
 
   return (
-    <View style={styles.container}>
-    <StatusBar barStyle="light-content" backgroundColor="black" translucent={true} />
+    <View style={[styles.container, {backgroundColor: colors.background}]}>
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor={colors.background} 
+        translucent={true} 
+      />
       <View style={styles.imageContainer}>
         <Animated.Image
-          source={Logo}
+          source={isDarkMode ? 
+            require('../../assets/icons/logo_recaps.png'):
+            require('../../assets/images/recaps_logo_light.png') 
+          }
           style={{
             width: '60%',
             height: '10%',
@@ -152,9 +162,7 @@ const SplashScreen: FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.black,
     height: Platform.OS === 'ios' ? 0 : StatusBar.currentHeight,
-    
   },
   imageContainer: {
     flex: 1,

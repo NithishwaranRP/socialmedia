@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState,  useCallback, memo  } from 'react';
+import React, { useEffect, useRef, useState,  useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,9 @@ import {
   NativeScrollEvent,
   InteractionManager,
   findNodeHandle,
+  AppState,
+  AppStateStatus,
+  Platform,
 } from 'react-native';
 
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,8 +32,10 @@ import { fetchUserByUsername } from '../../redux/actions/userAction';
 import { navigate } from '../../utils/NavigationUtil';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import Video from 'react-native-video';
-import { debounce } from 'lodash';
-import { useFocusEffect } from '@react-navigation/native';
+import {Colors, useThemeColors} from '../../constants/Colors';
+import { RootState } from '../../redux/store';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import convertToProxyURL from 'react-native-video-cache';
 import AnimatedCaption from './AnimatedCaption';
@@ -46,6 +51,17 @@ interface GradientTextProps {
 
 const GlobalFeed = () => {
   const dispatch = useAppDispatch();
+  const navigation = useNavigation();
+  const colors = useThemeColors(); // Get dynamic theme colors
+  const isDarkMode = useAppSelector((state: RootState) => state.theme.isDarkMode);
+  
+  // Log the theme state to debug
+  useEffect(() => {
+    console.log('Current theme mode:', isDarkMode ? 'Dark Mode' : 'Light Mode');
+    console.log('Current background color:', colors.background);
+    console.log('Current text color:', colors.text);
+  }, [isDarkMode, colors]);
+  
   const [allData, setAllData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
@@ -70,10 +86,24 @@ const GlobalFeed = () => {
   const { user } = useAppSelector(state => state.user);
   const breakingNewsRef = useRef<View>(null);
   const mainScrollViewRef = useRef<ScrollView>(null);
+  const [isScreenActive, setIsScreenActive] = useState(true);
+  const appState = useRef(AppState.currentState);
+
+  // Add a state for force re-rendering
+  const [forceRender, setForceRender] = useState(false);
+
+  // Add a state to track if category is being scrolled
+  const [isCategoryScrolling, setIsCategoryScrolling] = useState(false);
  
-  const GradientText = ({ text, style }: GradientTextProps) => {
+  // Isolate scroll behavior by tracking different positions separately
+  const categoryScrollPosition = useRef(0); // Only for category ScrollView
+  const mainScrollPosition = useRef(0); // For main ScrollView
+
+  // Memoize the GradientText component to prevent unnecessary re-renders
+  const GradientText = memo(({ text, style }: GradientTextProps) => {
     // Animation value for the flowing gradient effect
     const animValue = useRef(new Animated.Value(0)).current;
+    const colors = useThemeColors(); // Get current theme colors
     
     // Start the animation when component mounts
     useEffect(() => {
@@ -118,7 +148,7 @@ const GlobalFeed = () => {
                 {
                   color: modAnim.interpolate({
                     inputRange: [0, 0.5, 1],
-                    outputRange: ['#555555', '#ffffff', '#555555'],
+                    outputRange: [colors.lightText, colors.text, colors.lightText],
                   }),
                 },
               ]}
@@ -129,7 +159,7 @@ const GlobalFeed = () => {
         })}
       </View>
     );
-  };
+  });
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -213,16 +243,87 @@ const GlobalFeed = () => {
     calculateUnreadCounts();
   }, [allData]);
 
+  // Update hashtag counts whenever endless hashtags are updated
+  useEffect(() => {
+    if (endlessHashtags.length > 0 && hashtagCounts.size > 0) {
+      // Make sure all endlessHashtags have counts by copying from the original hashtags
+      const updatedCounts = new Map(hashtagCounts);
+      
+      endlessHashtags.forEach(hashtag => {
+        if (!updatedCounts.has(hashtag) && hashtagCounts.has(hashtag)) {
+          updatedCounts.set(hashtag, hashtagCounts.get(hashtag) || 0);
+        }
+      });
+      
+      setHashtagCounts(updatedCounts);
+    }
+  }, [endlessHashtags]);
+
   useFocusEffect(
     React.useCallback(() => {
+      // Screen is now focused/active
+      setIsScreenActive(true);
+      console.log('Screen is now active');
+      
       // Play the first reel when the screen is focused
       setCurrentVideoIndex(0);
+
+      // Resume auto-scrolling
+      startAutoScroll();
+      
       return () => {
+        // Screen is now unfocused/inactive
+        setIsScreenActive(false);
+        console.log('Screen is now inactive');
+        
         // Pause the video when the screen loses focus
         setCurrentVideoIndex(-1);
+        
+        // Stop auto-scrolling
+        stopAutoScroll();
       };
     }, [])
   );
+
+  // Also listen for app state changes (foreground/background)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Handle app state changes (active, background, inactive)
+  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+    if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      // App has come to the foreground
+      setIsScreenActive(true);
+      console.log('App is now active');
+      
+      // Only start things if our screen is currently focused
+      const isFocused = navigation?.isFocused?.();
+      if (isFocused) {
+        // Resume video playback starting from the first one
+        setCurrentVideoIndex(0);
+        
+        // Resume auto-scrolling
+        startAutoScroll();
+      }
+    } else if (nextAppState.match(/inactive|background/)) {
+      // App has gone to the background
+      setIsScreenActive(false);
+      console.log('App is now inactive');
+      
+      // Pause video playback
+      setCurrentVideoIndex(-1);
+      
+      // Stop auto-scrolling
+      stopAutoScroll();
+    }
+    
+    appState.current = nextAppState;
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -403,7 +504,7 @@ const GlobalFeed = () => {
     });
   }, [allData, allHashtags]);
 
-  const handleRenderItemPress = useCallback(async (item: any, index: number, idx?:any) => {
+  const handleRenderItemPress = useCallback(async (item: any, index: number, idx?: React.Key | null | undefined) => {
     const copyArray = Array.from(allData);
 
     // Find the hashtag of the selected video
@@ -569,6 +670,7 @@ const GlobalFeed = () => {
   const handleScrollForVisibility = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     handleScroll(event);
     checkBreakingNewsVisibility();
+    // Don't update scroll position reference for the categories when scrolling the main content
   }, [checkBreakingNewsVisibility]);
 
   // Run visibility check when the component mounts and on layout changes
@@ -578,7 +680,9 @@ const GlobalFeed = () => {
     return () => clearTimeout(timer);
   }, [checkBreakingNewsVisibility]);
 
-  const renderBreakingNewsItem = ({ item, index }: { item: any; index: number }) => {
+
+  // Optimize renderBreakingNewsItem to reduce rendering work
+  const renderBreakingNewsItem = useCallback(({ item, index }: { item: any; index: number }) => {
     // Use the first uploaded video for this tag
     const currentHashtag = allHashtags[index];
     const videoData = hashedVideos.get(currentHashtag);
@@ -589,14 +693,16 @@ const GlobalFeed = () => {
     const imageSource = thumbUri || 'https://via.placeholder.com/150';
     const isActive = currentVideoIndex === index; 
     const progress = videoProgress.get(index) || 0;
-    const preload = Math.abs(currentVideoIndex - index) <= 3;
+    const preload = Math.abs(currentVideoIndex - index) <= 2; // Reduce preload range
     
     // Cache the video URI for better performance
     const cachedVideoUri = convertToProxyURL(videoUri);
     const shouldRenderVideo = isActive || preload;
 
     // Modified code to use the isBreakingNewsVisible state for muting
+    // Also pause if screen is not active
     const shouldMute = !isBreakingNewsVisible || isMuted;
+    const shouldPause = !isScreenActive || !isActive;
 
     return (
       <TouchableOpacity 
@@ -610,21 +716,21 @@ const GlobalFeed = () => {
             posterResizeMode="cover"
             source={{ uri: cachedVideoUri }}
             style={styles.breakingNewsVideo}
-            paused={!isActive}
+            paused={shouldPause}
             onEnd={handleVideoEnd}
-            onLoad={() => {
-              console.log(`Video ${index} loaded successfully`);
-            }}
-            onLoadStart={() => {
-              console.log(`Video ${index} started loading`);
-            }}
             onProgress={({ currentTime, seekableDuration }) => {
-              const progressPercentage = currentTime / seekableDuration;
-              setVideoProgress(prev => new Map(prev).set(index, progressPercentage));
+              if (isActive && isScreenActive && seekableDuration > 0) {
+                const progressPercentage = currentTime / seekableDuration;
+                setVideoProgress(prev => {
+                  const newMap = new Map(prev);
+                  newMap.set(index, progressPercentage);
+                  return newMap;
+                });
+              }
             }}
             resizeMode="cover" 
-            minLoadRetryCount={5}
-            maxBitRate={2000000}
+            minLoadRetryCount={3}
+            maxBitRate={1500000}
             shutterColor="transparent"
             playWhenInactive={false}
             playInBackground={false}
@@ -635,7 +741,7 @@ const GlobalFeed = () => {
             volume={shouldMute ? 0 : 1}
             bufferConfig={{
               minBufferMs: 15000,
-              maxBufferMs: 50000,
+              maxBufferMs: 30000,
               bufferForPlaybackMs: 2500,
               bufferForPlaybackAfterRebufferMs: 5000,
             }}
@@ -655,11 +761,6 @@ const GlobalFeed = () => {
           <Text style={styles.loadingText}>Loading...</Text>
         </View>}
         
-        {/* <AnimatedCaption 
-          caption={videoItem?.caption || ''} 
-          active={isActive} 
-        /> */}
-        
         <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
         <View style={styles.newsContent}>
           <GradientText 
@@ -672,7 +773,48 @@ const GlobalFeed = () => {
         </TouchableOpacity>
       </TouchableOpacity>
     );
+  }, [currentVideoIndex, allHashtags, hashedVideos, videoProgress, isBreakingNewsVisible, isMuted, isScreenActive, handleNewsPress, handleVideoEnd]);
+
+  // Memoize the news item renderer with React.memo
+  const MemoizedNewsItem = memo(({ item, index, onPress }: {
+    item: any;
+    index: number;
+    onPress: (item: any, index: number) => void;
+  }) => {
+    // Component implementation that renders a news item
+    return (
+      <TouchableOpacity 
+        style={styles.newsCard} 
+        onPress={() => onPress(item, index)}
+      >
+        {/* Simplified inner content for performance */}
+      </TouchableOpacity>
+    );
+  });
+
+  // Set optimized FlatList configurations to improve performance
+  const optimizedFlatListProps = {
+    initialNumToRender: 2,         // Start with fewer items
+    maxToRenderPerBatch: 2,        // Render fewer items per batch
+    windowSize: 3,                 // Keep fewer items in memory
+    updateCellsBatchingPeriod: 100, // Less frequent updates
+    removeClippedSubviews: true,   // Remove offscreen views
+    keyExtractor: (item: any, index: number) => `item-${index}`,
   };
+
+  // Group thumbnails by hashtag - memoized for performance
+  const groupedThumbnails = useMemo(() => {
+    return allData.reduce((acc, item) => {
+      const hashtags = (item.caption || "").split(" ").filter((tag: string) => tag.startsWith("#"));
+      hashtags.forEach((hashtag: string | number) => {
+        if (!acc[hashtag]) {
+          acc[hashtag] = [];
+        }
+        acc[hashtag].push(item.thumbUri);
+      });
+      return acc;
+    }, {} as { [key: string]: string[] });
+  }, [allData]);
 
   const itemWidth = Dimensions.get('window').width; // or your specific item width
 const layoutWidth = Dimensions.get('window').width; // or your FlatList container width
@@ -700,30 +842,32 @@ const handleCategoryChange = (index: any) => {
   // Update the currentThumbnailUri if necessary
   setCurrentThumbnailUri(newThumbnailUri);
   handleScrollToBreakingNews(index); 
+  
   // Update active category index
   setActiveCategoryIndex(index);
   
   // Change the video index to match the selected category
   setCurrentVideoIndex(index);
-  const simulatedEvent = {
-    nativeEvent: {
-      contentOffset: {
-        x: index * itemWidth, // Calculate the x offset based on the index
-      },
-      layoutMeasurement: {
-        width: layoutWidth, // Width of the FlatList viewport
-      },
-    },
-  };
+  
+  // Update category scroll position but don't scroll the main content
+  const viewSize = 100; // approximate width of category item
+  categoryScrollPosition.current = index * viewSize;
+  
+  // Only scroll the category view, not affecting other scrolls
+  if (scrollViewRef.current) {
+    scrollViewRef.current.scrollTo({
+      x: categoryScrollPosition.current,
+      animated: true
+    });
+  }
+  
   // Optionally scroll to the first item if needed
   if (index >= 0 && index < Object.keys(groupedThumbnails).length) {
     flatListRef.current?.scrollToIndex({ 
       index,
       animated: true,
-      viewPosition: 0.5 // Adjust to 0.5 to center in the view
+      viewPosition: 0.5
     });
-  } else {
-    console.warn(`scrollToIndex out of range: requested index ${index} is out of 0 to ${Object.keys(groupedThumbnails).length - 1}`);
   }
 };
 
@@ -746,196 +890,281 @@ const handleCategory = (index: number) => {
   }
 };
 
-// Debounce the scroll handler for better performance
-const handleScrollBreakingNews = (event: any) => {
-  // Safely check if event and nativeEvent exist
-  if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
-    return;
-  }
-  
-  const contentOffsetX = event.nativeEvent.contentOffset.x; // Scroll offset
-  const viewSize = event.nativeEvent.layoutMeasurement.width; // View width
-  const visibleIndex = Math.floor(contentOffsetX / viewSize); // Calculate visible index
-
-  if (visibleIndex !== currentlyVisibleBreakingNewsIndex.current) {
-    // Scroll the thumbnail FlatList to the same index
-    setCurrentVideoIndex(visibleIndex);
-    setActiveCategoryIndex(visibleIndex);
-    currentlyVisibleBreakingNewsIndex.current = visibleIndex;
-    preloadVideos(visibleIndex);
-    if (flatListRef.current) {
-      flatListRef.current.scrollToIndex({
-        index: visibleIndex,
-        animated: true,
-        viewPosition: 0.5, // Center the item in view
-      });
-    }
-  }
-};
-
-const onMomentumScrollEnd = (event: any) => {
-  // Safely check if event and nativeEvent exist
-  if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
-    return;
-  }
-  
-  const contentOffsetX = event.nativeEvent.contentOffset.x; // Scroll offset
-  const viewSize = event.nativeEvent.layoutMeasurement.width; // View width
-  const visibleIndex = Math.floor(contentOffsetX / viewSize); // Calculate visible index
-
-  // Ensure visibleIndex is within bounds of groupedThumbnails
-  if (visibleIndex >= 0 && visibleIndex < Object.keys(groupedThumbnails).length) {
-      setCurrentVideoIndex(visibleIndex); // Update current video index
-      setActiveCategoryIndex(visibleIndex); // Update active category index
-      
-      // Scroll breaking news FlatList to the same index, ensuring it's in range
-      if (flatListRefBreakingNews.current) {
-          // Check if the current visible index corresponds to a valid breaking news item
-          if (visibleIndex < hashedVideos.size) {
-              flatListRefBreakingNews.current.scrollToIndex({
-                  index: visibleIndex,
-                  animated: true,
-                  viewPosition: 0.5 // Center the item in view
-              });
-          } else {
-              console.warn(`Requested index ${visibleIndex} is out of bounds for breaking news`);
-          }
-      }
-  } else {
-      console.warn(`Requested visible index ${visibleIndex} out of bounds for groupedThumbnails`);
-  }
-};
-
 const handleScroll = (event: any) => {
   // Safely check if event and nativeEvent exist
   if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
     return;
   }
   
-  // Update scrollPosition based on the scroll event
-  const contentOffsetX = event.nativeEvent.contentOffset.x; 
-  scrollPosition.current = contentOffsetX; // This keeps track of the latest scroll position
+  // No longer updating scrollPosition here - it will be updated in specific handlers
 };
+
+const handleCategoryScroll = (event: any) => {
+  if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
+    return;
+  }
   
+  // Only update the categoryScrollPosition
+  categoryScrollPosition.current = event.nativeEvent.contentOffset.x;
+};
+
+// Exclusive handler for main content scrolling
+const handleMainScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
+    return;
+  }
+  
+  // Only update the mainScrollPosition
+  mainScrollPosition.current = event.nativeEvent.contentOffset.y;
+  
+  // Check breaking news visibility
+  checkBreakingNewsVisibility();
+};
+
+const handleTouchStart = () => {
+  // Set flag to indicate category is being scrolled
+  setIsCategoryScrolling(true);
+  
+  // Clear any existing resume timer
+  if (autoScrollResumeTimerRef.current) {
+    clearTimeout(autoScrollResumeTimerRef.current);
+    autoScrollResumeTimerRef.current = null;
+  }
+  
+  // Stop auto scroll when the user touches
+  stopAutoScroll();
+};
+
+const handleTouchEnd = () => {
+  // Set flag to indicate category is no longer being scrolled
+  setIsCategoryScrolling(false);
+  
+  // Clear any existing resume timer first
+  if (autoScrollResumeTimerRef.current) {
+    clearTimeout(autoScrollResumeTimerRef.current);
+  }
+  
+  // Set a new timer to resume auto-scrolling after 2 seconds
+  autoScrollResumeTimerRef.current = setTimeout(() => {
+    startAutoScroll();
+    autoScrollResumeTimerRef.current = null;
+  }, 2000);
+};
+
+const startAutoScroll = () => {
+  // Don't start if screen is not active or already scrolling
+  if (!isScreenActive || autoScrollIntervalRef.current) return;
+
+  // Always set the scroll direction to forward (left to right)
+  scrollDirection.current = 1;
+  
+  // Start from the current category position
+  console.log('Starting auto-scroll from position:', categoryScrollPosition.current);
+
+  autoScrollIntervalRef.current = setInterval(() => {
+    // If screen becomes inactive during scrolling, stop it
+    if (!isScreenActive) {
+      stopAutoScroll();
+      return;
+    }
+    
+    // Move with smaller increments for smoother scrolling (1-2 pixels per frame)
+    categoryScrollPosition.current += 1.5 * scrollDirection.current;
+    
+    const hashtags = endlessHashtags.length > 0 ? endlessHashtags : allHashtags;
+    const viewSize = 100;
+    const scrollableWidth = hashtags.length * viewSize;
+
+    // If we're approaching the end, load more hashtags
+    if (categoryScrollPosition.current + viewSize >= scrollableWidth - 250) {
+      loadMoreHashtags(); // Load more hashtags
+    }
+
+    // Only update scroll if the ScrollView reference exists and auto-scroll is active
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ 
+        x: categoryScrollPosition.current, 
+        animated: false
+      });
+    }
+  }, 16);
+};
+
+const stopAutoScroll = () => {
+  if (autoScrollIntervalRef.current) {
+    clearInterval(autoScrollIntervalRef.current);
+    autoScrollIntervalRef.current = null;
+  }
+};
+
+// Update the onScrollBreakingNews handler to avoid affecting category scroll
+const handleScrollBreakingNews = (event: any) => {
+  // Safely check if event and nativeEvent exist
+  if (!event || !event.nativeEvent || !event.nativeEvent.contentOffset) {
+    return;
+  }
+  
+  const contentOffsetX = event.nativeEvent.contentOffset.x;
+  const viewSize = event.nativeEvent.layoutMeasurement.width;
+  const visibleIndex = Math.floor(contentOffsetX / viewSize);
+
+  if (visibleIndex !== currentlyVisibleBreakingNewsIndex.current) {
+    // Update video index and active category index
+    setCurrentVideoIndex(visibleIndex);
+    setActiveCategoryIndex(visibleIndex);
+    currentlyVisibleBreakingNewsIndex.current = visibleIndex;
+    preloadVideos(visibleIndex);
+    
+    // Scroll thumbnails without affecting category scroll position
+    if (flatListRef.current) {
+      flatListRef.current.scrollToIndex({
+        index: visibleIndex,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    }
+    
+    // Don't update categoryScrollPosition here
+    // Don't update scrollViewRef here
+  }
+};
+
+// Update handleScrollEnd to not affect category scroll position
+const handleScrollEnd = (event: { nativeEvent: { contentOffset: { x: any; }; layoutMeasurement: { width: any; }; contentSize: { width: any; }; }; }) => {
+  const contentOffsetX = event.nativeEvent.contentOffset.x;
+  const viewSize = event.nativeEvent.layoutMeasurement.width;
+  const scrollableWidth = event.nativeEvent.contentSize.width;
+
+  // Check if the user has scrolled to the end (within a small threshold)
+  if (contentOffsetX + viewSize >= scrollableWidth - 50) {
+    loadMoreHashtags(); // Load more hashtags
+  }
+  
+  // Only update categoryScrollPosition if this is a category scroll event
+  if (isCategoryScrolling) {
+    categoryScrollPosition.current = contentOffsetX;
+  }
+};
+
 const currentHashtag = endlessHashtags || allHashtags;
 
-
-
-  const renderNewsItem = ({ item, index }: { item: any; index: number }) => {
-  const isActive = activeCategoryIndex === index; // Determine if the current item is active
-  const currentHashtag = endlessHashtags[index] || allHashtags[index];
-  const thumbnails = groupedThumbnails[currentHashtag] || [];
-  // Use the last thumbnail if available
-  const lastThumbnailUri = thumbnails.length > 0 ? thumbnails[thumbnails.length - 1] : 'https://via.placeholder.com/150';
-
-  const cardStyle = thumbnails.length > 1 ? styles.multiThumbnailCard : styles.singleThumbnailCard;
-
+// Update the renderNewsItem function to use the memoized component
+const renderNewsItem = useCallback(({ item, index }: { item: any; index: number }) => {
   return (
-    <View style={[styles.newsCard, cardStyle]}>
-      {thumbnails.length > 1 ? (
-        <View style={styles.gridContainer}>
-          {thumbnails.map((thumb: any, idx: React.Key | null | undefined) => (
-            <TouchableOpacity 
-            key={idx} 
-            onPress={() => handleRenderItemPress(item, index, idx)} // Navigate to news detail
-            style={styles.thumbnailWrapper1} 
-          >
-
-           <Image
-              // key={idx} 
-              source={{ uri: thumb }}
-              style={styles.gridImage}
-            />
-              </TouchableOpacity>
-          ))}
-        </View>
-      ) : (
-        <TouchableOpacity onPress={() => handleNewsPress(item, index)}>
-          <Image
-            source={{ uri: lastThumbnailUri || 'https://via.placeholder.com/150' }}
-            style={styles.newsImage}
-          />
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
-        </TouchableOpacity>
-      )}
-    </View>
+    <NewsItem
+      item={item}
+      index={index}
+      activeCategoryIndex={activeCategoryIndex}
+      endlessHashtags={endlessHashtags}
+      allHashtags={allHashtags}
+      groupedThumbnails={groupedThumbnails}
+      onItemPress={handleNewsPress}
+      onThumbnailPress={handleRenderItemPress}
+    />
   );
-};
+}, [activeCategoryIndex, endlessHashtags, allHashtags, groupedThumbnails, handleNewsPress, handleRenderItemPress]);
         
+        // Add a thumbnail cache to store all thumbnails and their URIs
+        const [thumbnailCache, setThumbnailCache] = useState<Map<string, string>>(new Map());
+
+        // After setting allData, update this effect to cache all thumbnails
+        useEffect(() => {
+          if (allData.length > 0) {
+            // Create a new thumbnail cache
+            const newCache = new Map<string, string>();
+            
+            // Extract all unique thumbnails and their hashtags
+            allData.forEach((item) => {
+              const hashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
+              
+              if (item.thumbUri) {
+                // Store thumbnail for each associated hashtag
+                hashtags.forEach((hashtag: string) => {
+                  newCache.set(hashtag, item.thumbUri);
+                });
+              }
+            });
+            
+            // Update the thumbnail cache
+            setThumbnailCache(newCache);
+            console.log('Thumbnail cache updated with', newCache.size, 'entries');
+          }
+        }, [allData]);
+
+        // Update the loadMoreHashtags function to maintain thumbnail cache
         const loadMoreHashtags = () => {
-          setEndlessHashtags(prev => [...prev, ...allHashtags]);
+          // Create a new array of hashtags to add
+          const newHashtagsToAdd = [...allHashtags]; 
+          
+          // Update the endless hashtags array
+          const updatedEndlessHashtags = [...endlessHashtags, ...newHashtagsToAdd];
+          
+          // Create a new Map for hashtag counts that includes all hashtags
+          const updatedCounts = new Map(hashtagCounts);
+          
+          // Also update the thumbnail cache for the new hashtags
+          const updatedCache = new Map(thumbnailCache);
+          
+          // Make sure all hashtags in updatedEndlessHashtags have counts and thumbnails
+          newHashtagsToAdd.forEach(hashtag => {
+            // If this hashtag doesn't have a count yet, add it from the original counts
+            if (!updatedCounts.has(hashtag)) {
+              // Find the original count for this hashtag, or default to 0
+              const count = hashtagCounts.get(hashtag) || 0;
+              updatedCounts.set(hashtag, count);
+            }
+            
+            // Ensure this hashtag has a thumbnail in the cache
+            if (!updatedCache.has(hashtag)) {
+              // Try to find a thumbnail from groupedThumbnails
+              const thumbs = groupedThumbnails[hashtag] || [];
+              if (thumbs.length > 0) {
+                updatedCache.set(hashtag, thumbs[thumbs.length - 1]);
+              }
+            }
+          });
+          
+          // Update the state with the new hashtags, counts, and thumbnails
+          setHashtagCounts(updatedCounts);
+          setThumbnailCache(updatedCache);
+          setEndlessHashtags(updatedEndlessHashtags);
+          
+          console.log('Added more hashtags, total now:', updatedEndlessHashtags.length);
+          console.log('Updated hashtag counts:', updatedCounts.size);
+          console.log('Updated thumbnail cache:', updatedCache.size);
         };
 
         // Timer reference for auto-scroll resumption
         const autoScrollResumeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-        const startAutoScroll = () => {
-          if (autoScrollIntervalRef.current) return;
-
-          // Always set the scroll direction to forward (left to right)
-          scrollDirection.current = 1;
-
-          autoScrollIntervalRef.current = setInterval(() => {
-            // Always increment the scroll position (no reversing)
-            scrollPosition.current += 6 * scrollDirection.current;
+        // Add this effect to ensure hashtag counts are refreshed during scrolling
+        useEffect(() => {
+          // If we have endless hashtags loaded, make sure all of them have counts
+          if (endlessHashtags.length > 0) {
+            const updatedCounts = new Map(hashtagCounts);
             
-            const hashtags = endlessHashtags.length > 0 ? endlessHashtags : allHashtags;
-            const viewSize = 100;
-            const scrollableWidth = hashtags.length * viewSize;
-
-            // If we're approaching the end, load more hashtags
-            if (scrollPosition.current + viewSize >= scrollableWidth - 250) {
-              loadMoreHashtags(); // Load more hashtags
-            }
+            // Go through all current endless hashtags
+            endlessHashtags.forEach(hashtag => {
+              // If this hashtag doesn't have a count, add it
+              if (!updatedCounts.has(hashtag)) {
+                // Find the hashtag in the original hashtags and use its count
+                const originalIndex = allHashtags.indexOf(hashtag);
+                if (originalIndex !== -1) {
+                  const count = hashtagCounts.get(allHashtags[originalIndex]) || 0;
+                  updatedCounts.set(hashtag, count);
+                } else {
+                  // If not found in original hashtags, default to 0
+                  updatedCounts.set(hashtag, 0);
+                }
+              }
+            });
             
-            // If we've scrolled very far to the right (beyond the current hashtags),
-            // consider resetting to the start for better performance
-            if (scrollPosition.current > scrollableWidth + 500) {
-              // Optional: reset to beginning for very long scrolls
-              // scrollPosition.current = 0;
+            // Only update state if there were changes
+            if (updatedCounts.size !== hashtagCounts.size) {
+              setHashtagCounts(updatedCounts);
             }
-
-            scrollViewRef.current?.scrollTo({ x: scrollPosition.current, animated: true });
-          }, 30); // 30ms interval for fast scrolling
-        };
-
-        const stopAutoScroll = () => {
-          if (autoScrollIntervalRef.current) {
-            clearInterval(autoScrollIntervalRef.current);
-            autoScrollIntervalRef.current = null;
           }
-        };
-
-        // Update the touch handlers to remember the scroll position and continue from there
-        const handleTouchStart = () => {
-          // Clear any existing resume timer
-          if (autoScrollResumeTimerRef.current) {
-            clearTimeout(autoScrollResumeTimerRef.current);
-            autoScrollResumeTimerRef.current = null;
-          }
-          
-          // Stop auto scroll when the user touches
-          stopAutoScroll();
-        };
-
-        const handleTouchEnd = (event: any) => {
-          // Clear any existing resume timer first
-          if (autoScrollResumeTimerRef.current) {
-            clearTimeout(autoScrollResumeTimerRef.current);
-          }
-          
-          // If the event contains contentOffset, update the scrollPosition reference
-          if (event && event.nativeEvent && event.nativeEvent.contentOffset) {
-            // Update the scroll position to continue from where the user stopped
-            scrollPosition.current = event.nativeEvent.contentOffset.x;
-          }
-          
-          // Set a new timer to resume auto-scrolling after 3 seconds
-          autoScrollResumeTimerRef.current = setTimeout(() => {
-            startAutoScroll();
-            autoScrollResumeTimerRef.current = null;
-          }, 3000);
-        };
+        }, [endlessHashtags, scrollPosition.current]);
 
         // Start auto-scrolling on component mount
         useEffect(() => {
@@ -994,28 +1223,6 @@ const currentHashtag = endlessHashtags || allHashtags;
           }
         }, [allData]);
         
-          const handleScrollEnd = (event: { nativeEvent: { contentOffset: { x: any; }; layoutMeasurement: { width: any; }; contentSize: { width: any; }; }; }) => {
-            const contentOffsetX = event.nativeEvent.contentOffset.x; // Scroll offset
-            const viewSize = event.nativeEvent.layoutMeasurement.width; // View width
-            const scrollableWidth = event.nativeEvent.contentSize.width; // Total content width
-          
-            // Check if the user has scrolled to the end (within a small threshold)
-            if (contentOffsetX + viewSize >= scrollableWidth - 50) {
-              loadMoreHashtags(); // Load more hashtags
-            }
-          };
-
-          const groupedThumbnails = allData.reduce((acc, item) => {
-            const hashtags = (item.caption || "").split(" ").filter((tag: string) => tag.startsWith("#"));
-            hashtags.forEach((hashtag: string | number) => {
-              if (!acc[hashtag]) {
-                acc[hashtag] = [];
-              }
-              acc[hashtag].push(item.thumbUri);
-            });
-            return acc;
-          }, {} as { [key: string]: string[] });
-
     // Function to format hashtag text
     const getFormattedHashtagText1 = () => {
       const hashtag = endlessHashtags[activeCategoryIndex] || allHashtags[activeCategoryIndex] || '';
@@ -1046,181 +1253,15 @@ const currentHashtag = endlessHashtags || allHashtags;
       
       return sequentialNumber.toString();
     };
-
-    return (
-      <ScrollView 
-        ref={mainScrollViewRef}
-        style={styles.container} 
-        showsVerticalScrollIndicator={false} 
-        nestedScrollEnabled={true}
-        onScroll={handleScrollForVisibility}
-        scrollEventThrottle={16}
-      >
-        <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
-        <View>
-          <View
-            ref={breakingNewsRef}
-            onLayout={checkBreakingNewsVisibility}
-          >
-            <FlatList
-              ref={flatListRefBreakingNews}
-              horizontal
-              data={[...hashedVideos.values()]}
-              renderItem={renderBreakingNewsItem}
-              keyExtractor={(item, index) => `video-${index}`}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.breakingNewsContainer}
-              pagingEnabled
-              getItemLayout={getItemLayout}
-              initialNumToRender={3}
-              maxToRenderPerBatch={3}
-              windowSize={5}
-              removeClippedSubviews={true}
-              updateCellsBatchingPeriod={50}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={{
-                itemVisiblePercentThreshold: 50,
-              }}
-              onScroll={handleScrollBreakingNews}
-              onEndReachedThreshold={0.5}
-            />
-          </View>
-
-          {/* <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.thumbnailContainer}
-          >
-            {Array.from(hashedVideos.entries()).map(([hashtag, videoData], index) => {
-              const isActive = activeCategoryIndex === index;
-              const progress = videoProgress.get(index) || 0; 
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => handleCategoryChange(index)}
-                  style={[styles.thumbnailWrapper, isActive && styles.activeThumbnail]}
-                >
-                  <Image
-                    source={{ uri: videoData.item?.thumbUri || 'https://via.placeholder.com/50' }} 
-                    style={[styles.thumbnailImage, !isActive && styles.inactiveThumbnail]}
-                  />
-                  {isActive && (
-                    <View style={styles.thumbnailProgressBarContainer}>
-                      <View style={[styles.thumbnailProgressBar, { width: `${progress * 100}%` }]} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView> */}
-
-      <ScrollView
-      ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={(event) => {
-          handleScrollEnd(event);
-          // Also use this event for touch end to capture final position
-          handleTouchEnd(event);
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={(event) => handleTouchEnd(event)}
-        onScroll={handleScroll}
-      >
-        <View style={styles.categoryWrapper}>
-          <View style={styles.firstRow}>
-          {(endlessHashtags.length > 0 ? endlessHashtags : allHashtags).map((hashtag, index) => {
-              const selectedHashtag = hashtag;
-              // Find the original index in the `allHashtags`
-              const actualIndex = allHashtags.indexOf(selectedHashtag);
-              const isActive = activeCategoryIndex === actualIndex; 
-              // Get the unread count for the hashtag
-              const unreadCount = hashtagCounts.get(hashtag) || 0;
-              // Format the hashtag for display
-              const displayHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
-              // Display number (index + 1 to start from 1 instead of 0)
-              const displayNumber = getDisplayNumber(hashtag, index, endlessHashtags.length > 0 ? endlessHashtags : allHashtags);
-              // Get the thumbnail for this hashtag - get the last one (most recent)
-              const hashtagThumbnails = groupedThumbnails[hashtag] || [];
-              const thumbnailUri = hashtagThumbnails.length > 0 ? 
-                                   hashtagThumbnails[hashtagThumbnails.length - 1] : 
-                                   'https://via.placeholder.com/150';
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => {
-                    handleCategory(index);
-                  }}
-                  style={[
-                    styles.categoryItem, 
-                    isActive && styles.activeCategory,
-                  ]}
-                >
-                  {/* Number before the thumbnail - with improved numbering logic */}
-                  <Text style={styles.numberDisplay}>
-                    {displayNumber}
-                  </Text>
-                  
-                  {/* Thumbnail image */}
-                  <Image 
-                    source={{ uri: thumbnailUri }}
-                    style={styles.thumbnailImage}
-                    resizeMode="cover"
-                  />
-                  
-                  {/* Thumbnail overlay for better contrast */}
-                  <View style={styles.thumbnailOverlay} />
-                  
-                  {/* Hashtag text container */}
-                  <View style={styles.categoryTextContainer}>
-                    <Text style={[styles.categoryText, isActive && styles.activeCategoryText]}>
-                      {displayHashtag}
-                    </Text>
-                  </View>
-                  
-                  {/* Count badge - always shown, positioned as overlay, moved to the end */}
-                  <View style={styles.badgeContainer}>
-                    <Text style={styles.badgeText}>{unreadCount}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-          
-      </ScrollView>
-   
-    </View>
-    <View style={{flex:1, marginVertical: 10, marginLeft: 10}}>
-      <GradientText 
-        text={getFormattedHashtagText2()}
-        style={{fontWeight: 'bold', fontSize: 16, color: '#fff', textAlign: 'left'}}
-      />
-    </View>
-    <FlatList
-  ref={flatListRef}
-  horizontal
-  data={Object.keys(groupedThumbnails)}
-  renderItem={renderNewsItem}
-  keyExtractor={(item, index) => index.toString()}
-  pagingEnabled
-  refreshing={refreshing}
-  onRefresh={handleRefresh}
-  contentContainerStyle={styles.horizontalContainer}
-  showsHorizontalScrollIndicator={false}
-  onMomentumScrollEnd={onMomentumScrollEnd}
-/>
-  </ScrollView>
-);
-};
-
+    
+    // Move the StyleSheet here to access 'colors'
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+        backgroundColor: colors.background,
+      },
+      mainScrollContainer: {
+        flexGrow: 1,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -1228,10 +1269,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   gridImage: {
-    width: '100%', // Adjust as needed
-    height: 300, // Adjust as needed
+        width: '100%',
+        height: 300,
     borderRadius: 10,
-    // marginBottom: 5,
   },
   horizontalContainer: {
     paddingVertical: 10,  // Space above and below the FlatList
@@ -1245,11 +1285,10 @@ const styles = StyleSheet.create({
   position: 'absolute',
   bottom: 10,
   right: 10,
-  backgroundColor: 'rgba(245, 245, 245, 0.5)',
+        backgroundColor: colors.card,
   borderRadius: 20,
   padding: 8,
 },
-
 muteIcon: {
   width: 15,
   height: 15,
@@ -1260,8 +1299,9 @@ thumbnailContainer: {
     paddingHorizontal: 10,
   },
   thumbnailWrapper1: {
-    width: '45%', // Two items per row with some margin
+        width: '48%', // Two items per row with some margin
     marginBottom: 5,
+        gap: 10,
   },
   thumbnailWrapper: {
     marginRight: 8,
@@ -1276,11 +1316,11 @@ thumbnailContainer: {
   thumbnailImage: {
     width: '100%',
     height: 100, // Slightly taller
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
+        borderRadius: 15,
+        // borderTopRightRadius: 15,
   },
   inactiveThumbnail: {
-    opacity: 0.5, // Reduce opacity for non-active thumbnails
+    opacity: 0.9, // Reduce opacity for non-active thumbnails
   },
   thumbnailProgressBarContainer: {
     position: 'absolute',
@@ -1302,9 +1342,9 @@ thumbnailContainer: {
     overflow: 'hidden',
   },
   breakingNewsVideo: {
-    width: '100%', // Ensures the video covers full width
-    height: '100%', // Adjust height to prevent blank screen
-    backgroundColor: 'black', // Fix black screen issue on some devices
+        width: '100%',
+        height: '100%',
+        backgroundColor: colors.black,
   },
   placeholderImage: {
     width: '100%',
@@ -1373,21 +1413,21 @@ thumbnailContainer: {
     marginTop: 10,
   },
   categoryItem: {
-    backgroundColor: '#151515',
+        backgroundColor: isDarkMode ? 'rgba(22, 38, 64, 0.8)' : 'rgba(233, 217, 191, 0.8)',
     paddingVertical: 0,
     paddingHorizontal: 0,
     borderRadius: 15,
     width: 100,
     height: 100,
     marginRight: 40,
-    marginLeft: 30, // Add left margin for the number
+        marginLeft: 30,
     marginBottom: 15,
     alignItems: 'center',
     justifyContent: 'flex-start',
     position: 'relative',
     overflow: 'visible',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
   },
   categoryTextContainer: {
     width: '100%',
@@ -1395,27 +1435,45 @@ thumbnailContainer: {
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Darker background
+        // backgroundColor: isDarkMode ? 'rgba(2, 11, 23, 0.8)' : 'rgba(255, 255, 255, 0.8)',
   },
   categoryText: {
     fontSize: 15,
-    color: '#ffffff',
+        color: isDarkMode ? colors.lightText : '#555',
     fontWeight: 'bold',
     textAlign: 'center',
   },
   activeCategory: {
-    backgroundColor: '#202020',
-    borderColor: '#4099ff',
-    borderWidth: 1,
+        backgroundColor: isDarkMode ? 'rgba(22, 38, 64, 1)' : 'rgba(233, 217, 191, 1)', 
+        opacity: 1,
+        borderColor: colors.theme,
+        borderWidth: 3,
+        borderRadius: 15,
+
+        // transform: [{ scale: 1.05 }], // Make active category slightly larger
+        // Add shadow for better visibility in both modes
+        // ...Platform.select({
+        //   ios: {
+        //     shadowColor: colors.theme,
+        //     shadowOffset: { width: 0, height: 0 },
+        //     shadowOpacity: 0.8,
+        //     shadowRadius: 8,
+        //   },
+        //   android: {
+        //     elevation: 10,
+        //   },
+        // }),
   },
   activeCategoryText: {
-    color: '#ffffff',
+        color: isDarkMode ? '#ffffff' : '#000000',
+        fontWeight: '900',
+        fontSize: 16, // Slightly larger font for active category
   },
   badgeContainer: {
     position: 'absolute',
     top: -10,
     right: -10,
-    backgroundColor: '#4099ff',
+        backgroundColor: '#a9c2eb',
     borderRadius: 15,
     minWidth: 28,
     height: 28,
@@ -1423,7 +1481,7 @@ thumbnailContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 3000,
-    shadowColor: '#000',
+        // shadowColor: isDarkMode ? '#000' : '#555',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -1431,9 +1489,11 @@ thumbnailContainer: {
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 10,
+        borderWidth: 1,
+        borderColor: isDarkMode ? '#a9c2eb' : '#a9c2eb',
   },
   badgeText: {
-    color: 'white',
+        color: isDarkMode ? '#fff' : '#fff',
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -1543,7 +1603,7 @@ thumbnailContainer: {
   newsTitle1: {
     fontSize: normalizeWidth(22),
     fontWeight: 'bold',
-    color: '#fff',
+        color: colors.text,
     marginBottom: 5,
   },
   metaRow1: {
@@ -1591,7 +1651,7 @@ thumbnailContainer: {
     height: '100%',
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#000',
+        backgroundColor: colors.background,
   },
   loaderContainer: {
     width: '100%',
@@ -1610,7 +1670,7 @@ thumbnailContainer: {
   newsTitle: {
     fontSize: normalizeWidth(8),
     fontWeight: 'bold',
-    color: '#fff',
+        color: colors.text,
     marginBottom: 5,
   },
   metaRow: {
@@ -1682,7 +1742,7 @@ thumbnailContainer: {
     alignItems: 'center',
   },
   loadingText: {
-    color: 'white',
+        color: colors.text,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -1697,22 +1757,333 @@ thumbnailContainer: {
   },
   thumbnailOverlay: {
     position: 'absolute',
+        borderRadius: 15,
+
     top: 0,
     left: 0,
     right: 0,
     height: 130, // Match thumbnail height
-    backgroundColor: 'rgba(0,0,0,0.2)', // Subtle dark overlay
+        backgroundColor: isDarkMode ? 'rgba(2, 11, 23, 0.5)' : 'rgba(255, 255, 255, 0.5)',
     zIndex: 2,
   },
+      activeThumbnailOverlay: {
+        // backgroundColor: 'rgba(169, 194, 235, 0.3)', // Use theme color but with transparency
+      },
   numberDisplay: {
     position: 'absolute',
     left: -30,
     top: 30,
     fontSize: 50,
     fontWeight: 'bold',
-    color: 'rgba(255,255,255,0.7)',
+        color: isDarkMode ? colors.lightText : '#888',
     zIndex: 1,
   },
-});
+      activeNumberDisplay: {
+        color: colors.theme, // Use theme color for active number
+        fontWeight: '900',
+      },
+      categoryScrollWrapper: {
+        height: 160, // Fixed height for the category section
+        marginVertical: 10,
+        backgroundColor: isDarkMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+        borderRadius: 15,
+        marginHorizontal: 5,
+        // Add subtle shadow
+        // ...Platform.select({
+        //   ios: {
+        //     shadowColor: isDarkMode ? '#000' : '#ccc',
+        //     shadowOffset: { width: 0, height: 2 },
+        //     shadowOpacity: 0.2,
+        //     shadowRadius: 4,
+        //   },
+        //   android: {
+        //     elevation: 2,
+        //   },
+        // }),
+      },
+    });
+
+    // Move NewsItem here so it can access styles
+    const NewsItem = memo(({ 
+      item, 
+      index, 
+      activeCategoryIndex, 
+      endlessHashtags, 
+      allHashtags, 
+      groupedThumbnails, 
+      onItemPress,
+      onThumbnailPress
+    }: {
+      item: any;
+      index: number;
+      activeCategoryIndex: number;
+      endlessHashtags: string[];
+      allHashtags: string[];
+      groupedThumbnails: Record<string, string[]>;
+      onItemPress: (item: any, index: number) => void;
+      onThumbnailPress: (item: any, index: number, idx?: React.Key | null | undefined) => void;
+    }) => {
+      const isActive = activeCategoryIndex === index;
+      const currentHashtag = index < endlessHashtags.length 
+        ? endlessHashtags[index] 
+        : allHashtags[index - endlessHashtags.length];
+      const thumbnails = groupedThumbnails[currentHashtag] || [];
+      const lastThumbnailUri = useMemo(() => 
+        thumbnails.length > 0 ? thumbnails[thumbnails.length - 1] : 'https://via.placeholder.com/150'
+      , [thumbnails]);
+
+      const cardStyle = thumbnails.length > 1 ? styles.multiThumbnailCard : styles.singleThumbnailCard;
+
+      // Optimize the thumbnail rendering with useMemo
+      const gridThumbnails = useMemo(() => {
+        if (thumbnails.length <= 1) return null;
+        
+        return thumbnails.map((thumb: string, idx: number) => (
+          <TouchableOpacity 
+            key={`thumb-${idx}`} 
+            onPress={() => onThumbnailPress(item, index, idx)} 
+            style={styles.thumbnailWrapper1} 
+          >
+            <Image
+              source={{ uri: thumb }}
+              style={styles.gridImage}
+            />
+          </TouchableOpacity>
+        ));
+      }, [thumbnails, item, index, onThumbnailPress]);
+
+      return (
+        <View style={[styles.newsCard, cardStyle]}>
+          {thumbnails.length > 1 ? (
+            <View style={styles.gridContainer}>
+              {gridThumbnails}
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => onItemPress(item, index)}>
+              <Image
+                source={{ uri: lastThumbnailUri }}
+                style={styles.newsImage}
+              />
+              <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    });
+
+    // Add this effect to force re-render when theme changes
+    useEffect(() => {
+      // Force re-render when theme changes
+      setForceRender(prev => !prev);
+    }, [isDarkMode]);
+
+    // Add this method near the other useEffect declarations to create a PanResponder
+    const categoryPanResponder = React.useMemo(
+      () =>
+        PanResponder.create({
+          // Prevent category scroll view from capturing vertical scroll gestures
+          onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
+            // Only allow horizontal scrolling in the category section by checking if 
+            // the horizontal movement is greater than the vertical movement
+            return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+          },
+        }),
+      []
+    );
+
+    // Update the onPress handler for categories to prevent rapid multiple presses
+    const handleCategoryPress = useCallback((index: number) => {
+      // Temporarily disable category scrolling to prevent double scroll issues
+      setIsCategoryScrolling(true);
+      
+      // Process the category change
+      handleCategory(index);
+      
+      // Re-enable scrolling after a short delay
+      setTimeout(() => {
+        setIsCategoryScrolling(false);
+      }, 300);
+    }, [handleCategory]);
+
+    return (
+      <ScrollView 
+        ref={mainScrollViewRef}
+        style={styles.container} 
+        showsVerticalScrollIndicator={false} 
+        nestedScrollEnabled={true}
+        onScroll={handleMainScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={styles.mainScrollContainer}
+        scrollEnabled={!isCategoryScrolling} // Disable scrolling when category is being scrolled
+      >
+        <StatusBar 
+          barStyle={isDarkMode ? "light-content" : "dark-content"} 
+          backgroundColor={colors.background} 
+          translucent 
+        />
+        <View>
+          <View
+            ref={breakingNewsRef}
+            onLayout={checkBreakingNewsVisibility}
+          >
+            <FlatList
+              ref={flatListRefBreakingNews}
+              horizontal
+              data={[...hashedVideos.values()]}
+              renderItem={renderBreakingNewsItem}
+              keyExtractor={(item, index) => `video-${index}`}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.breakingNewsContainer}
+              pagingEnabled
+              getItemLayout={getItemLayout}
+              initialNumToRender={2}
+              maxToRenderPerBatch={2}
+              windowSize={3}
+              removeClippedSubviews={true}
+              updateCellsBatchingPeriod={100}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={{
+                itemVisiblePercentThreshold: 50,
+                minimumViewTime: 250,
+              }}
+              onScroll={handleScrollBreakingNews} // Use dedicated breaking news scroll handler
+              onEndReachedThreshold={0.5}
+            />
+          </View>
+
+          {/* ScrollView for hashtags - Completely isolated from other scrolls */}
+          <View 
+            style={styles.categoryScrollWrapper}
+            onStartShouldSetResponder={() => true}
+            onResponderTerminationRequest={() => false}
+          >
+            <ScrollView
+              ref={scrollViewRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContainer}
+              scrollEventThrottle={32}
+              decelerationRate="fast"
+              snapToAlignment="center"
+              onMomentumScrollEnd={handleScrollEnd}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onScroll={handleCategoryScroll} // Use the dedicated category scroll handler
+              {...categoryPanResponder.panHandlers}
+            >
+              <View style={styles.categoryWrapper}>
+                <View style={styles.firstRow}>
+                  {(endlessHashtags.length > 0 ? endlessHashtags : allHashtags).map((hashtag, index) => {
+                    const selectedHashtag = hashtag;
+                    const actualIndex = allHashtags.indexOf(selectedHashtag);
+                    const isActive = activeCategoryIndex === actualIndex;
+                    
+                    // Make sure we get the hashtag count, defaulting to 0 if not available
+                    const unreadCount = hashtagCounts.get(hashtag) || 0;
+                    
+                    const displayHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
+                    const displayNumber = getDisplayNumber(hashtag, index, endlessHashtags.length > 0 ? endlessHashtags : allHashtags);
+                    
+                    // IMPORTANT FIX: Get thumbnail directly from groupedThumbnails first
+                    let thumbnailUri = 'https://via.placeholder.com/150';
+                    
+                    // Always try to get thumbnail from groupedThumbnails regardless of distance from active
+                    const hashtagThumbnails = groupedThumbnails[hashtag] || [];
+                    if (hashtagThumbnails.length > 0) {
+                      thumbnailUri = hashtagThumbnails[hashtagThumbnails.length - 1];
+                    }
+                    
+                    // If still no thumbnail, search through all data to find one for this hashtag
+                    if (thumbnailUri === 'https://via.placeholder.com/150') {
+                      // Find first item with this hashtag
+                      const matchingItem = allData.find(item => {
+                        const itemHashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
+                        return itemHashtags.includes(hashtag) && item.thumbUri;
+                      });
+                      
+                      if (matchingItem && matchingItem.thumbUri) {
+                        thumbnailUri = matchingItem.thumbUri;
+                      }
+                    }
+
+                    return (
+                      <TouchableOpacity
+                        key={`hashtag-${hashtag}-${index}`}
+                        onPress={() => handleCategoryPress(index)}
+                        style={[
+                          styles.categoryItem,
+                          isActive && styles.activeCategory,
+                          // Math.abs(index - activeCategoryIndex) > 10 ? {opacity: 0.5} : {opacity: 1}
+                        ]}
+                      >
+                        <Text style={[
+                          styles.numberDisplay,
+                          isActive && styles.activeNumberDisplay
+                        ]}>
+                          {displayNumber}
+                        </Text>
+
+                        <Image
+                          source={{ uri: thumbnailUri }}
+                          style={styles.thumbnailImage}
+                          resizeMode="cover"
+                          progressiveRenderingEnabled={true}
+                        />
+
+                        <View style={[
+                          styles.thumbnailOverlay,
+                          isActive && styles.activeThumbnailOverlay
+                        ]} />
+
+                        <View style={styles.categoryTextContainer}>
+                          <Text style={[styles.categoryText, isActive && styles.activeCategoryText]}>
+                            {displayHashtag}
+                          </Text>
+                        </View>
+
+                        <View style={styles.badgeContainer}>
+                          <Text style={styles.badgeText}>{unreadCount}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+       
+        </View>
+        <View style={{flex:1, marginVertical: 10, marginLeft: 10}}>
+          <GradientText 
+            text={getFormattedHashtagText2()}
+            style={{fontWeight: 'bold', fontSize: 16, color: colors.text, textAlign: 'left'}}
+          />
+        </View>
+        <FlatList
+          ref={flatListRef}
+          horizontal
+          data={Object.keys(groupedThumbnails)}
+          renderItem={renderNewsItem}
+          keyExtractor={(item, index) => `news-${index}`}
+          pagingEnabled
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          contentContainerStyle={styles.horizontalContainer}
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScrollEnd} 
+          initialNumToRender={2}
+          maxToRenderPerBatch={2}
+          windowSize={3}
+          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={100}
+          getItemLayout={(data, index) => ({
+            length: Dimensions.get('window').width,
+            offset: Dimensions.get('window').width * index,
+            index,
+          })}
+        />
+      </ScrollView>
+    );
+  };
 
 export default GlobalFeed;

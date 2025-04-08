@@ -17,17 +17,16 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useAppSelector} from '../../redux/reduxHook';
 import {selectUser} from '../../redux/reducers/userSlice';
 import { goBack, navigate } from '../../utils/NavigationUtil';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { useThemeColors } from '../../constants/Colors';
 import { FONTS } from '../../constants/Fonts';
 import Toast from 'react-native-toast-message';
-import LinearGradient from 'react-native-linear-gradient'; // Add this line
+import LinearGradient from 'react-native-linear-gradient';
 import RNFS from 'react-native-fs';
-import { FFmpegKit, FFmpegKitConfig  } from 'ffmpeg-kit-react-native';
+import { FFmpegKit } from 'ffmpeg-kit-react-native';
 import convertToProxyURL from 'react-native-video-cache';
 
-const { VideoOverlay } = NativeModules;
-
 const RemixScreen = () => {
+    const colors = useThemeColors();
     const [isRecording, setIsRecording] = useState(false);
     const [hasPermission, setHasPermission] = useState(false);
     const [device, setDevice] = useState(null);
@@ -59,6 +58,15 @@ const RemixScreen = () => {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [thumbnailPath, setThumbnailPath] = useState(null);
+
+    // Define gradient colors as string values
+    const gradientColors = useMemo(() => {
+        return ['#000000', colors.isDark ? '#434343' : '#6B6B6B'];
+    }, [colors.isDark]);
+    
+    const loaderGradientColors = useMemo(() => {
+        return ['#000000', '#434343', '#000000'];
+    }, []);
 
     const checkPermissions = async () => {
         const cameraPermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.CAMERA : PERMISSIONS.ANDROID.CAMERA;
@@ -129,23 +137,52 @@ const RemixScreen = () => {
                 await RNFS.unlink(outputFilePath);
                 console.log('Existing file deleted:', outputFilePath);
             }
-           
-            const muteFlag = isMuted ? '-an' : ''; // Add this line
-            // const command = `-i ${reelUri.videoUri} ${muteFlag} -i ${recordedVideo} -filter_complex "[1:v]scale=iw*0.2:ih*0.2[overlayed];[0:v][overlayed]overlay=W-w-5:H-h-5" -c:a aac -b:a 192k ${outputFilePath}`;
-            // const command = `-i ${reelUri.videoUri} ${muteFlag} -i ${recordedVideo} -filter_complex "[1:v]scale=iw*0.2:ih*0.2[overlayed];[0:v][overlayed]overlay=W-w-5:H-h-5" -c:v libx264 -c:a aac -b:a 192k ${outputFilePath}`;
-            // const command = `-i ${reelUri.videoUri} -i ${recordedVideo} -filter_complex "[1:v]scale=iw*0.2:ih*0.2[overlayed];[0:v][overlayed]overlay=W-w-5:H-h-5" -an ${outputFilePath}`;
-           // Determine audio mapping based on mute state
-         // Prepare the audio mapping based on the mute state
-         const audioMapping = isMuted 
-        //  ? '-i an -map 1:a' // Only record audio from the recorded video
-         ? '-map 1:a -map 1:a' // Only record audio from the recorded video
-         : '-map 0:a -map 0:a'; // Include audio from both background and recorded videos
-     console.log('audioMapping', audioMapping);
-    //  const command = `-i ${reelUri.videoUri} -i ${recordedVideo} -filter_complex "[1:v]scale=iw*0.2:ih*0.2[overlayed];[0:v][overlayed]overlay=W-w-5:H-h-5" ${audioMapping} -c:v mpeg4 -c:a aac -b:a 192k ${outputFilePath}`;
-    const command = `-i ${reelUri.videoUri} -i ${recordedVideo} -filter_complex "[1:v]scale=iw*0.25:ih*0.25[overlayed];[0:v][overlayed]overlay=W-w-45:H-h-45" ${audioMapping} -c:v mpeg4 -c:a aac -b:a 192k ${outputFilePath}`;
-      const session = await FFmpegKit.execute(command);
+            
+            // Get the duration of the recorded video first to ensure proper splitting
+            // This is a two-step process
+            
+            // Step 1: Get duration of recorded video
+            console.log('Getting duration of recorded video...');
+            const durationCmd = `-i ${recordedVideo}`;
+            const durationSession = await FFmpegKit.execute(durationCmd);
+            const durationLog = await durationSession.getOutput();
+            console.log('Duration log:', durationLog);
+            
+            // Step 2: Extract duration from the log (simplified approach)
+            let duration = '30'; // Default fallback duration in seconds
+            try {
+                // Parse duration from ffmpeg output (this is a simple approach)
+                // Example output might contain: "Duration: 00:00:15.20"
+                const durationMatch = durationLog.match(/Duration: (\d{2}:\d{2}:\d{2}\.\d{2})/);
+                if (durationMatch && durationMatch[1]) {
+                    const timeComponents = durationMatch[1].split(':');
+                    const hours = parseInt(timeComponents[0]);
+                    const minutes = parseInt(timeComponents[1]);
+                    const seconds = parseFloat(timeComponents[2]);
+                    
+                    // Convert to total seconds
+                    duration = (hours * 3600 + minutes * 60 + seconds).toString();
+                    console.log('Extracted duration in seconds:', duration);
+                }
+            } catch (error) {
+                console.error('Error parsing duration:', error);
+            }
+            
+            // Simplify the audio mapping
+            const audioOption = isMuted ? '-an' : '';
+            
+            // Use the explicit duration to trim the background video
+            const command = `-i ${reelUri.videoUri} -i ${recordedVideo} -t ${duration} -filter_complex "[1:v]scale=iw*0.25:ih*0.25[overlayed];[0:v][overlayed]overlay=W-w-45:H-h-45" ${audioOption} -c:v mpeg4 -q:v 5 -c:a aac -strict experimental ${outputFilePath}`;
+            
+            console.log('Executing FFmpeg command:', command);
+            
+            const session = await FFmpegKit.execute(command);
             const returnCode = await session.getReturnCode();
             const returnCodeValue = returnCode.getValue();
+        
+            // Get detailed log in case of error
+            const sessionLog = await session.getOutput();
+            console.log('FFmpeg session log:', sessionLog);
         
             if (returnCodeValue === 0) {
                 console.log('Video merged successfully:', outputFilePath);
@@ -156,12 +193,13 @@ const RemixScreen = () => {
                 await createThumbnail(outputFilePath);
             } else {
                 console.error('Failed to merge videos with return code:', returnCodeValue);
+                console.error('FFmpeg error log:', sessionLog);
                 Alert.alert('Merge Failed', `Failed to complete the video merge: ${returnCodeValue}`);
             }
         } catch (error) {
             console.error('Error merging videos:', error);
             Alert.alert('Error', 'An unexpected error occurred while merging videos.');
-        }finally {
+        } finally {
             setIsMerging(false); // Stop loading
             stopAnimation(); // Stop the animation
         }
@@ -365,7 +403,7 @@ const previewVideo = response?.reel?.videoUri;
 console.log('bgvideo', reelUri.videoUri);
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
            
              {!isPreview && !isMerging && (
                 <Video
@@ -384,69 +422,78 @@ console.log('bgvideo', reelUri.videoUri);
                         bufferForPlaybackAfterRebufferMs: 5000,
                     }}
                     playWhenInactive={false}
-                playInBackground={false}
-                useTextureView={false}
-                controls={false}
-                disableFocus={true}
+                    playInBackground={false}
+                    useTextureView={false}
+                    controls={false}
+                    disableFocus={true}
                     hideShutterView
-                minLoadRetryCount={5}
-                shutterColor="transparent"
-                onBuffer={this.onBuffer} // Handle buffering
-                onError={this.videoError} // Handle errors
-                onEnd={() => setPlayBgVideo(false)} // Restart playback
+                    minLoadRetryCount={5}
+                    shutterColor="transparent"
+                    onBuffer={this.onBuffer} // Handle buffering
+                    onError={this.videoError} // Handle errors
+                    onEnd={() => setPlayBgVideo(false)} // Restart playback
                 
                 />
             )}
             {hasPermission && device && !isPreview && !isMerging && (
-                <Camera 
-                    ref={cameraRef}
-                    style={styles.overlayCamera}
-                    device={device}
-                    isActive={true}
-                    video={true}
-                    audio={true}
-                />
+                <View style={styles.cameraWrapper}>
+                    <Camera 
+                        ref={cameraRef}
+                        style={styles.overlayCamera}
+                        device={device}
+                        isActive={true}
+                        video={true}
+                        audio={true}
+                    />
+                </View>
             )}
 
             {isMerging && (
 
-            <View style={styles.overlay} >
+            <View style={[styles.overlay1, { backgroundColor: colors.background }]} >
 
             <Animated.View style={[styles.loaderContainer, { transform: [{ translateY: loaderTranslateY }] }]}>
             <LinearGradient
-                colors={['#000000', '#434343', '#000000']} // retains your gradient design
+                colors={loaderGradientColors}
                 style={styles.loader}
             />
-            <Text style={styles.loaderText}>Preparing for preview...</Text>
+            <Text style={[styles.loaderText, { color:'white' }]}>Preparing for preview...</Text>
             </Animated.View>
             </View>
             )}
             {!isRecording && !isPreview && !isMerging &&(
                 <View style={styles.iconContainer}>
-                    <View style={styles.iconBackground}>
+                    <View style={[styles.iconBackground, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
                         <TouchableOpacity onPress={() => setIsMuted(prev => !prev)} style={styles.iconButton}>
-                            <Icon name={isMuted ? "volume-mute-outline" : "volume-high-outline"} size={30} color="white" />
+                            <Icon name={isMuted ? "volume-mute-outline" : "volume-high-outline"} size={30} color={'white'} />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={onTimerPress}>
-                         <Text style={styles.timerText}>{'5s'}</Text>
+                         <Text style={[styles.timerText, { color: 'white' }]}>{'5s'}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             )}
  {isTimerRunning && (
                 <Animated.View style={{ transform: [{ scale: scaleValue }], position: 'absolute', top: '50%', left: '50%', alignItems: 'center', justifyContent: 'center', transform: [{ translateX: -50 }, { translateY: -50 }] }}>
-                    <Text style={styles.countdownText}>{countdown}s</Text>
+                    <Text style={[styles.countdownText, { color: 'white' }]}>{countdown}s</Text>
                 </Animated.View>
             )}
 {isRecording && (
-            <View style={styles.recordingIndicator}>
-                <View style={styles.redDot} />
-                <Text style={styles.recText}>REC</Text>
+            <View style={[styles.recordingIndicator, { backgroundColor: 'rgba(226, 27, 27, 0.6)' }]}>
+                <View style={[styles.redDot, { backgroundColor: 'red' }]} />
+                <Text style={[styles.recText, { color: colors.white }]}>REC</Text>
             </View>
         )}             
         {!isPreview && !isMerging && (
                 <TouchableOpacity
-                    style={[styles.recordButton, isRecording && styles.recording]}
+                    style={[
+                        styles.recordButton, 
+                        isRecording && styles.recording,
+                        { 
+                            backgroundColor: isRecording ? 'darkred' : 'red',
+                            borderColor: colors.white 
+                        }
+                    ]}
                     onPress={isRecording ? stopRecording : startRecording}
                 />
             )}
@@ -462,54 +509,52 @@ console.log('bgvideo', reelUri.videoUri);
                     onError={this.videoError} // Handle errors
                     onEnd={() => setIsPlayingMerged(false)} // Restart playback
                 />
-                <View style={styles.previewContainer}>
+                <View style={[styles.previewContainer, { backgroundColor: colors.background }]}>
 
-                        <View style={styles.progressBar}>
-                            <View style={[styles.progress, { width: `${(currentTime / duration) * 100}%` }]} />
+                        <View style={[styles.progressBar, { backgroundColor: 'lightgray' }]}>
+                            <View style={[styles.progress, { width: `${(currentTime / duration) * 100}%`, backgroundColor: colors.success }]} />
                         </View>
-                        <TouchableOpacity onPress={() => setIsPlaying(prev => !prev)} style={styles.playButton}>
-                            <Icon name={isPlaying ? "pause" : "play"} size={30} color="white" />
+                        <TouchableOpacity onPress={() => setIsPlaying(prev => !prev)} style={[styles.playButton, { backgroundColor: 'rgba(0, 0, 0, 0.5)' }]}>
+                            <Icon name={isPlaying ? "pause" : "play"} size={30} color={colors.white} />
                         </TouchableOpacity>
                         <View style={styles.previewButtons}>
                         <LinearGradient
-        colors={['#000000', '#434343']} // Gradient for the Cross button
-        style={styles.gradientButton}
-    >
-        <TouchableOpacity
-            style={styles.crossButtonTouchable}
-            onPress={async () => {
-                setIsPreview(false);
-                setIsUploadCanceled(true);
-                await uploadVideo();
-                setRecordedVideo(null);
-                videoRef.current?.seek(0);
-            }}
-        >
-            <Icon name="close" size={30} color="white" />
-        </TouchableOpacity>
-    </LinearGradient>
-    <LinearGradient
-        colors={['#000000', '#434343']} // Gradient for the Tick button
-        style={styles.gradientButton}
-    >
-       <TouchableOpacity
-    style={styles.tickButtonTouchable}
-    onPress={() => {
-        try {
-            console.log('clicked', isPlayingMerged);
-
-            setIsPlayingMerged(false);
-            setIsUploadPopupVisible(true);
-        } catch (error) {
-            // Handle errors from the upload process
-            console.error('Error during upload:', error);
-            Alert.alert('Upload Failed', 'There was an error uploading your video. Please try again.');
-        }
-    }}
->
-    <Icon name="checkmark" size={30} color="white" />
-</TouchableOpacity> 
-    </LinearGradient>
+                    colors={gradientColors}
+                    style={styles.gradientButton}
+                >
+                    <TouchableOpacity
+                        style={styles.crossButtonTouchable}
+                        onPress={async () => {
+                            setIsPreview(false);
+                            setIsUploadCanceled(true);
+                            await uploadVideo();
+                            setRecordedVideo(null);
+                            videoRef.current?.seek(0);
+                        }}
+                    >
+                        <Icon name="close" size={30} color="white" />
+                    </TouchableOpacity>
+                </LinearGradient>
+                <LinearGradient
+                    colors={gradientColors}
+                    style={styles.gradientButton}
+                >
+                    <TouchableOpacity
+                        style={styles.tickButtonTouchable}
+                        onPress={() => {
+                            try {
+                                console.log('clicked', isPlayingMerged);
+                                setIsPlayingMerged(false);
+                                setIsUploadPopupVisible(true);
+                            } catch (error) {
+                                console.error('Error during upload:', error);
+                                Alert.alert('Upload Failed', 'There was an error uploading your video. Please try again.');
+                            }
+                        }}
+                    >
+                        <Icon name="checkmark" size={30} color="white" />
+                    </TouchableOpacity> 
+                </LinearGradient>
 
     
 </View>
@@ -517,33 +562,29 @@ console.log('bgvideo', reelUri.videoUri);
                     </>
 )}
      <Modal visible={showPreviewPopup} transparent animationType="slide">
-    <View style={styles.popupOverlay}>
+    <View style={[styles.popupOverlay, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
         <LinearGradient
-            colors={['#000000', '#434343']} // Gradient for the modal background
+            colors={gradientColors}
             style={styles.popupContainer}
         >
-            <Text style={styles.popupText}>Would you like to preview or re-record?</Text>
+            <Text style={[styles.popupText, { color: 'white' }]}>Would you like to preview or re-record?</Text>
             <View style={styles.popupButtons}>
                 <LinearGradient
-                    colors={['#000000', '#434343']} // Gradient for Preview button
+                    colors={gradientColors}
                     style={[styles.popupButton, { flex: 1, marginHorizontal: 5, borderRadius: 5 }]}
                 >
                     <TouchableOpacity 
                         style={styles.popupButtonTouchable} 
                         onPress={async () => {
                             handleReRecord();
-                            // setShowPreviewPopup(false);
-                            // console.log('clicked');
-                            // await mergeVideos();
-                            // setIsPreview(true);
                         }}
                     >
-                        <Text style={styles.buttonText}>Preview</Text>
+                        <Text style={[styles.buttonText, { color: 'white' }]}>Preview</Text>
                     </TouchableOpacity>
                 </LinearGradient>
 
                 <LinearGradient
-                    colors={['#000000', '#434343']} // Gradient for Re-record button
+                    colors={gradientColors}
                     style={[styles.popupButton, { flex: 1, marginHorizontal: 5, borderRadius: 5 }]}
                 >
                     <TouchableOpacity 
@@ -555,7 +596,7 @@ console.log('bgvideo', reelUri.videoUri);
                             videoRef.current?.seek(0);
                         }}
                     >
-                        <Text style={styles.buttonText}>Re-record</Text>
+                        <Text style={[styles.buttonText, { color: 'white' }]}>Re-record</Text>
                     </TouchableOpacity>
                 </LinearGradient>
             </View>
@@ -569,15 +610,14 @@ console.log('bgvideo', reelUri.videoUri);
                 visible={isUploadPopupVisible}
                 animationType="fade"
             >
-                    <ScrollView contentContainerStyle={styles.Uploadcontainer}>
+                    <ScrollView contentContainerStyle={[styles.Uploadcontainer, { backgroundColor: colors.background }]}>
                            <View style={styles.flexDirectionRow}>
                            <Image source={{uri: Platform.OS === 'android' ? `file://${thumbnailPath}` : thumbnailPath}} style={styles.img} />
                              <TextInput
-                               style={[styles.input, styles.textArea]}
+                               style={[styles.input, styles.textArea, { borderColor: 'gray', color: colors.text }]}
                                value={reelUri.caption}
-                               placeholderTextColor={Colors.border}
+                               placeholderTextColor={colors.border}
                                onChangeText={setCaption}
-                            //    placeholder="Enter your caption here..."
                                multiline={true}
                                numberOfLines={8}
                              />
@@ -611,11 +651,9 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'black',
     },
     countdownText: {
         fontSize: 60, // Adjust as needed for visibility
-        color: 'white',
         fontWeight: 'bold',
         textAlign: 'center',
     },
@@ -623,7 +661,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 50,
         right: 20,
-        backgroundColor: 'rgba(226, 27, 27, 0.6)',
         flexDirection: 'row',
         alignItems: 'center',
         zIndex: 2000, // Make sure this is on top of other elements
@@ -633,27 +670,32 @@ const styles = StyleSheet.create({
         width: 10,
         height: 10,
         borderRadius: 5,
-        backgroundColor: 'red',
         marginRight: 5, // Spacing between the dot and the text
     },
     
     recText: {
-        color: 'white',
         fontSize: 18,
         fontWeight: 'bold',
     },
     overlay: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: 'auto',      // Explicitly set top to auto
+        left: 'auto',     // Explicitly set left to auto
+        bottom: 130,
+        right: 20,
+        width: '30%', 
+        height: '30%',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    },
+    overlay1: {
+        position: 'absolute',
+        width: '100%', 
+        height: '50%',
+        // backgroundColor: 'rgba(0, 0, 0, 0.7)',
     },
     loaderContainer: {
         position: 'absolute',
         top: '50%', // Center vertically
-        // left: '50%', // Center horizontally
         transform: [{ translateX: -50 }, { translateY: -50 }], // Offset to center properly
         alignItems: 'center', // Center items within container
         width: '100%', // Set width to 95%
@@ -666,7 +708,6 @@ const styles = StyleSheet.create({
         borderRadius: 10 // Add some border-radius to make it look smooth
     },
     loaderText: {
-        color: 'white',
         fontSize: 16,
         position: 'absolute', // Positioning the text in the center of the loader
         textAlign: 'center', // Center the text
@@ -675,9 +716,7 @@ const styles = StyleSheet.create({
     Uploadcontainer: {
         flex: 1,
         paddingHorizontal: 0,
-        
         alignItems: 'center',
-        backgroundColor: 'black',
     },
     flexDirectionRow: {
         flexDirection: 'row',
@@ -686,9 +725,7 @@ const styles = StyleSheet.create({
       },
       input: {
         height: 150,
-        borderColor: 'gray',
         borderWidth: 1,
-        color: Colors.text,
         borderRadius: 5,
         fontFamily: FONTS.Medium,
         padding: 10,
@@ -713,12 +750,9 @@ const styles = StyleSheet.create({
         bottom: 0,
     },
     overlayCamera: {
-        position: 'absolute',
-        bottom: 45,
-        right: 0,
-        width: '30%',
-        height: '30%',
-        overflow: 'hidden',
+        flex: 1,
+        width: '100%', // Make camera fill the wrapper container
+        height: '100%',
     },
     recordButton: {
         position: 'absolute',
@@ -726,13 +760,11 @@ const styles = StyleSheet.create({
         width: 70,
         height: 70,
         borderRadius: 35,
-        backgroundColor: 'red',
         borderWidth: 5,
-        borderColor: 'white',
         alignSelf: 'center',
     },
     recording: {
-        backgroundColor: 'darkred',
+        // backgroundColor handled in inline style
     },
     uploadButton: {
         position: 'absolute',
@@ -742,7 +774,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     uploadButtonText: {
-        color: 'white',
         fontSize: 16,
     },
     gradientButton: {
@@ -778,7 +809,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     iconBackground: {
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', // Semi-transparent black
         borderRadius: 10,
         paddingVertical: 20,
         alignItems: 'center',
@@ -806,9 +836,7 @@ const styles = StyleSheet.create({
     popupText: {
         fontSize: 16,
         marginBottom: 20,
-        color: 'white',
         textAlign: 'center',
-        
     },
     popupButtons: {
         flexDirection: 'row',
@@ -819,7 +847,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
     },
     popupContainer: {
         width: '80%',
@@ -841,7 +868,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonText: {
-        color: 'white',
         fontSize: 16,
     },
     progressContainer: {
@@ -850,7 +876,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     progressText: {
-        color: Colors.text,
         marginTop: 5,
     },
     previewContainer: {
@@ -872,14 +897,12 @@ const styles = StyleSheet.create({
     },
     progressBar: {
         height: 5,
-        backgroundColor: 'lightgray',
         borderRadius: 2,
         marginTop: 10,
         width: '100%',
     },
     progress: {
         height: '100%',
-        backgroundColor: 'green', // Color for progress
         borderRadius: 2,
     },
     playButton: {
@@ -887,7 +910,6 @@ const styles = StyleSheet.create({
         bottom: 20,
         left: '50%',
         marginLeft: -15,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         padding: 10,
         borderRadius: 50,
     },
@@ -903,13 +925,23 @@ const styles = StyleSheet.create({
     },
     timerText: {
         fontSize: 20, // Large font size for visibility
-        color: 'white', // White color for contrast against dark backgrounds
         fontWeight: 'bold', // Bold font weight for emphasis
         textAlign: 'center', // Center align the text
         textShadowColor: 'rgba(0, 0, 0, 0.7)', // Shadow for better contrast
         textShadowOffset: { width: 1, height: 1 }, // Shadow offset
         textShadowRadius: 5, // Radius for shadow blur
-    }
+    },
+    cameraWrapper: {
+        position: 'absolute',
+        top: 'auto',
+        left: 'auto',
+        bottom: 45,
+        right: 20, // Keep at 20px from right edge
+        width: '10%', // Narrower width to match image proportions
+        height: 300, // Taller height for a more extreme portrait rectangle like in the image
+        overflow: 'hidden',
+        borderRadius: 10,
+    },
 });
 
 export default RemixScreen;
