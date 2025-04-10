@@ -1,0 +1,836 @@
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Dimensions,
+  PixelRatio,
+} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import { useAppDispatch, useAppSelector } from '../../redux/reduxHook';
+import { fetchUserByUsername } from '../../redux/actions/userAction';
+import { navigate } from '../../utils/NavigationUtil';
+import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
+import Video from 'react-native-video';
+import { useFocusEffect } from '@react-navigation/native';
+import { fetchFeedReel } from '../../redux/actions/reelAction';
+import axios from 'axios';
+
+const normalizeWidth = (size: number) => PixelRatio.roundToNearestPixel(scale(size));
+const normalizeHeight = (size: number) => PixelRatio.roundToNearestPixel(verticalScale(size));
+
+const GlobalFeed = () => {
+  const dispatch = useAppDispatch();
+  const [categories, setCategories] = useState<string[]>([]);
+  const [newsItems, setNewsItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(-1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [hashtagCounts, setHashtagCounts] = useState(new Map<string, number>());
+  const [lastThumbnails, setLastThumbnails] = useState<Record<string, string>>({});
+  const [captions, setCaptions] = useState<string[]>([]);
+  const [videoKeys, setVideoKeys] = useState<Record<string, number>>({}); // Caption to video keys
+  const flatListRef = useRef<FlatList>(null);
+  const flatListRefBreakingNews = useRef<FlatList>(null);
+  const { user } = useAppSelector(state => state.user);
+  const currentlyVisibleBreakingNewsIndex = useRef(0);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      setLoading(true);
+      try {
+        const data = await dispatch(fetchFeedReel(0, 16)); // Replace with your actual API endpoint
+
+        setCategories(data?.categories || []);
+        setNewsItems(data?.newsItems || []);
+      } catch (error) {
+        console.error('Fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  useEffect(() => {
+    if (user && user.username) {
+      dispatch(fetchUserByUsername(user.username));
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    const thumbnailsMap: Record<string, string> = {};
+    const uniqueCaptions: string[] = [];
+    const videoKeyMap: Record<string, number> = {};
+
+    newsItems.forEach((item, index) => {
+      thumbnailsMap[item.caption] = item.thumbUri;
+      if (!uniqueCaptions.includes(item.caption)) {
+        uniqueCaptions.push(item.caption);
+      }
+      videoKeyMap[item.caption] = index; // Store the index/key for video access
+    });
+
+    setLastThumbnails(thumbnailsMap);
+    setCaptions(uniqueCaptions);
+    setVideoKeys(videoKeyMap);
+  }, [newsItems]);
+
+  useEffect(() => {
+    // Calculate unread counts for each hashtag
+    const calculateUnreadCounts = () => {
+      const counts = new Map<string, number>();
+
+      newsItems.forEach((item) => {
+        const hashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
+
+        hashtags.forEach((hashtag: string) => {
+          if (!item.isRead) {
+            counts.set(hashtag, (counts.get(hashtag) || 0) + 1);
+          }
+        });
+      });
+
+      console.log('Unread counts:', counts);
+      setHashtagCounts(counts);
+    };
+
+    calculateUnreadCounts();
+  }, [newsItems]);
+
+  const handleNewsPress = useCallback((item: any, index: number) => {
+    navigate('FeedReelScrollScreen', {
+      data: newsItems,
+      initialIndex: index,
+    });
+  }, [newsItems]);
+
+  const handleCategoryChange = useCallback((index: number) => {
+    if (index >= 0 && index < newsItems.length) {
+      setCurrentVideoIndex(index);
+      setActiveCategoryIndex(index);
+      // Scroll the FlatList to the selected item
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({
+          animated: true,
+          index: index,
+          viewPosition: 0,
+        });
+      }
+    } else {
+      console.warn(`handleCategoryChange: Index ${index} is out of bounds for newsItems.`);
+    }
+  }, [newsItems]);
+
+  const groupedThumbnails = newsItems.reduce((acc, item) => {
+    const caption = item.caption; // Use caption as the key
+
+    if (!acc[caption]) {
+      acc[caption] = [];
+    }
+    acc[caption].push(item.thumbUri);
+    return acc;
+  }, {} as { [key: string]: string[] });
+
+  const renderNewsItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    const isActive = activeCategoryIndex === index;
+    const caption = item.caption;
+    const thumbnails = groupedThumbnails[caption] || [];
+
+    const cardStyle = thumbnails.length > 1 ? styles.multiThumbnailCard : styles.singleThumbnailCard;
+
+    return (
+      <View style={[styles.newsCard, cardStyle]}>
+        {thumbnails.length > 1 ? (
+          <View style={styles.gridContainer}>
+            {thumbnails.map((thumb, idx) => (
+              <TouchableOpacity
+                key={idx}
+                onPress={() => handleNewsPress(item, index)} // Direct navigation on any thumbnail press
+                style={styles.thumbnailWrapper1}
+              >
+                <Image
+                  source={{ uri: thumb }}
+                  style={styles.gridImage}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <TouchableOpacity onPress={() => handleNewsPress(item, index)}>
+            <Image
+              source={{ uri: item.thumbUri || 'https://via.placeholder.com/150' }}
+              style={styles.newsImage}
+            />
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }, [activeCategoryIndex, groupedThumbnails, handleNewsPress]);
+
+  const handleScroll = useCallback((event: any) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const viewSize = event.nativeEvent.layoutMeasurement.width;
+    const page = Math.floor(contentOffsetX / viewSize);
+
+    if (page !== activeCategoryIndex && page >= 0 && page < newsItems.length) {
+      handleCategoryChange(page);
+    }
+  }, [handleCategoryChange, newsItems.length]);
+  const allVideos = captions.map(caption => newsItems[videoKeys[caption]])
+  const handleVideoEnd = () => {
+    const nextIndex = currentVideoIndex + 1;
+
+    // Check if the next index is within bounds
+    if (nextIndex < allVideos.length) {
+      setCurrentVideoIndex(nextIndex);
+      setActiveCategoryIndex(nextIndex);
+
+      // Scroll to the next video
+      if (flatListRefBreakingNews.current) {
+        flatListRefBreakingNews.current.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+          viewPosition: 0.5, // Center the item in view
+        });
+      }
+    } else {
+      // Loop back to the first video
+      setCurrentVideoIndex(0);
+      setActiveCategoryIndex(0);
+
+      if (flatListRefBreakingNews.current) {
+        flatListRefBreakingNews.current.scrollToIndex({
+          index: 0,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }
+    }
+  }
+
+  const handleScrollToBreakingNews = (index: number) => {
+    if (flatListRefBreakingNews.current && index >= 0 && index < allVideos.length) {
+      setCurrentVideoIndex(index);
+      setActiveCategoryIndex(index);
+      flatListRefBreakingNews.current.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.5, // Center the item in view
+      });
+    } else {
+      console.warn(`scrollToIndex out of range: requested index ${index} is out of 0 to ${allVideos.length - 1}`);
+    }
+  };
+
+  const preloadVideos = (index: number) => {
+    // Implement video preloading logic here (e.g., load thumbnails, metadata)
+    console.log(`Preloading videos around index: ${index}`);
+  };
+
+  const onMomentumScrollEnd = (event: { nativeEvent: { contentOffset: { x: any; }; layoutMeasurement: { width: any; }; }; }) => {
+    const contentOffsetX = event.nativeEvent.contentOffset.x; // Scroll offset
+    const viewSize = event.nativeEvent.layoutMeasurement.width; // View width
+    const visibleIndex = Math.floor(contentOffsetX / viewSize); // Calculate visible index
+
+    // Ensure visibleIndex is within bounds of groupedThumbnails
+    if (visibleIndex >= 0 && visibleIndex < Object.keys(groupedThumbnails).length) {
+      setCurrentVideoIndex(visibleIndex); // Update current video index
+      setActiveCategoryIndex(visibleIndex); // Update active category index
+
+      // Scroll breaking news FlatList to the same index, ensuring it's in range
+      if (flatListRefBreakingNews.current) {
+        // Check if the current visible index corresponds to a valid breaking news item
+        if (visibleIndex < allVideos.length) {
+          flatListRefBreakingNews.current.scrollToIndex({
+            index: visibleIndex,
+            animated: true,
+            viewPosition: 0.5 // Center the item in view
+          });
+        } else {
+          console.warn(`Requested index ${visibleIndex} is out of bounds for breaking news`);
+        }
+      }
+    } else {
+      console.warn(`Requested visible index ${visibleIndex} out of bounds for groupedThumbnails`);
+    }
+  };
+
+  const renderBreakingNewsItem = useCallback(({ item, index }: { item: any; index: number }) => {
+    const isActive = index === activeCategoryIndex;
+
+    return (
+      <TouchableOpacity style={styles.breakingNewsCard} onPress={() => handleNewsPress(item, index)}>
+        <Video
+          poster={item?.thumbUri}
+          posterResizeMode="cover"
+          source={{ uri: item?.videoUri }}
+          style={styles.breakingNewsVideo}
+          paused={!isActive}
+          onEnd={handleVideoEnd} // Implement looping or next video logic
+          resizeMode="cover"
+          minLoadRetryCount={5}
+          maxBitRate={1000000}
+          shutterColor="transparent"
+          playWhenInactive={false}
+          playInBackground={false}
+          useTextureView={false}
+          controls={false}
+          disableFocus={true}
+          hideShutterView
+          volume={isMuted ? 0 : 1}
+          onError={(e) => console.error('Video Error:', e)}
+        />
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.gradientOverlay} />
+        <View style={styles.newsContent}>
+          <Text style={styles.newsTitle1} numberOfLines={2}>{item?.caption}</Text>
+        </View>
+        <TouchableOpacity style={styles.muteButton} onPress={() => setIsMuted(!isMuted)}>
+          <Image source={isMuted ? require('../../assets/icons/mute.png') : require('../../assets/icons/unmute.png')} style={styles.muteIcon} />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  }, [activeCategoryIndex, handleNewsPress, isMuted]);
+
+  const onViewableItemsChanged = useRef((({ viewableItems }: { viewableItems: any }) => {
+    if (viewableItems.length > 0) {
+      const visibleIndex = viewableItems[0].index;
+      if (visibleIndex !== currentlyVisibleBreakingNewsIndex.current) {
+        // Scroll the thumbnail FlatList to the same index
+        setCurrentVideoIndex(visibleIndex);
+        setActiveCategoryIndex(visibleIndex);
+        currentlyVisibleBreakingNewsIndex.current = visibleIndex;
+        preloadVideos(visibleIndex);
+        if (flatListRef.current) {
+          flatListRef.current.scrollToIndex({
+            index: visibleIndex,
+            animated: true,
+            viewPosition: 0.5, // Center the item in view
+          });
+        }
+      }
+    }
+  })).current;
+
+  return (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
+      <View>
+        <FlatList
+          ref={flatListRefBreakingNews}
+          horizontal
+          data={allVideos} // Directly map the data to the desired video
+          renderItem={renderBreakingNewsItem}
+          keyExtractor={(item, index) => item?._id || item?.id || String(index)}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.breakingNewsContainer}
+          pagingEnabled
+          initialNumToRender={1}
+          maxToRenderPerBatch={2}
+          windowSize={2}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.thumbnailContainer}
+        >
+          {captions.map((caption, index) => {
+            const thumbUri = lastThumbnails[caption];
+            const isActive = newsItems.findIndex(item => item.caption === caption) === activeCategoryIndex;
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => {
+                  const itemIndex = newsItems.findIndex(item => item.caption === caption);
+                  if (itemIndex !== -1) {
+                    handleScrollToBreakingNews(itemIndex);
+                  }
+                }}
+                style={[styles.thumbnailWrapper, isActive && styles.activeThumbnail]}
+              >
+                <Image
+                  source={{ uri: thumbUri || 'https://via.placeholder.com/50' }}
+                  style={[styles.thumbnailImage, !isActive && styles.inactiveThumbnail]}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          <View style={styles.categoryWrapper}>
+            <View style={styles.firstRow}>
+              {categories.map((category, index) => {
+                const unreadCount = hashtagCounts.get(category) || 0;
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleScrollToBreakingNews(index)}
+                    style={[styles.categoryItem, activeCategoryIndex === index && styles.activeCategory]}
+                  >
+                    <Text style={[styles.categoryText, activeCategoryIndex === index && styles.activeCategoryText]}>
+                      {category}
+                    </Text>
+                    <View style={styles.badgeContainer}>
+                      <Text style={styles.badgeText}>{unreadCount}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+      <FlatList
+        ref={flatListRef}
+        horizontal
+        data={newsItems}
+        renderItem={renderNewsItem}
+        keyExtractor={(item) => item._id}
+        pagingEnabled
+        contentContainerStyle={styles.horizontalContainer}
+        showsHorizontalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      />
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  gridImage: {
+    width: '100%',
+    height: 300,
+    borderRadius: 10,
+  },
+  horizontalContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+  },
+  newsContainer: {
+    width: '50%',
+    flex: 1,
+  },
+  muteButton: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(245, 245, 245, 0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  muteIcon: {
+    width: 15,
+    height: 15,
+  },
+  thumbnailContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  thumbnailWrapper1: {
+    width: '45%',
+    marginBottom: 5,
+  },
+  thumbnailWrapper: {
+    marginRight: 8,
+    borderRadius: 5,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  activeThumbnail: {
+    opacity: 1,
+  },
+  thumbnailImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 5,
+  },
+  inactiveThumbnail: {
+    opacity: 0.5,
+  },
+  thumbnailProgressBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  thumbnailProgressBar: {
+    height: '100%',
+    backgroundColor: 'rgb(255, 255, 255)',
+  },
+  breakingNewsCard: {
+    width: normalizeWidth(350),
+    height: normalizeHeight(370),
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  breakingNewsVideo: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'black',
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '70%',
+    backgroundColor: '#444',
+  },
+  placeholderText: {
+    width: '80%',
+    height: 20,
+    backgroundColor: '#444',
+    marginVertical: 5,
+    borderRadius: 5,
+  },
+  placeholderMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  placeholderMetaItem: {
+    width: '30%',
+    height: 10,
+    backgroundColor: '#444',
+    borderRadius: 5,
+  },
+  placeholderCategory: {
+    width: normalizeWidth(80),
+    height: normalizeHeight(20),
+    backgroundColor: '#444',
+    borderRadius: 5,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: normalizeHeight(15),
+    marginTop: normalizeHeight(10),
+  },
+  headerTitle: {
+    fontSize: normalizeWidth(22),
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+  },
+  firstRow: {
+    flexDirection: 'row',
+    marginBottom: 5,
+  },
+  secondRow: {
+    flexDirection: 'row',
+  },
+  categoryWrapper: {
+    flexDirection: 'column',
+    flexWrap: 'wrap',
+    gap: 8,
+    width: '100%',
+  },
+  categoriesContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 10,
+    marginTop: 10,
+  },
+  categoryItem: {
+    backgroundColor: '#000',
+    paddingVertical: 6,
+    borderColor: '#d2d2d2',
+    borderWidth: 0.5,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+    minWidth: 90,
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryText: {
+    fontSize: 14,
+    color: '#d2d2d2', // Light gray text
+    fontWeight: 'bold',
+  },
+  activeCategory: {
+    backgroundColor: '#d2d2d2', // Slightly brighter for active category
+    borderWidth: 0.5,
+    // borderColor:'grey'
+  },
+  activeCategoryText: {
+    color: '#111', // White text for active category
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: '#2999fe',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: 'white', // Badge text color
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  bellIcon: {
+    width: normalizeWidth(15),
+    height: normalizeHeight(15),
+    tintColor: '#fff',
+  },
+  profileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: normalizeWidth(5),
+    marginBottom: normalizeHeight(15),
+  },
+  userInfo: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  rightIconContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  iconBackground: {
+    backgroundColor: '#222',
+    borderRadius: 100,
+    padding: normalizeHeight(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: normalizeWidth(45),
+    height: normalizeHeight(45),
+    borderRadius: 15,
+    marginRight: normalizeWidth(10),
+  },
+  greeting: {
+    fontSize: normalizeWidth(12),
+    color: '#aaa',
+  },
+  userName: {
+    fontSize: normalizeWidth(14),
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  searchTitle: {
+    fontSize: normalizeWidth(14),
+    color: '#fff',
+    marginBottom: normalizeHeight(15),
+    fontWeight: 'bold',
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#222',
+    borderRadius: 10,
+    flex: 1,
+    paddingHorizontal: normalizeWidth(15),
+    height: normalizeHeight(40),
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    marginLeft: normalizeWidth(10),
+  },
+  voiceContainer: {
+    backgroundColor: '#222',
+    borderRadius: 100,
+    padding: normalizeHeight(10),
+    marginLeft: normalizeWidth(10),
+  },
+  micIcon: {
+    width: normalizeWidth(15),
+    height: normalizeHeight(15),
+    tintColor: '#fff',
+  },
+  sectionTitle: {
+    color: '#fff',
+    fontSize: normalizeWidth(18),
+    fontWeight: 'bold',
+    marginLeft: normalizeWidth(15),
+    marginTop: normalizeHeight(10),
+  },
+  breakingNewsContainer: {
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '35%',
+  },
+  newsContent: {
+    position: 'absolute',
+    bottom: normalizeHeight(20),
+    left: normalizeWidth(20),
+    right: normalizeWidth(20),
+  },
+  newsTitle1: {
+    fontSize: normalizeWidth(12),
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  metaRow1: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metaItem1: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewIcon1: {
+    width: normalizeWidth(14),
+    height: normalizeHeight(10),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  commentIcon1: {
+    width: normalizeWidth(12),
+    height: normalizeHeight(10),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  shareIcon1: {
+    width: normalizeWidth(10),
+    height: normalizeHeight(10),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  metaText1: {
+    fontSize: normalizeWidth(10),
+    color: '#dcdcdc',
+  },
+  newsCard: {
+    borderRadius: 10,
+  },
+  singleThumbnailCard: {
+    width: normalizeWidth(350),
+    height: normalizeHeight(240),
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  multiThumbnailCard: {
+    width: normalizeWidth(350),
+    height: '100%',
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#000',
+  },
+  loaderContainer: {
+    width: '100%',
+    height: normalizeHeight(370),
+    marginRight: 240,
+    marginLeft: 5,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: '#222',
+  },
+  newsImage: {
+    width: '50%',
+    height: 300,
+    borderRadius: 10,
+  },
+  newsTitle: {
+    fontSize: normalizeWidth(8),
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewIcon: {
+    width: normalizeWidth(7),
+    height: normalizeHeight(5),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  commentIcon: {
+    width: normalizeWidth(6),
+    height: normalizeHeight(5),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  shareIcon: {
+    width: normalizeWidth(5),
+    height: normalizeHeight(5),
+    marginRight: 5,
+    tintColor: '#dcdcdc',
+  },
+  metaText: {
+    fontSize: normalizeWidth(6),
+    color: '#dcdcdc',
+  },
+  breakingNewsImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  tagsContainer1: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 5,
+  },
+  trendingTag1: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    color: '#fff',
+    fontSize: normalizeWidth(12),
+    paddingHorizontal: normalizeWidth(10),
+    paddingVertical: normalizeHeight(5),
+    borderRadius: 12,
+    marginRight: 6,
+  },
+  categoryTag1: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    color: '#fff',
+    fontSize: normalizeWidth(12),
+    paddingHorizontal: normalizeWidth(10),
+    paddingVertical: normalizeHeight(5),
+    borderRadius: 12,
+  },
+});
+
+export default GlobalFeed;

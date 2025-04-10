@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "315162978760",
+    "firebase_url": "https://recaps-9fd10-default-rtdb.firebaseio.com",
+    "project_id": "recaps-9fd10",
+    "storage_bucket": "recaps-9fd10.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:315162978760:android:64e04a6dbbdb76304ef8fd",
+        "android_client_info": {
+          "package_name": "com.recaps_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "315162978760-bsvpm9gn4mp8kobpveliu78bimkuv317.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.recaps_app",
+            "certificate_hash": "ad82438d8099bb43fdceabff04689fd591d51911"
+          }
+        },
+        {
+          "client_id": "315162978760-jd7ekipqmn009igv83ch12nifda51aai.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2DOlF0EYxkWjltOM0JBCpzK5-dx6SToM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "315162978760-jd7ekipqmn009igv83ch12nifda51aai.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

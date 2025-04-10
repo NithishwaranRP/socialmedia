@@ -1,0 +1,417 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-italic.woff",
+      "sha1": "ff3f0d4a12b17520bc5418a6334b57f6b3d05ce5"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-italic.woff2",
+      "sha1": "5ca6022552b71fb973022ea23181407e8b022e30"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-normal.woff",
+      "sha1": "22fa17068dd5591b562842cdedfd1e101a17c3e8"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-400-normal.woff2",
+      "sha1": "765c802310e6ac7e3da3b3c0ff447f5f546c4e8a"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-italic.woff",
+      "sha1": "e9052617e613a6b32174a81bbea26dbb7b4ea836"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-italic.woff2",
+      "sha1": "bb789bd64e071239dc300bb8da82f2fee7ebd06c"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff",
+      "sha1": "9c5d21e5dddb20afcae1c1e5027f1b9fe9e5f260"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-500-normal.woff2",
+      "sha1": "b65b1ad6338ef8c1ff3fe3b40dfe704dd4a880d2"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-italic.woff",
+      "sha1": "ba0d36e69c1be30bcc4f80298f6370ec65b46e61"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-italic.woff2",
+      "sha1": "d1420470b8d43a52053aeeeb777a9f1d5411e5d4"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-normal.woff",
+      "sha1": "3e11365ca6cdc5e175ecdd73f31a250f07f98f1a"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-600-normal.woff2",
+      "sha1": "39f564155b253ae080b09be1bd28ed3f4da37cfd"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-italic.woff",
+      "sha1": "3a9ac889c501c5ebd79b3fea59e023599fee88ab"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-italic.woff2",
+      "sha1": "5aa23a02fde9d46ec76a0cd31852b12e04307bfe"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-normal.woff",
+      "sha1": "71e9ea417421381933e64c28d888a564b3103f3b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-700-normal.woff2",
+      "sha1": "5c0d1e4e1f930b90a49e540b2c6a1cad77a2b98c"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-italic.woff",
+      "sha1": "7b59766f18d80e51f98fb34a6b87a76704caa830"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-italic.woff2",
+      "sha1": "f04865f60bc65294163f3e476c3b768019910a04"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-normal.woff",
+      "sha1": "00019b044758335630dabd22d005aad25f7f8fad"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-800-normal.woff2",
+      "sha1": "0969ec705af594aadf9bc6434d2d93eca76497bf"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-italic.woff",
+      "sha1": "6a60305bbe5b328265c55a07f5e9aa629b163057"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-italic.woff2",
+      "sha1": "705a075b12dee88cbd3e67e83becb210cdd83ef9"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-normal.woff",
+      "sha1": "43fa4446cc8305cef79c5b332c6822d59a788351"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-cyrillic-900-normal.woff2",
+      "sha1": "4de626dcc8ed41284c2a2fce2b9211840a7e1997"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff",
+      "sha1": "589eb94683c327974577de64faa7aab696a2216a"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2",
+      "sha1": "f225cbde3ea4df2fd17e793d5f41e0e48cea00dc"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff",
+      "sha1": "c8700a107bafe20e81c7324c9b49b6e589d0f8a8"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff2",
+      "sha1": "de5636d6096f5a29f0764aa563c54f157b1f9de9"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-italic.woff",
+      "sha1": "cd839b6a3506013f87c9f05e7973e22523f3653c"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-italic.woff2",
+      "sha1": "8ee9c6334c716c6c1cc225acdea4ed732332e837"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-normal.woff",
+      "sha1": "14b739ad88bd06ffdf6055c910cc0990e7f605e4"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-normal.woff2",
+      "sha1": "37c0f4e50386eced5fb7481ee6111b1d98f7d231"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-italic.woff",
+      "sha1": "a5148ee22fdb0169cc243f3caff5bd62cc39c18b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-italic.woff2",
+      "sha1": "c8a1c89ea92f3fcbf593dd974ecb0e4a00a1a2e5"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff",
+      "sha1": "ac7ead0c46fdac0cb8d26e74bb2e4ffebbbc1775"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2",
+      "sha1": "91b274ddccff97780ba9f00ae3cec4beb48ec6f4"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-italic.woff",
+      "sha1": "5a9b9cc8c18881de2445f07079ea657c3a299733"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-italic.woff2",
+      "sha1": "d6a56bbaaa395ce63d8e18b702674cf8db510b49"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff",
+      "sha1": "97a473a70b95c4bab16546b6181b6af70a8c8f30"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2",
+      "sha1": "17ab700aec9588424f6e2ccb392b600f52d4c881"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-italic.woff",
+      "sha1": "2eb9582492cbf8cd268a29f40a6adcf09013f415"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-italic.woff2",
+      "sha1": "a1ec90e3a71c87e6d6048e33bf0192259c17eea3"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-normal.woff",
+      "sha1": "6c25e0edfba8a0f4605f46f4febfca4cee7b8f17"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-800-normal.woff2",
+      "sha1": "f8f9d2528ac4638eee69cb6fc5a9ab3fc23c7d5e"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-italic.woff",
+      "sha1": "3615ed49c2b967377993aa574af41a3318c738de"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-italic.woff2",
+      "sha1": "04959b86b2803ce7c351b1dfe9d768027805a91d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-normal.woff",
+      "sha1": "1e15fd1a4877b07786e9e7811c91ca9769c0eec6"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-900-normal.woff2",
+      "sha1": "fc28b54ab4d55b9125e37ee3fd9bff46300ece40"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-italic.woff",
+      "sha1": "81008981a7c324aee117318e260070f43f701b7e"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-italic.woff2",
+      "sha1": "f4e66b8c8ad8ac4e7db95324cfb2bcba359a2969"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-normal.woff",
+      "sha1": "b4da01aaa2d58b496387ef280ce8a09b42fcf8e5"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-400-normal.woff2",
+      "sha1": "6a3b737da36773cd1f071e9033ee7104b0fc165b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-italic.woff",
+      "sha1": "17d6788467411031283ef0a6701b87b20a4f7da7"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-italic.woff2",
+      "sha1": "c39927fd69eb69619f7dc067a51902df1279519d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-normal.woff",
+      "sha1": "fb42759d782585614ac89a441a6a5a5a89aedfd8"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-500-normal.woff2",
+      "sha1": "04e350f403f42f35e78000467034f99e2e2e2dd3"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-italic.woff",
+      "sha1": "170b57602de409d0b6598816c426db9e9a6e6078"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-italic.woff2",
+      "sha1": "0dfa1aad27bdab688c83c138a69f84fdee5b4c9d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-normal.woff",
+      "sha1": "940b474e2562de44984968a2ed9c6a0cd92c6a7f"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-600-normal.woff2",
+      "sha1": "d9f223ca51734fe0622976fe553645314573ecd0"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-italic.woff",
+      "sha1": "cb8c1f7faa9bdcf5616a586abdf9cfbf29d7c15b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-italic.woff2",
+      "sha1": "b02046efe79fb79c009facd7f5a88ae27ac48cf7"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-normal.woff",
+      "sha1": "d71d67db450ee041ad71c3225deb03a1dd176137"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-700-normal.woff2",
+      "sha1": "0d29ac5745fcf5924bb4f0019afb7ce6ad87317b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-italic.woff",
+      "sha1": "0d36c355334b55de73e141aa14ccf4bbe4e8e8c1"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-italic.woff2",
+      "sha1": "e04fe704b1cb28ef98a63440afe951cd81905f46"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-normal.woff",
+      "sha1": "66ef7d03a6e895f0c70f5f8a019d9e9a920d811e"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-800-normal.woff2",
+      "sha1": "9bcc7eddee0266fe7127936c16a92f08a0ee4086"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-italic.woff",
+      "sha1": "fdd257391e7f9fe1fa3f6107e741ff25ac19e874"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-italic.woff2",
+      "sha1": "1c8321865fcb326fb33c7e919c02723ace841a8b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-normal.woff",
+      "sha1": "48ff6c10ff52c1e090bb25ac7a0aeec3a10ea999"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-latin-ext-900-normal.woff2",
+      "sha1": "272089d4c20d53f7ab97d525edc57bcb1e28f345"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-italic.woff",
+      "sha1": "ef12db0b19e31c4c9e4565f930e506c304f6cc34"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-italic.woff2",
+      "sha1": "43fced0580faf145c10ae7528cc9276349643002"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-normal.woff",
+      "sha1": "6e338700cb03a8b57ce11a9a1b3ca7cb9f69490d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-400-normal.woff2",
+      "sha1": "5d3a4e706941b93106687fdcf871caf76305bb33"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-italic.woff",
+      "sha1": "a0b9a2eddbeb3b88109975ff7b4897b51373c3e7"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-italic.woff2",
+      "sha1": "9f6bf93db2b9ad06c63f4d1f374f89e3b83be9dd"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-normal.woff",
+      "sha1": "a2bfce0d8bff2430fda9394fe5ec1386689ca9e5"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-500-normal.woff2",
+      "sha1": "989e28a8596c843f2390b65f245db823287dc88b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-italic.woff",
+      "sha1": "e4d2f25d2bc6212c1d64dc0dedf745a0cde67ab3"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-italic.woff2",
+      "sha1": "f79da643ffb081b61ef0166ac56f7d2a2e65a65d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-normal.woff",
+      "sha1": "28efe5f5fcc4347eaf61754e58fe95b20ea3b11d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-600-normal.woff2",
+      "sha1": "ed9fbd1fd693e18f00d0cb672cf5c29b6bd85fb8"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-italic.woff",
+      "sha1": "3a262be0e957a0ef58bb120b6e97114a135942d7"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-italic.woff2",
+      "sha1": "43c48f2ec0c2650d16c77104b4338c6f4f01306c"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-normal.woff",
+      "sha1": "5f79c79469b4d38dcd69fc4cc2a68363dc68d26b"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-700-normal.woff2",
+      "sha1": "219dcfe6021ad2f5df331b92fc5db1c2b3b989ff"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-italic.woff",
+      "sha1": "dc53b3280720bf599ea90dc0d70b500465554f8d"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-italic.woff2",
+      "sha1": "6003f14af155fed28268319c77c78eabc795a172"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-normal.woff",
+      "sha1": "878e3ae1dcd971355db995de316a4df1b9962ac3"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-800-normal.woff2",
+      "sha1": "c431e497c487c10996bb3a04861f8ad6e1579135"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-italic.woff",
+      "sha1": "1c8d82ae68243c232c2bf6212710ef9a61acfeb6"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-italic.woff2",
+      "sha1": "ae30c882aa52bfc9dc15fb6403f98840d2963e80"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-normal.woff",
+      "sha1": "19f55ba70b17bd1757d22dff5bbc198d81c6395e"
+    },
+    {
+      "path": "node_modules/@fontsource/playfair-display/files/playfair-display-vietnamese-900-normal.woff2",
+      "sha1": "cc214205ded592b9036972088921d9129113827d"
+    },
+    {
+      "path": "src/assets/fonts/Audiowide-Regular.ttf",
+      "sha1": "651503b7a0a89f49f78f14d04c62f811853573cd"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Black.ttf",
+      "sha1": "645e04c53c6b5b35bce654a811ebce16af8aa721"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Bold.ttf",
+      "sha1": "875cf0cecd647bcf22e79d633d868c1b1ec98dfa"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Light.ttf",
+      "sha1": "e247a92158e112f8bf7b638c8d95381d66b00dbb"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Medium.ttf",
+      "sha1": "283f21b44efbdbf276ba802be2d949a36bbc4233"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-Regular.ttf",
+      "sha1": "fdd3002e7d814ee47c1c1b8487c72c6bbb3a2d00"
+    },
+    {
+      "path": "src/assets/fonts/Poppins-SemiBold.ttf",
+      "sha1": "8a4ace9392d06bcb7f8ea2f5169b07e4c383a90d"
+    }
+  ]
+}
