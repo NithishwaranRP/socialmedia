@@ -31,6 +31,7 @@ import Slider from '@react-native-community/slider';
 import { navigate } from '../../utils/NavigationUtil';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { markReelAsWatched } from '../../redux/actions/reelAction';
+import { useAvatarPopup } from '../../context/AvatarPopupContext';
 
 interface VideoItemProps {
   item: any;
@@ -55,6 +56,9 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
   const userId = useAppSelector((state) => state.user?.user?.id);
   const videoRef = useRef<any>(null);
   
+  // Get Avatar popup context
+  const { setShowAIAvatar, setIsLoading, setDirectInitSession } = useAvatarPopup();
+
   // Early return for invalid item
   if (!item || !item._id || !item.videoUri) {
     console.error('Invalid video item received:', item);
@@ -117,6 +121,7 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
       // Platform.OS == 'android' ? 'https://192.168.68.133:8080' : 'reelzzz:/'
       // Platform.OS == 'android' ? 'https://192.168.108.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'http://192.168.128.133:8080' : 'reelzzz:/'
     }/share/reel/${item._id}`;
     const message = `Hey, Checkout this reel: ${reelUrl}`;
     Share.share({
@@ -254,7 +259,17 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
     console.log("Video Duration:", videoDuration);
   }, [videoDuration]);
 
-  
+  // Handle AI Avatar button press
+  const handleAIAvatar = () => {
+    console.log("Opening AI Avatar for reel:", item._id);
+    // Pause the video
+    setIsPaused(true);
+    // Open the AI Avatar popup and initialize session
+    setIsLoading(true);
+    setDirectInitSession(true);
+    setShowAIAvatar(true);
+  };
+
   return (
     <View style={styles.container}>
       <GestureHandlerRootView style={{flex: 1}}>
@@ -355,7 +370,7 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
         comments={commentMeta}
         onLike={() => {
           handleLikeReel();
-        } }
+        }}
         onComment={() => {
           SheetManager.show('comment-sheet', {
             payload: {
@@ -364,7 +379,7 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
               commentsCount: item.commentsCount,
             },
           });
-        } }
+        }}
         onLongPressLike={() => {
           SheetManager.show('like-sheet', {
             payload: {
@@ -372,10 +387,13 @@ const VideoItem: FC<VideoItemProps> = ({item, isVisible, preload}) => {
               type: 'reel',
             },
           });
-        } }
+        }}
         onReact={handleReactReel}
         onShare={handleShareReel}
-        isLiked={reelMeta?.isLiked} react={''}      />
+        onAIAvatar={handleAIAvatar}
+        isLiked={reelMeta?.isLiked} 
+        react={''}
+      />
     </View>
   );
 };

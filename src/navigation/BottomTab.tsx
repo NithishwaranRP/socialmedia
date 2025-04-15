@@ -79,12 +79,24 @@ import { Colors, useThemeColors } from "../constants/Colors";
 import { navigate } from "../utils/NavigationUtil";
 import { useAppSelector } from "../redux/reduxHook";
 import { RootState } from "../redux/store";
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useAvatarPopup } from "../context/AvatarPopupContext";
 
 const Tab = createBottomTabNavigator();
 
 const BottomTab = () => {
   const isDarkMode = useAppSelector((state: RootState) => state.theme.isDarkMode);
   const colors = useThemeColors();
+  const { setShowAIAvatar, setIsLoading, setDirectInitSession } = useAvatarPopup();
+
+  const handleAvatarButtonPress = () => {
+    // Set loading state first
+    setIsLoading(true);
+    // Tell the avatar component to directly initiate a session
+    setDirectInitSession(true);
+    // Show the avatar popup
+    setShowAIAvatar(true);
+  };
 
   return (
     <Tab.Navigator
@@ -145,12 +157,12 @@ const BottomTab = () => {
         component={HomeScreen}
         options={{
           tabBarIcon: () => (
-            <TouchableOpacity onPress={() => navigate("PickReelScreen")} activeOpacity={0.8}>
+            <TouchableOpacity 
+              onPress={handleAvatarButtonPress} 
+              activeOpacity={0.8}
+            >
               <View style={isDarkMode ? styles.postButtonContainerDark : styles.postButtonContainerLight}>
-                <Image 
-                  style={isDarkMode ? styles.postButtonDark : styles.postButtonLight} 
-                  source={require("../assets/icons/nav.png")} 
-                />
+                <Icon name="smart-toy" size={24} color={isDarkMode ? "#FFF" : "#282A2D"} />
               </View>
             </TouchableOpacity>
           ),

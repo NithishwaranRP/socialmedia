@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {Colors} from '../../constants/Colors';
 import CustomText from '../global/CustomText';
@@ -19,6 +20,7 @@ interface InteractionButtonProps {
   onComment: () => void;
   onShare: () => void;
   onReact: () => void;
+  onAIAvatar?: () => void;
   onLongPressLike: () => void;
   isLiked: boolean;
 }
@@ -33,6 +35,7 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
   likes,
   react,
   onReact,
+  onAIAvatar,
 }) => {
   // const colors = useThemeColors();
   
@@ -73,6 +76,13 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
         <Icon name={'share'} size={RFValue(22)} color={Colors.text} />
         <CustomText variant="h9" fontFamily={FONTS.Medium}>
           Share
+        </CustomText>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.button} onPress={onAIAvatar}>
+        <MaterialIcon name={'smart-toy'} size={RFValue(22)} color={Colors.text} />
+        <CustomText variant="h9" fontFamily={FONTS.Medium}>
+          AI Chat
         </CustomText>
       </TouchableOpacity>
     </View>

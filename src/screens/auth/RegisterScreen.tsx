@@ -23,6 +23,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import CustomText from '../../components/global/CustomText';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import messaging from '@react-native-firebase/messaging';
+import {LANGUAGES} from '../../constants/Languages';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 import {
   checkUsernameAvailability,
@@ -205,6 +207,16 @@ const RegisterScreen: FC = () => {
   const [bio, setBio] = useState<string>('');
   const [imageUri, setImageUri] = useState<string>('');
 
+  // Add language picker state
+  const [open, setOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [languages, setLanguages] = useState(
+    LANGUAGES.map(lang => ({
+      label: lang.label,
+      value: lang.value
+    }))
+  );
+
   // Create animation values for the flowing gradient
   const animatedValue = useRef(new Animated.Value(0)).current;
   
@@ -362,6 +374,7 @@ const RegisterScreen: FC = () => {
       id_token: item?.id_token,
       username,
       fcmToken,
+      preferredLanguage: selectedLanguage,
     };
     console.log('Register Data:', registerData);
     await dispatch(register(registerData));
@@ -482,6 +495,26 @@ const RegisterScreen: FC = () => {
                 placeholder="Tell us a bit about yourself"
                 multiline={true}
                 numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.formGroup}>
+              <View style={styles.labelContainer}>
+                <CustomText style={styles.label}>Preferred Language</CustomText>
+              </View>
+              <DropDownPicker
+                open={open}
+                value={selectedLanguage}
+                items={languages}
+                setOpen={setOpen}
+                setValue={setSelectedLanguage}
+                setItems={setLanguages}
+                style={[styles.input, {backgroundColor: 'rgba(24, 24, 27, 0.6)'}]}
+                dropDownContainerStyle={{backgroundColor: '#18181B', borderColor: '#27272A'}}
+                textStyle={{color: '#FAFAFA', fontFamily: FONTS.Medium}}
+                placeholderStyle={{color: '#A1A1AA'}}
+                zIndex={3000}
+                zIndexInverse={1000}
               />
             </View>
           </View>

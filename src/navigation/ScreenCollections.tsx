@@ -11,6 +11,8 @@ import RemixScreen from '../screens/reel/RemixScreen';
 import UploadReelScreen from '../screens/reel/UploadReelScreen';
 import UploadRemixScreen from '../screens/reel/UploadRemixScreen';
 import BottomTab from './BottomTab';
+// Import commented out since we're showing HeyGenAvatarScreen as a popup now
+// import { HeyGenAvatarScreen } from '../components/HeyGenAvatar';
 
 export const authStack = [
   {
@@ -68,6 +70,11 @@ export const dashboardStack = [
     name: 'ReedemScreen',
     component: ReedemScreen,
   },
+  // HeyGenAvatarScreen route commented out since we're showing it as a popup now
+  // {
+  //   name: 'HeyGenAvatarScreen',
+  //   component: HeyGenAvatarScreen,
+  // },
 ];
 
 export const mergedStacks = [...dashboardStack, ...authStack];

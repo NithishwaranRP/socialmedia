@@ -20,15 +20,17 @@ appAxios.interceptors.response.use(
   response => response,
   async error => {
     if (error.response && error.response.status === 401) {
-      console.log('Received 401 error, attempting to refresh token');
       try {
-        const newAccessToken = await refresh_tokens();
-        if (newAccessToken) {
-          console.log('Refreshed token, retrying request');
-          error.config.headers.Authorization = `Bearer ${newAccessToken}`;
-          return axios(error.config);
+        const newToken = await refresh_tokens();
+        if (newToken) {
+          // Try the request again with the new token
+          const originalRequest = error.config;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return appAxios(originalRequest);
         } else {
-          console.log('Token refresh failed');
+          // If token refresh failed, navigate to login
+          token_storage.clearAll();
+          resetAndNavigate('LoginScreen');
           return Promise.reject(error);
         }
       } catch (refreshError) {
@@ -38,11 +40,11 @@ appAxios.interceptors.response.use(
     }
 
     if (error.response && error.response.status !== 401) {
-      const errorMessage = error.response.data.msg || 'something went wrong';
+      const errorMessage = error.response.data?.msg || 'Something went wrong';
       Alert.alert(errorMessage);
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export const refresh_tokens = async () => {
@@ -52,7 +54,7 @@ export const refresh_tokens = async () => {
       console.log('REFRESH TOKEN ERROR: No refresh token found');
       return null;
     }
-    
+
     console.log('Attempting to refresh token with:', refresh_token.substring(0, 10) + '...');
     const response = await axios.post(REFRESH_TOKEN, {
       refresh_token,

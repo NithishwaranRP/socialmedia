@@ -17,10 +17,18 @@ export const userSlice = createSlice({
     setUser: (state, action: PayloadAction<object>) => {
       state.user = action.payload;
     },
+    
+    // Add new reducer to update preferred language
+    updatePreferredLanguage: (state, action: PayloadAction<string>) => {
+      if (state.user) {
+        state.user.preferredLanguage = action.payload;
+        console.log('Updated user preferred language in Redux:', action.payload);
+      }
+    },
   },
 });
 
-export const {setUser} = userSlice.actions;
+export const {setUser, updatePreferredLanguage} = userSlice.actions;
 
 export const selectUser = (state: RootState) => state.user.user;
 

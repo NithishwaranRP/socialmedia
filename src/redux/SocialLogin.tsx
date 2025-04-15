@@ -1,4 +1,4 @@
-import {Alert} from 'react-native';
+import {Alert, ToastAndroid} from 'react-native';
 import {navigate, resetAndNavigate} from '../utils/NavigationUtil';
 import {setUser} from './reducers/userSlice';
 import {token_storage} from './storage';
@@ -12,6 +12,8 @@ import {
   GraphRequestManager,
 } from 'react-native-fbsdk';
 import messaging from '@react-native-firebase/messaging';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {LANGUAGES} from '../constants/Languages';
 
 interface RegisterData {
   id_token: string;
@@ -23,10 +25,47 @@ interface RegisterData {
 }
 
 const handleSignInSuccess = async (res: any, dispatch: any) => {
-  token_storage.set('access_token', res.data.tokens.access_token);
-  token_storage.set('refresh_token', res.data.tokens.refresh_token);
-  await dispatch(setUser(res.data.user));
-  resetAndNavigate('BottomTab');
+  try {
+    const {user, tokens} = res.data;
+    console.log('Login successful, processing user data...', user);
+    console.log('Language data in response:', user.preferredLanguage);
+    
+    // Store user's preferred language in AsyncStorage
+    if (user.preferredLanguage) {
+      console.log('Setting language in storage:', user.preferredLanguage);
+      await AsyncStorage.setItem('selectedLanguage', user.preferredLanguage);
+      console.log(`Loaded user's preferred language from server: ${user.preferredLanguage}`);
+      ToastAndroid.show(`Welcome back! Using your preferred language: ${
+        LANGUAGES.find(lang => lang.value === user.preferredLanguage)?.label || user.preferredLanguage
+      }`, ToastAndroid.SHORT);
+    } else {
+      // If user has no language preference set, default to English
+      console.log('No language in user profile, defaulting to English');
+      await AsyncStorage.setItem('selectedLanguage', 'en');
+      console.log('No preferred language on server, defaulting to English');
+    }
+    
+    // Store tokens
+    token_storage.set('access_token', tokens.access_token);
+    token_storage.set('refresh_token', tokens.refresh_token);
+    console.log('Auth tokens stored successfully');
+    
+    // Make sure preferredLanguage is included in the user object before setting in Redux
+    if (!user.preferredLanguage && await AsyncStorage.getItem('selectedLanguage')) {
+      user.preferredLanguage = await AsyncStorage.getItem('selectedLanguage');
+      console.log('Added preferredLanguage to user object from AsyncStorage:', user.preferredLanguage);
+    }
+    
+    // Update Redux state with user data
+    await dispatch(setUser(user));
+    console.log('User data loaded into Redux:', user);
+    
+    // Navigate to main app
+    resetAndNavigate('BottomTab');
+  } catch (error) {
+    console.error('Error during sign-in process:', error);
+    Alert.alert('Login Error', 'There was a problem completing your login. Please try again.');
+  }
 };
 
 const handleSignInError = (error: any, data: RegisterData) => {

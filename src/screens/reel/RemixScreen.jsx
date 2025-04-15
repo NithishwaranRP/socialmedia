@@ -337,6 +337,7 @@ const handleReRecord = async () => {
             setIsUploadInProgress(true);
             // const response = await fetch('http://192.168.68.133:8080/uploadVideo', {
             const response = await fetch('https://recaps-backend-277610981315.asia-south1.run.app/uploadVideo', {
+            // const response = await fetch('http://192.168.128.133:8080/uploadVideo', {
                 method: 'POST',
                 body: formData,
             });

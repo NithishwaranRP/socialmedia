@@ -4,10 +4,17 @@ import {Platform} from 'react-native';
 // export const BASE_URL = "https://reelzzzserverworking.vercel.app";
 export const BASE_URL = "https://recaps-backend-277610981315.asia-south1.run.app";
 
+// Be sure your backend is running on this IP and port
+// export const BASE_URL = "http://192.168.105.133:8080";
+
 // FOR LOCAL DEVELOPMENT (Uncomment when needed)
-// export const BASE_URL = "http://192.168.68.133:8080"; // Change based on your local IP
-// export const BASE_URL = "http://192.168.222.133:8080"; // Change based on your local IP
-// 192.168.48.90
+// export const BASE_URL = "http://192.168.105.133:8080";
+// export const BASE_URL = "http://localhost:8080"; // For emulator
+// export const BASE_URL = "http://10.0.2.2:8080"; // For Android emulator accessing localhost
+// export const BASE_URL = "http://192.168.1.X:8080"; // Change based on your local IP
+
+// Log the active endpoint for debugging
+console.log('🚀 Active API endpoint:', BASE_URL);
 
 // RUNNING ON REAL DEVICE USE YOUR NETWORK IP TO ACCESS ON REAL DEVICE
 //eg http://192.168.29.88:3000

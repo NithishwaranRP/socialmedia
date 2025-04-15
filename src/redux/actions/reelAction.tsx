@@ -1,11 +1,13 @@
 import {navigate, resetAndNavigate} from '../../utils/NavigationUtil';
 import {appAxios} from '../apiConfig';
 import {refetchUser} from './userAction';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const createReel = (data: any) => async (dispatch: any) => {
   try {
+    console.log('Creating reel with data:', JSON.stringify(data));
     const res = await appAxios.post('/reel', data);
-    console.log(res);
+    console.log('Reel created response:', res.data);
     dispatch(refetchUser());
   } catch (error) {
     console.log('REEL CREATE ERROR', error);
@@ -15,10 +17,20 @@ export const createReel = (data: any) => async (dispatch: any) => {
 export const fetchFeedReel =
   (offset: number, limit: number) => async (dispatch: any) => {
     try {
-      const res = await appAxios.get(
-        `/feed/home?limit=${limit || 25}&offset=${offset}`,
-      );
-      // console.log(res);
+      // Get selected language from AsyncStorage
+      const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
+      
+      // Build the URL with language parameter if available
+      let url = `/feed/home?limit=${limit || 25}&offset=${offset}`;
+      if (selectedLanguage) {
+        url += `&language=${selectedLanguage}`;
+        console.log(`Filtering feed by language: ${selectedLanguage}`);
+      } else {
+        console.log('No language filter applied');
+      }
+      
+      const res = await appAxios.get(url);
+      console.log(`Fetched ${res.data.reels?.length || 0} reels`);
       
       return res.data.reels || [];
     } catch (error) {
@@ -29,10 +41,17 @@ export const fetchFeedReel =
 export const fetchFeedScrollReel =
   (offset: number, limit: number) => async (dispatch: any) => {
     try {
-      console.log(`Fetching reels with offset: ${offset}, limit: ${limit || 10}`);
-      const res = await appAxios.get(
-        `/feed/home?limit=${limit || 10}&offset=${offset}`,
-      );
+      // Get selected language from AsyncStorage
+      const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
+      
+      // Build the URL with language parameter if available
+      let url = `/feed/home?limit=${limit || 10}&offset=${offset}`;
+      if (selectedLanguage) {
+        url += `&language=${selectedLanguage}`;
+      }
+      
+      console.log(`Fetching reels with offset: ${offset}, limit: ${limit || 10}, language: ${selectedLanguage || 'all'}`);
+      const res = await appAxios.get(url);
       console.log(`Fetched ${res.data.reels?.length || 0} reels successfully`);
       return res.data.reels || [];
     } catch (error) {
@@ -102,8 +121,17 @@ export const fetchReel =
         return [];
       }
 
-      // Create a cache key
-      const cacheKey = `${type}_${data.userId}_${data.offset}`;
+      // Get the selected language from AsyncStorage
+      let selectedLanguage = null;
+      try {
+        selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
+        console.log(`Language for profile feed: ${selectedLanguage || 'none'}`);
+      } catch (error) {
+        console.error('Error getting language preference:', error);
+      }
+
+      // Create a cache key that includes language
+      const cacheKey = `${type}_${data.userId}_${data.offset}_${selectedLanguage || 'default'}`;
       
       // Check if we have a request in progress for this key
       if (pendingFetches.has(cacheKey)) {
@@ -118,7 +146,7 @@ export const fetchReel =
         return cachedItem.data;
       }
 
-      console.log(`Fetching reels: type=${type}, userId=${data.userId}, offset=${data.offset}`);
+      console.log(`Fetching reels: type=${type}, userId=${data.userId}, offset=${data.offset}, language=${selectedLanguage || 'default'}`);
       
       // Ensure we're using the correct endpoint
       const endpoint = `/feed/${type}/${data.userId}`;
@@ -130,8 +158,14 @@ export const fetchReel =
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
           
+          // Build the URL with language parameter if available
+          let url = `${endpoint}?limit=5&offset=${data.offset}`;
+          if (selectedLanguage) {
+            url += `&language=${selectedLanguage}`;
+          }
+          
           const res = await appAxios.get(
-            `${endpoint}?limit=5&offset=${data.offset}`,
+            url,
             { signal: controller.signal }
           );
           
@@ -217,3 +251,25 @@ export const getReelById =
       return [];
     }
   };
+
+export const fetchReelsByLanguage = (language: string, offset: number, limit: number) => async (dispatch: any) => {
+  try {
+    console.log(`Fetching reels for language: ${language}, offset: ${offset}, limit: ${limit}`);
+    const res = await appAxios.get(
+      `/feed/language/${language}?limit=${limit || 10}&offset=${offset}`
+    );
+    console.log(`Fetched ${res.data.reels?.length || 0} reels for language ${language}`);
+    return {
+      reels: res.data.reels || [],
+      hasMore: res.data.hasMore || false,
+      totalCount: res.data.totalCount || 0
+    };
+  } catch (error) {
+    console.log('FETCH REELS BY LANGUAGE ERROR', error);
+    return {
+      reels: [],
+      hasMore: false,
+      totalCount: 0
+    };
+  }
+};

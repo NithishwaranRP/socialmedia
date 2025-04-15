@@ -6,8 +6,10 @@ import {
   View,
   Dimensions,
   ActivityIndicator,
+  Text,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {useAppSelector, useAppDispatch} from '../../redux/reduxHook';
 import {selectUser} from '../../redux/reducers/userSlice';
@@ -18,6 +20,7 @@ import {FONTS} from '../../constants/Fonts';
 import CustomText from '../../components/global/CustomText';
 import {useThemeColors} from '../../constants/Colors';
 import MinimalButton from '../../components/global/MinimalButton';
+import { useAvatarPopup } from '../../context/AvatarPopupContext';
 
 const {width} = Dimensions.get('window');
 
@@ -28,6 +31,7 @@ const ProfileScreen = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser) as User;
   const colors = useThemeColors();
+  const { setShowAIAvatar, setIsLoading, setDirectInitSession } = useAvatarPopup();
 
   // Check if user has valid data
   const hasValidUserData = user && user.id;
@@ -47,6 +51,13 @@ const ProfileScreen = () => {
     } finally {
       setRefreshing(false);
     }
+  };
+
+  // Handle starting AI avatar with direct initialization
+  const handleStartAIAvatar = () => {
+    setIsLoading(true);
+    setDirectInitSession(true);
+    setShowAIAvatar(true);
   };
 
   const MyTabs = [
@@ -112,8 +123,6 @@ const ProfileScreen = () => {
       <View style={[styles.profileSection, { backgroundColor: colors.background }]}>
         <MinimalProfileDetails user={user} />
       </View>
-      
-      {/* Tab Bar */}
       <View style={[styles.tabBarContainer, { 
         backgroundColor: colors.background,
         borderColor: colors.border
@@ -152,8 +161,6 @@ const ProfileScreen = () => {
           </TouchableOpacity>
         ))}
       </View>
-      
-      {/* Content Area */}
       <View style={[styles.contentContainer, { backgroundColor: colors.background }]}>
         {refreshing ? (
           <View style={styles.loadingContainer}>
@@ -212,6 +219,29 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginVertical: 20,
+  },
+  buttonIcon: {
+    marginRight: 10,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: FONTS.Medium,
+  },
+  description: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontFamily: FONTS.Regular,
+    marginTop: 20,
+    paddingHorizontal: 30,
   },
 });
 

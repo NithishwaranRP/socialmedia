@@ -1,17 +1,38 @@
-import React, {FC} from 'react';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import CustomView from '../../components/global/CustomView';
 import CustomGradient from '../../components/global/CustomGradient';
 import GlobalFeed from '../../components/feed/GlobalFeed';
+import { useThemeColors } from '../../constants/Colors';
+import { NavigationProp } from '@react-navigation/native';
 
-const HomeScreen: FC = () => {
+interface HomeScreenProps {
+  navigation: NavigationProp<any>;
+}
+
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
+  const colors = useThemeColors();
+
   return (
-    <CustomView>
-      {/* <CustomGradient position="top" /> */}
+    <CustomView style={styles.container}>
       <GlobalFeed />
-      <CustomGradient position="bottom" />
+      <CustomGradient position="bottom" style={styles.gradient} />
     </CustomView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  gradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
+});
 
 export default HomeScreen;
 

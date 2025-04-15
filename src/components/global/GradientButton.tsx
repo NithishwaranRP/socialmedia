@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, TouchableOpacity, StyleSheet, ViewStyle, TextStyle} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import CustomText from './CustomText';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -9,11 +9,21 @@ import {useThemeColors} from '../../constants/Colors';
 import {useSelector} from 'react-redux';
 import {RootState} from '../../redux/store';
 
-const GradientButton: React.FC<{
+interface GradientButtonProps {
   text: string;
   iconName?: string;
   onPress?: () => void;
-}> = ({text, iconName, onPress}) => {
+  style?: ViewStyle | ViewStyle[];
+  textStyle?: TextStyle | TextStyle[];
+}
+
+const GradientButton: React.FC<GradientButtonProps> = ({
+  text, 
+  iconName, 
+  onPress, 
+  style, 
+  textStyle
+}) => {
   const colors = useThemeColors();
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   
@@ -24,7 +34,7 @@ const GradientButton: React.FC<{
     
   return (
     <TouchableOpacity
-      style={styles.GradientButtonContainer}
+      style={[styles.GradientButtonContainer, style]}
       activeOpacity={0.4}
       onPress={onPress}>
       <LinearGradient
@@ -35,15 +45,21 @@ const GradientButton: React.FC<{
         <View style={styles.innerButton}>
           <CustomText
             variant="h8"
-            style={[styles.text, {color: colors.text}]}
+            style={[
+              styles.text, 
+              {color: colors.text, marginRight: iconName ? 5 : 0},
+              textStyle
+            ]}
             fontFamily={FONTS.Medium}>
             {text}
           </CustomText>
-          <Icon
-            name={iconName ? iconName : 'wallet-giftcard'}
-            size={RFValue(16)}
-            style={[styles.icon, {color: colors.text}]}
-          />
+          {iconName && (
+            <Icon
+              name={iconName}
+              size={RFValue(16)}
+              style={[styles.icon, {color: colors.text}]}
+            />
+          )}
         </View>
       </LinearGradient>
     </TouchableOpacity>
@@ -70,9 +86,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    paddingHorizontal: 10,
   },
   text: {
-    marginRight: 5,
+    textAlign: 'center',
   },
   icon: {
     marginLeft: 4,

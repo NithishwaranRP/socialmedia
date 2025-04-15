@@ -18,6 +18,7 @@ const linking = {
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.68.133:8080'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.108.133:8080'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'http://192.168.128.133:8080'],
   config,
 };
 

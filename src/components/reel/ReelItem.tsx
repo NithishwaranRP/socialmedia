@@ -14,6 +14,7 @@ interface ReelItemProps {
   onComment: () => void;
   onShare: () => void;
   onReact: () => void;
+  onAIAvatar?: () => void;
   onLongPressLike: () => void;
   isLiked: boolean;
 }
@@ -28,6 +29,7 @@ const ReelItem: React.FC<ReelItemProps> = ({
   onShare,
   react,
   onReact,
+  onAIAvatar,
   isLiked,
   onLongPressLike,
 }) => {
@@ -49,6 +51,7 @@ const ReelItem: React.FC<ReelItemProps> = ({
         onComment={onComment}
         onShare={onShare}
         onReact={onReact}
+        onAIAvatar={onAIAvatar}
         isLiked={isLiked}
       />
     </View>

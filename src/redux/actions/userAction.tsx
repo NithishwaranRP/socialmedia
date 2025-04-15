@@ -1,12 +1,13 @@
 import {token_storage} from '../storage';
 import {appAxios} from '../apiConfig';
-import {setUser} from '../reducers/userSlice';
+import {setUser, updatePreferredLanguage} from '../reducers/userSlice';
 import {persistor} from '../store';
 import {resetAndNavigate} from '../../utils/NavigationUtil';
 import {CHECK_USERNAME, REGISTER} from '../API';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import {addFollowing} from '../reducers/followingSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface registerData {
   id_token: string;
@@ -17,6 +18,7 @@ interface registerData {
   userImage: string;
   bio: string;
   fcmToken?: string | null;
+  preferredLanguage?: string;
 }
 
 export const checkUsernameAvailability =
@@ -32,22 +34,67 @@ export const checkUsernameAvailability =
     }
   };
 
-export const register = (data: registerData) => async (dispatch: any) => {
+export const register = (registerData: registerData) => async (dispatch: any) => {
   try {
-    console.log('Registering with data:', data); // Log registration data
-    const res = await axios.post(REGISTER, data);
-    token_storage.set('access_token', res.data.tokens.access_token);
-    token_storage.set('refresh_token', res.data.tokens.refresh_token);
-    await dispatch(setUser(res.data.user));
-    resetAndNavigate('BottomTab');
+    console.log('Sending registration data to:', `${REGISTER}`);
+    
+    const res = await axios.post(`${REGISTER}`, registerData);
+    console.log('Registration response:', res.status, typeof res.data);
+    
+    if (!res.data || !res.data.user || !res.data.tokens) {
+      console.error('Invalid response format:', res.data);
+      alert('Registration failed: Invalid server response format');
+      return;
+    }
+    
+    const { user, tokens } = res.data;
+    console.log('Registration succeeded! User:', user.username);
+    
+    // Store the user's preferred language in AsyncStorage
+    if (user.preferredLanguage) {
+      await AsyncStorage.setItem('selectedLanguage', user.preferredLanguage);
+      console.log(`Saved preferred language to storage: ${user.preferredLanguage}`);
+    } else {
+      // Default to English if no language is specified
+      await AsyncStorage.setItem('selectedLanguage', 'en');
+      console.log('No preferred language specified, defaulting to English');
+    }
+    
+    try {
+      // Store tokens using the helper method
+      const tokenStored = await token_storage.storeToken(tokens);
+      if (!tokenStored) {
+        throw new Error('Failed to store tokens');
+      }
+      console.log('Tokens stored successfully');
+      
+      // Update Redux state
+      dispatch(setUser(user));
+      
+      // Navigate to home screen
+      resetAndNavigate('BottomTab');
+    } catch (storageError) {
+      console.error('Error storing tokens:', storageError);
+      alert('Registration completed but error storing session. Please log in again.');
+    }
   } catch (error: any) {
-    Toast.show({
-      type: 'normalToast',
-      props: {
-        msg: 'There was an error, try again later',
-      },
-    });
-    console.log('REGISTER ERROR ->', error);
+    console.error('Registration error:', error);
+    
+    if (axios.isAxiosError(error)) {
+      // Extract detailed error information from Axios error
+      console.error('Status:', error.response?.status);
+      console.error('Response data:', JSON.stringify(error.response?.data));
+      
+      const errorMessage = error.response?.data?.msg || 
+                         error.response?.data?.error || 
+                         'Registration failed. Please try again later.';
+      
+      alert(errorMessage);
+    } else {
+      // Handle non-Axios errors
+      console.error('Non-axios error:', error.message);
+      alert('Registration failed. Please check your connection and try again.');
+    }
   }
 };
 
@@ -142,3 +189,47 @@ export const getFollowOrFollowingUsers =
       return [];
     }
   };
+
+/**
+ * Updates a user's preferred language
+ * @param languageCode - The language code to set as preferred
+ * @returns A boolean indicating success or failure
+ */
+export const updateUserLanguage = (languageCode: string) => async (dispatch: any) => {
+  try {
+    console.log('Updating language preference to:', languageCode);
+    
+    // First, immediately update AsyncStorage
+    await AsyncStorage.setItem('selectedLanguage', languageCode);
+    console.log('Updated AsyncStorage with language:', languageCode);
+    
+    // Update Redux state immediately (optimistic update)
+    dispatch(updatePreferredLanguage(languageCode));
+    console.log('Updated Redux state with language:', languageCode);
+    
+    // Then try to update the server
+    const res = await appAxios.patch('/user/profile', {
+      preferredLanguages: [languageCode]  // Send as array with single value to match backend schema
+    });
+    
+    if (res.status === 200) {
+      console.log('Successfully updated language preference in user profile');
+      
+      // Keep Redux state updated
+      dispatch(updatePreferredLanguage(languageCode));
+      
+      // Refresh the user data to ensure all parts of the app are updated
+      dispatch(refetchUser());
+      
+      return true;
+    } else {
+      console.error('Failed to update language preference:', res.data);
+      // Even if server update failed, we've already updated locally
+      return true;
+    }
+  } catch (error) {
+    console.error('Error updating language preference:', error);
+    // Local update succeeded even if server failed
+    return true;
+  }
+};

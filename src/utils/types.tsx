@@ -1,4 +1,5 @@
 interface User {
+  [x: string]: any;
   _id: string;
   id: string;
   username: string;

@@ -23,6 +23,7 @@ import {
   AppState,
   AppStateStatus,
   Platform,
+  Modal,
 } from 'react-native';
 
 import LinearGradient from 'react-native-linear-gradient';
@@ -34,6 +35,8 @@ import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import Video from 'react-native-video';
 import {Colors, useThemeColors} from '../../constants/Colors';
 import { RootState } from '../../redux/store';
+import { RFValue } from 'react-native-responsive-fontsize';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
@@ -64,17 +67,10 @@ interface HashtagItem {
   thumbnails: string[];
 }
 
-// Add type definition for route params
-interface RouteParams {
-  refreshFeed?: boolean;
-  [key: string]: any;
-}
-
 const GlobalFeed = () => {
   const dispatch = useAppDispatch();
-  const navigation = useNavigation<any>(); // Type as any to allow setParams
+  const navigation = useNavigation();
   const route = useRoute();
-  const routeParams = route.params as RouteParams | undefined;
   const colors = useThemeColors(); // Get dynamic theme colors
   const isDarkMode = useAppSelector((state: RootState) => state.theme.isDarkMode);
   
@@ -94,9 +90,12 @@ const GlobalFeed = () => {
   const [videoProgress, setVideoProgress] = useState(new Map());
   const [isMuted, setIsMuted] = useState(false);
   const [isBreakingNewsVisible, setIsBreakingNewsVisible] = useState(true);
-  const scrollPosition = useRef(0);
-  const scrollDirection = useRef(1); // 1 for right, -1 for left
-  const scrollViewRef = useRef<ScrollView>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
+  const [showLanguageModal, setShowLanguageModal] = useState<boolean>(false);
+  
+  scrollPosition.useRef(0);
+  scrollDirection.useRef(1); // 1 for right, -1 for left
+  scrollViewRef.useRef<ScrollView>(null);
   const [hashedVideos, setHashedVideos] = useState<Map<string, any>>(new Map());
   const autoScrollIntervalRef = useRef<number | null>(null);
   const [hashtagCounts, setHashtagCounts] = useState<Map<string, number>>(new Map());
@@ -127,23 +126,6 @@ const GlobalFeed = () => {
 
   // Add this state to track app state
   const [currentAppState, setCurrentAppState] = useState(AppState.currentState);
-
-  // Add to existing imports and state declarations
-  // ...existing code...
-
-  // Add to the component to detect language changes from route params
-  useEffect(() => {
-    // Check if we need to refresh because of language change
-    if (routeParams?.refreshFeed) {
-      console.log('Language changed, refreshing feed data');
-      handleRefresh();
-      
-      // Clear the param to prevent multiple refreshes
-      navigation.setParams({ refreshFeed: undefined });
-    }
-  }, [routeParams, handleRefresh, navigation]);
-
-  // ...rest of the existing code...
 
   // Memoize the GradientText component to prevent unnecessary re-renders
   const GradientText = memo(({ text, style }: GradientTextProps) => {
@@ -210,7 +192,7 @@ const GlobalFeed = () => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const result = await dispatch(fetchFeedReel(0, 200));
+      const result = await dispatch(fetchFeedReel(0, 200, selectedLanguage));
       setAllData(result);
       await saveData(result);
     } catch (error) {
@@ -219,26 +201,7 @@ const GlobalFeed = () => {
       // await loadData();
       setRefreshing(false);
     }
-  }, [dispatch]);
-
-  // Add an effect to refresh the feed when language changes
-  useFocusEffect(
-    useCallback(() => {
-      const checkLanguageChange = async () => {
-        // Get the route params
-        const params = route.params as any;
-        if (params?.refreshFeed) {
-          console.log('Language changed, refreshing feed data');
-          handleRefresh();
-          
-          // Clear the param
-          navigation.setParams({ ...params, refreshFeed: undefined });
-        }
-      };
-      
-      checkLanguageChange();
-    }, [route.params, handleRefresh])
-  );
+  }, [dispatch, selectedLanguage]);
 
   const saveData = useCallback(async (data: any) => {
     try {
@@ -331,23 +294,18 @@ const GlobalFeed = () => {
         // App has come to foreground, refresh data
         const refreshData = async () => {
           try {
-            const result = await dispatch(fetchFeedReel(0, 200));
-            setAllData(result);
-            await saveData(result);
-            
-            // Recalculate hashtag counts
-            const counts = new Map<string, number>();
-            result.forEach((item: FeedItem) => {
-              const hashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
-              hashtags.forEach((hashtag: string) => {
-                if (!item.isRead) {
-                  counts.set(hashtag, (counts.get(hashtag) || 0) + 1);
-                }
-              });
-            });
-            setHashtagCounts(counts);
+            const result = await dispatch(fetchFeedReel(0, 200, selectedLanguage));
+            if (result && result.length > 0) {
+              setAllData(result);
+              await saveData(result);
+            } else {
+              await loadData();
+            }
           } catch (error) {
             console.error('Error refreshing data:', error);
+            await loadData();
+          } finally {
+            setLoading(false);
           }
         };
         
@@ -362,7 +320,7 @@ const GlobalFeed = () => {
     return () => {
       subscription.remove();
     };
-  }, [currentAppState, dispatch]);
+  }, [currentAppState, dispatch, selectedLanguage]);
 
   // Update useFocusEffect
   useFocusEffect(
@@ -374,23 +332,18 @@ const GlobalFeed = () => {
       // Refresh data and recalculate counts when screen is focused
       const refreshData = async () => {
         try {
-          const result = await dispatch(fetchFeedReel(0, 200));
-          setAllData(result);
-          await saveData(result);
-          
-          // Recalculate hashtag counts
-          const counts = new Map<string, number>();
-          result.forEach((item: FeedItem) => {
-            const hashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
-            hashtags.forEach((hashtag: string) => {
-              if (!item.isRead) {
-                counts.set(hashtag, (counts.get(hashtag) || 0) + 1);
-              }
-            });
-          });
-          setHashtagCounts(counts);
+          const result = await dispatch(fetchFeedReel(0, 200, selectedLanguage));
+          if (result && result.length > 0) {
+            setAllData(result);
+            await saveData(result);
+          } else {
+            await loadData();
+          }
         } catch (error) {
           console.error('Error refreshing data:', error);
+          await loadData();
+        } finally {
+          setLoading(false);
         }
       };
       
@@ -415,7 +368,7 @@ const GlobalFeed = () => {
           stopAutoScroll();
         }
       };
-    }, [dispatch, currentAppState])
+    }, [dispatch, currentAppState, selectedLanguage])
   );
 
   const loadData = useCallback(async () => {
@@ -438,7 +391,7 @@ const GlobalFeed = () => {
           try {
 
      if (allData.length === 0) {
-          const result = await dispatch(fetchFeedReel(0, 200));
+          const result = await dispatch(fetchFeedReel(0, 200, selectedLanguage));
           setAllData(result);
           await saveData(result); // Save fetched data to AsyncStorage
         }
@@ -454,7 +407,7 @@ const GlobalFeed = () => {
         // }
       };
       fetchNews();
-    }, [dispatch]);
+    }, [dispatch, selectedLanguage]);
 
   useEffect(() => {
     if (user && user.username) {
@@ -1040,23 +993,18 @@ const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     // Refresh data
     const refreshData = async () => {
       try {
-        const result = await dispatch(fetchFeedReel(0, 200));
-        setAllData(result);
-        await saveData(result);
-        
-        // Recalculate hashtag counts
-        const counts = new Map<string, number>();
-        result.forEach((item: FeedItem) => {
-          const hashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
-          hashtags.forEach((hashtag: string) => {
-            if (!item.isRead) {
-              counts.set(hashtag, (counts.get(hashtag) || 0) + 1);
-            }
-          });
-        });
-        setHashtagCounts(counts);
+        const result = await dispatch(fetchFeedReel(0, 200, selectedLanguage));
+        if (result && result.length > 0) {
+          setAllData(result);
+          await saveData(result);
+        } else {
+          await loadData();
+        }
       } catch (error) {
         console.error('Error refreshing data:', error);
+        await loadData();
+      } finally {
+        setLoading(false);
       }
     };
     
@@ -1893,6 +1841,62 @@ muteIcon: {
   activeDot: {
     backgroundColor: '#fff',
   },
+  languageFilterContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    zIndex: 999,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  languageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  languageButtonText: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  languageModalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  selectedLanguageOption: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  languageOptionText: {
+    fontSize: 16,
+  },
     });
 
     // Move NewsItem here so it can access styles
@@ -2035,218 +2039,139 @@ muteIcon: {
       );
     });
 
+    // Function to handle language selection
+    const selectLanguage = (language: string) => {
+      setSelectedLanguage(language);
+      setShowLanguageModal(false);
+      refreshData();
+    };
+
     return (
-      <ScrollView 
-        ref={mainScrollViewRef}
-        style={styles.container} 
-        showsVerticalScrollIndicator={false} 
-        nestedScrollEnabled={true}
-        onScroll={handleMainScroll}
-        scrollEventThrottle={16}
-        contentContainerStyle={styles.mainScrollContainer}
-        scrollEnabled={true}
-      >
-        <StatusBar 
-          barStyle={isDarkMode ? "light-content" : "dark-content"} 
-          backgroundColor={colors.background} 
-          translucent 
-        />
-        <View>
-          <View
-            ref={breakingNewsRef}
-            onLayout={checkBreakingNewsVisibility}
-            style={{ position: 'relative' }}
-          >
-            <FlatList
-              ref={flatListRefBreakingNews}
-              horizontal
-              data={[...hashedVideos.values()]}
-              renderItem={renderBreakingNewsItem}
-              keyExtractor={(item, index) => `video-${index}`}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.breakingNewsContainer}
-              pagingEnabled
-              getItemLayout={getItemLayout}
-              initialNumToRender={2}
-              maxToRenderPerBatch={2}
-              windowSize={3}
-              removeClippedSubviews={true}
-              updateCellsBatchingPeriod={100}
-              onViewableItemsChanged={onViewableItemsChanged}
-              viewabilityConfig={{
-                itemVisiblePercentThreshold: 50,
-                minimumViewTime: 250,
-              }}
-              onScroll={handleScrollBreakingNews}
-              onEndReachedThreshold={0.5}
-            />
-            <CarouselDots 
-              total={Array.from(hashedVideos.values()).length}
-              active={currentVideoIndex}
-            />
-          </View>
-
-          {/* ScrollView for hashtags - Completely isolated from other scrolls */}
-          <View 
-            style={styles.categoryScrollWrapper}
-            {...categoryPanResponder.panHandlers}
-          >
-            <ScrollView
-              ref={scrollViewRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.scrollContainer}
-              scrollEventThrottle={16}
-              decelerationRate="fast"
-              snapToAlignment="center"
-              onMomentumScrollEnd={handleScrollEnd}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onScroll={handleCategoryScroll}
-              overScrollMode="never"
-              bounces={false}
-              directionalLockEnabled={true}
-              disableIntervalMomentum={true}
-              nestedScrollEnabled={true}
-              onScrollEndDrag={handleScrollEnd} // Add this to catch scroll end from drag
-            >
-              <View style={styles.categoryWrapper}>
-                <View style={styles.firstRow}>
-                  {(endlessHashtags.length > 0 ? endlessHashtags : allHashtags).map((hashtag, index) => {
-                    const selectedHashtag = hashtag;
-                    const actualIndex = allHashtags.indexOf(selectedHashtag);
-                    const isActive = activeCategoryIndex === actualIndex;
-                    
-                    // Performance optimization: Only render thumbnails that are close to view
-                    // Calculate distance from current scroll position
-                    const itemPosition = index * 100; // Assuming each item is 100 pixels wide
-                    const distanceFromView = Math.abs(itemPosition - categoryScrollPosition.current);
-                    
-                    // Skip rendering thumbnails that are far from view to improve performance
-                    if (distanceFromView > 1000) {
-                      return (
-                        <View
-                          key={`hashtag-${hashtag}-${index}`}
-                          style={[
-                            styles.categoryItem,
-                            isActive && styles.activeCategory,
-                          ]}
-                        />
-                      );
-                    }
-                    
-                    // Make sure we get the hashtag count, defaulting to 0 if not available
-                    const unreadCount = hashtagCounts.get(hashtag) || 0;
-                    
-                    const displayHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
-                    const displayNumber = getDisplayNumber(hashtag, index, endlessHashtags.length > 0 ? endlessHashtags : allHashtags);
-                    
-                    // IMPORTANT FIX: Get thumbnail directly from groupedThumbnails first
-                    let thumbnailUri = 'https://via.placeholder.com/150';
-                    
-                    // Always try to get thumbnail from groupedThumbnails regardless of distance from active
-                    const hashtagThumbnails = groupedThumbnails[hashtag] || [];
-                    if (hashtagThumbnails.length > 0) {
-                      thumbnailUri = hashtagThumbnails[hashtagThumbnails.length - 1];
-                    }
-                    
-                    // If still no thumbnail, search through all data to find one for this hashtag
-                    if (thumbnailUri === 'https://via.placeholder.com/150') {
-                      // Find first item with this hashtag
-                      const matchingItem = allData.find(item => {
-                        const itemHashtags = (item.caption || '').split(' ').filter((tag: string) => tag.startsWith('#'));
-                        return itemHashtags.includes(hashtag) && item.thumbUri;
-                      });
-                      
-                      if (matchingItem && matchingItem.thumbUri) {
-                        thumbnailUri = matchingItem.thumbUri;
-                      }
-                    }
-
-                    // Use React.memo to prevent unnecessary re-renders
-                    return (
-                      <TouchableOpacity
-                        key={`hashtag-${hashtag}-${index}`}
-                        onPress={() => handleCategoryPress(index)}
-                        style={[
-                          styles.categoryItem,
-                          isActive && styles.activeCategory,
-                        ]}
-                      >
-                        <Text style={[
-                          styles.numberDisplay,
-                          isActive && styles.activeNumberDisplay
-                        ]}>
-                          {displayNumber}
-                        </Text>
-
-                        <FastImage
-                          source={{ uri: thumbnailUri }}
-                          style={styles.thumbnailImage}
-                          resizeMode={FastImage.resizeMode.cover}
-                        />
-
-                        <View style={[
-                          styles.thumbnailOverlay,
-                          isActive && styles.activeThumbnailOverlay
-                        ]} />
-
-                        <View style={styles.categoryTextContainer}>
-                          <Text 
-                            style={[styles.categoryText, isActive && styles.activeCategoryText]}
-                            // numberOfLines={1} 
-                            // ellipsizeMode="tail"
-                          >
-                            {displayHashtag}
-                          </Text>
-                        </View>
-
-                        <View style={styles.badgeContainer}>
-                          <Text style={styles.badgeText}>{unreadCount}</Text>
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            </ScrollView>
-          </View>
-       
-        </View>
-        <View style={{marginLeft: 10}}>
-          <GradientText 
-            text={getFormattedHashtagText2()}
-            style={{fontWeight: 'bold', fontSize: 16, color: colors.text, textAlign: 'left'}}
+      <>
+        <View style={{flex: 1, backgroundColor: colors.background}}>
+          <StatusBar
+            backgroundColor={colors.headerBackground}
+            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
           />
+          
+          {/* Language Filter Button */}
+          <View style={[styles.languageFilterContainer, { backgroundColor: colors.cardBackground }]}>
+            <TouchableOpacity 
+              style={styles.languageButton}
+              onPress={() => setShowLanguageModal(true)}
+            >
+              <Text style={[styles.languageButtonText, { color: colors.text }]}>
+                {selectedLanguage ? selectedLanguage : 'All Languages'}
+              </Text>
+              <Icon name="arrow-drop-down" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          {/* Rest of your existing UI components */}
+          {/* ... */}
+          
         </View>
-        <FlatList<HashtagItem>
-          ref={flatListRef}
-          horizontal
-          data={Object.keys(groupedThumbnails).map(hashtag => ({
-            hashtag,
-            count: hashtagCounts.get(hashtag) || 0,
-            thumbnails: groupedThumbnails[hashtag] || []
-          }))}
-          renderItem={renderNewsItem}
-          keyExtractor={(item) => `news-${item.hashtag}`}
-          pagingEnabled
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          contentContainerStyle={styles.horizontalContainer}
-          showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleScrollEnd} 
-          initialNumToRender={2}
-          maxToRenderPerBatch={2}
-          windowSize={3}
-          removeClippedSubviews={true}
-          updateCellsBatchingPeriod={100}
-          getItemLayout={(data: ArrayLike<HashtagItem> | null | undefined, index: number) => ({
-            length: Dimensions.get('window').width,
-            offset: Dimensions.get('window').width * index,
-            index,
-          })}
-        />
-      </ScrollView>
+        
+        {/* Language Selection Modal */}
+        <Modal
+          visible={showLanguageModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowLanguageModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowLanguageModal(false)}
+          >
+            <View style={[styles.languageModalContent, { backgroundColor: colors.cardBackground }]}>
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === '' && styles.selectedLanguageOption
+                ]}
+                onPress={() => selectLanguage('')}
+              >
+                <Text 
+                  style={[
+                    styles.languageOptionText,
+                    { color: colors.text },
+                    selectedLanguage === '' && { color: colors.primary }
+                  ]}
+                >
+                  All Languages
+                </Text>
+                {selectedLanguage === '' && (
+                  <Icon name="check" color={colors.primary} size={20} />
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === 'English' && styles.selectedLanguageOption
+                ]}
+                onPress={() => selectLanguage('English')}
+              >
+                <Text 
+                  style={[
+                    styles.languageOptionText,
+                    { color: colors.text },
+                    selectedLanguage === 'English' && { color: colors.primary }
+                  ]}
+                >
+                  English
+                </Text>
+                {selectedLanguage === 'English' && (
+                  <Icon name="check" color={colors.primary} size={20} />
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === 'Tamil' && styles.selectedLanguageOption
+                ]}
+                onPress={() => selectLanguage('Tamil')}
+              >
+                <Text 
+                  style={[
+                    styles.languageOptionText,
+                    { color: colors.text },
+                    selectedLanguage === 'Tamil' && { color: colors.primary }
+                  ]}
+                >
+                  Tamil
+                </Text>
+                {selectedLanguage === 'Tamil' && (
+                  <Icon name="check" color={colors.primary} size={20} />
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  selectedLanguage === 'Hindi' && styles.selectedLanguageOption
+                ]}
+                onPress={() => selectLanguage('Hindi')}
+              >
+                <Text 
+                  style={[
+                    styles.languageOptionText,
+                    { color: colors.text },
+                    selectedLanguage === 'Hindi' && { color: colors.primary }
+                  ]}
+                >
+                  Hindi
+                </Text>
+                {selectedLanguage === 'Hindi' && (
+                  <Icon name="check" color={colors.primary} size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </>
     );
   };
 
