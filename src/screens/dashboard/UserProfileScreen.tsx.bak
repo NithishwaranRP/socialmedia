@@ -51,10 +51,11 @@ const UserProfileScreen: FC = () => {
   }, [userParam?.username]);
 
   const MyTabs = [
+  
     {
-      name: 'Reel',
-      component: loading ? <></> : <ReelListTab user={user} type="post" key="post" />,
-      icon: 'apps-sharp',
+      name: 'History',
+      component: loading ? <></> : <ReelListTab user={user} type="watched" key="watched" />,
+      icon: 'logo-tableau',
     },
     {
       name: 'Liked',
@@ -62,9 +63,9 @@ const UserProfileScreen: FC = () => {
       icon: 'heart',
     },
     {
-      name: 'History',
-      component: loading ? <></> : <ReelListTab user={user} type="watched" key="watched" />,
-      icon: 'logo-tableau',
+      name: 'Reel',
+      component: loading ? <></> : <ReelListTab user={user} type="post" key="post" />,
+      icon: 'apps-sharp',
     },
   ];
 

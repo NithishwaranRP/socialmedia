@@ -21,6 +21,8 @@ interface InteractionButtonProps {
   onShare: () => void;
   onReact: () => void;
   onAIAvatar?: () => void;
+  onDelete?: () => void;
+  showDelete?: boolean;
   onLongPressLike: () => void;
   isLiked: boolean;
 }
@@ -36,6 +38,8 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
   react,
   onReact,
   onAIAvatar,
+  onDelete,
+  showDelete = false,
 }) => {
   // const colors = useThemeColors();
   
@@ -85,6 +89,19 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
           AI Chat
         </CustomText>
       </TouchableOpacity>
+      
+      {showDelete && onDelete && (
+        <TouchableOpacity style={styles.button} onPress={onDelete}>
+          <MaterialIcon name={'delete'} size={RFValue(22)} color={Colors.error || '#FF0000'} />
+          <CustomText 
+            variant="h9" 
+            fontFamily={FONTS.Medium} 
+            style={{color: Colors.error || '#FF0000'}}
+          >
+            Delete
+          </CustomText>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

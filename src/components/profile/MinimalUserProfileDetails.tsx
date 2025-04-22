@@ -105,7 +105,7 @@ const MinimalUserProfileDetails: React.FC<MinimalUserProfileDetailsProps> = ({
     setMenuVisible(false);
     
     const profileUrl = `${
-      // Platform.OS == 'android' ? 'http://192.168.128.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'http://192.168.105.133:8080' : 'reelzzz:/'
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
     }/share/user/${user.username}`;
     

@@ -32,8 +32,26 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useAvatarPopup } from '../../context/AvatarPopupContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Register LiveKit globals
-registerGlobals();
+// Safely register LiveKit globals with error handling
+const safeRegisterGlobals = () => {
+  try {
+    if (__DEV__) {
+      // In development mode, initialize normally
+      console.log('Initializing LiveKit in DEV mode');
+      registerGlobals();
+    } else {
+      // In production mode, try to initialize but catch errors
+      console.log('Initializing LiveKit in PRODUCTION mode');
+      registerGlobals();
+    }
+  } catch (error) {
+    console.error('Failed to register LiveKit globals:', error);
+    // We'll continue even if this fails, and handle WebRTC availability elsewhere
+  }
+};
+
+// Call the safe initialization
+safeRegisterGlobals();
 
 // HeyGen API configuration
 const API_CONFIG = {
@@ -43,23 +61,66 @@ const API_CONFIG = {
 
 // Storage key for saving position
 const POSITION_STORAGE_KEY = 'heygen_avatar_position';
+// Storage keys for session persistence
+const SESSION_STORAGE_PREFIX = 'heygen_session_';
+const SESSION_ID_KEY = `${SESSION_STORAGE_PREFIX}id`;
+const SESSION_TOKEN_KEY = `${SESSION_STORAGE_PREFIX}token`;
+const WS_URL_KEY = `${SESSION_STORAGE_PREFIX}ws_url`;
+const TOKEN_KEY = `${SESSION_STORAGE_PREFIX}access_token`;
+const SESSION_TIMESTAMP_KEY = `${SESSION_STORAGE_PREFIX}timestamp`;
+// Session validity in milliseconds (30 minutes)
+const SESSION_VALIDITY_DURATION = 30 * 60 * 1000;
 
 // Custom ChromaKey Video Track component
 interface ChromaKeyVideoProps {
   trackRef: any;
+  onVideoEnd?: () => void;
 }
 
-const ChromaKeyVideoTrack: React.FC<ChromaKeyVideoProps> = ({ trackRef }) => {
+const ChromaKeyVideoTrack: React.FC<ChromaKeyVideoProps> = ({ trackRef, onVideoEnd }) => {
+  // Use an effect to detect when video track changes or ends
+  useEffect(() => {
+    if (trackRef && onVideoEnd) {
+      // Check if track has an onEnded event we can listen to
+      const track = trackRef.track;
+      if (track) {
+        // Some track implementations might have this event
+        if (typeof track.addEventListener === 'function') {
+          track.addEventListener('ended', onVideoEnd);
+          return () => {
+            track.removeEventListener('ended', onVideoEnd);
+          };
+        }
+      }
+      
+      // As a fallback, periodically check if the video is playing
+      let lastPlayingState = true;
+      const checkInterval = setInterval(() => {
+        // If track exists and has a state property we can check
+        if (track && track.state) {
+          const isPlaying = track.state === 'live';
+          // If it was playing and now it's not, call onVideoEnd
+          if (lastPlayingState && !isPlaying) {
+            onVideoEnd();
+          }
+          lastPlayingState = isPlaying;
+        }
+      }, 1000);
+      
+      return () => clearInterval(checkInterval);
+    }
+  }, [trackRef, onVideoEnd]);
+  
   return (
     <View style={styles.chromaKeyWrapper}>
-      {/* Dark vignette overlay to help blend the avatar */}
-      <View style={styles.vignette} />
+      {/* We're removing the vignette overlay since it's not defined in styles */}
       
       {/* Custom styled video track for chroma key effect */}
       <VideoTrack
         style={styles.chromaKeyVideo}
         trackRef={trackRef}
         objectFit="cover"
+        // Remove onEnded as it's not supported
       />
     </View>
   );
@@ -85,6 +146,14 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
   const [isListening, setIsListening] = useState(false);
   const [micPermissionGranted, setMicPermissionGranted] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [continuousMode, setContinuousMode] = useState(false);
+  const [lastSpeechTimestamp, setLastSpeechTimestamp] = useState(0);
+  const [partialResults, setPartialResults] = useState<string>('');
+  const speechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [conversationActive, setConversationActive] = useState(false);
+  const [waitingForAIResponse, setWaitingForAIResponse] = useState(false);
+  const [recognitionErrorCount, setRecognitionErrorCount] = useState(0);
+  const maxErrorRetries = 3; // Maximum number of consecutive errors before resetting
   
   // For draggable functionality
   const pan = useRef(new Animated.ValueXY()).current;
@@ -99,6 +168,96 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
   // Calculate limits to keep popup on screen
   const popupWidth = 300; // width from styles
   const popupHeight = 400; // height from styles
+  
+  // Function declarations
+  const restartVoiceRecognition = async () => {
+    try {
+      // Make sure we're in a valid state to restart
+      if (!continuousMode || !connected || !sessionId || !sessionToken) {
+        console.log('Not restarting voice recognition - continuousMode or session invalid');
+        setIsListening(false);
+        return;
+      }
+      
+      // First ensure voice recognition is fully stopped
+      try {
+        console.log('Stopping current voice recognition before restart');
+        await Voice.destroy(); // More thorough cleanup than just stop()
+        setIsListening(false); // Make sure UI reflects stopped state
+      } catch (stopError) {
+        console.log('Error stopping voice before restart (non-critical):', stopError);
+      }
+      
+      // Wait a longer moment before restarting to ensure clean state
+      setTimeout(async () => {
+        try {
+          // Reset error count on restart
+          setRecognitionErrorCount(0);
+          
+          console.log('Restarting voice recognition with fresh instance...');
+          // Reinitialize Voice with listeners
+          await Voice.removeAllListeners();
+          await Voice.destroy();
+          
+          // Re-setup the instance with enhanced settings
+          Voice.onSpeechStart = () => {
+            console.log('Speech started (restarted instance)');
+            setLastSpeechTimestamp(Date.now());
+          };
+          
+          Voice.onSpeechEnd = () => {
+            console.log('Speech ended (restarted instance)');
+          };
+          
+          Voice.onSpeechResults = (result) => {
+            if (result.value && result.value.length > 0) {
+              console.log('Speech result (restarted instance):', result.value[0]);
+              // Let the main listener handle the results
+            }
+          };
+          
+          // Enhanced options for better speech recognition
+          const options = {
+            locale: 'en_US',
+            continuous: true,
+            partialResults: true,
+            onDevice: true,
+            // Additional options to improve recognition performance
+            showPopup: false,
+            showPartial: true,
+            maxResults: 5,
+            // Lower recognition threshold to capture more speech
+            extra: {
+              "android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS": "1000",
+              "android.speech.extra.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS": "500",
+              "android.speech.extra.DICTATION_MODE": true
+            }
+          };
+          
+          await Voice.start('en-US', options);
+          setIsListening(true);
+          console.log('Voice recognition successfully restarted with enhanced settings');
+        } catch (startError) {
+          console.error('Error in restart voice recognition:', startError);
+          // Try to restart with simplified settings if the enhanced settings failed
+          try {
+            console.log('Trying simpler configuration after restart failure');
+            await Voice.start('en-US', { continuous: true });
+            setIsListening(true);
+          } catch (simpleError) {
+            console.error('Even simple restart failed:', simpleError);
+            // If we can't restart after multiple attempts, turn off continuous mode
+            setError('Voice recognition failed to restart. Turning off continuous mode.');
+            setContinuousMode(false);
+            setIsListening(false);
+          }
+        }
+      }, 1500); // Increased delay for more reliable restart
+    } catch (e) {
+      console.error('Error in restartVoiceRecognition flow:', e);
+      setIsListening(false);
+    }
+  };
   
   // Load saved position on initial render
   useEffect(() => {
@@ -115,7 +274,187 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
     };
     
     loadSavedPosition();
-  }, []);
+    
+    // Try to load a saved session if not already connected
+    if (!connected && !loading) {
+      loadSavedSession();
+    }
+
+    // Set up a detection mechanism for when conversation is active
+    // Check every second if we need to restart voice recognition
+    const continuousConversationInterval = setInterval(() => {
+      // If we're in continuous mode, conversation is active, but not listening or speaking
+      if (continuousMode && conversationActive && !isListening && !speaking && !waitingForAIResponse) {
+        console.log('Auto-detecting conversation continuation needed - restarting voice recognition');
+        startListening();
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(continuousConversationInterval);
+    };
+  }, [continuousMode, conversationActive, isListening, speaking, waitingForAIResponse]);
+  
+  // Save current session to AsyncStorage
+  const saveSession = async () => {
+    try {
+      if (!sessionId || !sessionToken || !wsUrl || !token) {
+        console.log('No valid session to save');
+        return;
+      }
+      
+      const sessionData = {
+        sessionId,
+        sessionToken,
+        wsUrl,
+        token,
+        timestamp: Date.now()
+      };
+      
+      await AsyncStorage.setItem(SESSION_ID_KEY, sessionId);
+      await AsyncStorage.setItem(SESSION_TOKEN_KEY, sessionToken);
+      await AsyncStorage.setItem(WS_URL_KEY, wsUrl);
+      await AsyncStorage.setItem(TOKEN_KEY, token);
+      await AsyncStorage.setItem(SESSION_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log('Session saved successfully:', sessionId);
+    } catch (error) {
+      console.error('Error saving session:', error);
+    }
+  };
+  
+  // Load saved session from AsyncStorage
+  const loadSavedSession = async () => {
+    try {
+      // Check if we have all required session data
+      const savedSessionId = await AsyncStorage.getItem(SESSION_ID_KEY);
+      const savedSessionToken = await AsyncStorage.getItem(SESSION_TOKEN_KEY);
+      const savedWsUrl = await AsyncStorage.getItem(WS_URL_KEY);
+      const savedToken = await AsyncStorage.getItem(TOKEN_KEY);
+      const savedTimestamp = await AsyncStorage.getItem(SESSION_TIMESTAMP_KEY);
+      
+      if (!savedSessionId || !savedSessionToken || !savedWsUrl || !savedToken || !savedTimestamp) {
+        console.log('No complete saved session found');
+        return false;
+      }
+      
+      // Check if session is still valid (not expired)
+      const timestamp = parseInt(savedTimestamp, 10);
+      const now = Date.now();
+      if (now - timestamp > SESSION_VALIDITY_DURATION) {
+        console.log('Saved session has expired');
+        clearSavedSession();
+        return false;
+      }
+      
+      console.log('Found valid saved session, attempting to resume:', savedSessionId);
+      
+      // Set session data
+      setSessionId(savedSessionId);
+      setSessionToken(savedSessionToken);
+      setWsUrl(savedWsUrl);
+      setToken(savedToken);
+      
+      // Attempt to reconnect to the session
+      return resumeSession(savedSessionId, savedSessionToken);
+    } catch (error) {
+      console.error('Error loading saved session:', error);
+      return false;
+    }
+  };
+  
+  // Clear saved session data
+  const clearSavedSession = async () => {
+    try {
+      await AsyncStorage.removeItem(SESSION_ID_KEY);
+      await AsyncStorage.removeItem(SESSION_TOKEN_KEY);
+      await AsyncStorage.removeItem(WS_URL_KEY);
+      await AsyncStorage.removeItem(TOKEN_KEY);
+      await AsyncStorage.removeItem(SESSION_TIMESTAMP_KEY);
+      console.log('Saved session cleared');
+    } catch (error) {
+      console.error('Error clearing saved session:', error);
+    }
+  };
+  
+  // Resume an existing session
+  const resumeSession = async (sessionIdToResume: string, sessionTokenToResume: string) => {
+    try {
+      setLoading(true);
+      setGlobalLoading(true);
+      setError(null);
+      
+      console.log('Attempting to resume session:', sessionIdToResume);
+      
+      // Check session status first
+      const checkResponse = await fetch(
+        `${API_CONFIG.serverUrl}/v1/streaming.check`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionTokenToResume}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionIdToResume,
+          }),
+        }
+      );
+      
+      const checkData = await checkResponse.json();
+      console.log('Session check response:', checkData);
+      
+      if (checkData.code !== 100 || checkData.data?.status !== 'active') {
+        console.log('Session is not active, creating new session instead');
+        clearSavedSession();
+        return false;
+      }
+      
+      // Connect WebSocket for reconnected session
+      const params = new URLSearchParams({
+        session_id: sessionIdToResume,
+        session_token: sessionTokenToResume,
+        silence_response: 'false',
+        stt_language: 'en',
+      });
+
+      const wsReconnectUrl = `wss://${
+        new URL(API_CONFIG.serverUrl).hostname
+      }/v1/ws/streaming.chat?${params}`;
+
+      console.log('Reconnecting to WebSocket...');
+      const ws = new WebSocket(wsReconnectUrl);
+      
+      ws.onopen = () => {
+        console.log('WebSocket reconnection established');
+      };
+      
+      ws.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+      
+      setWebSocket(ws);
+      setConnected(true);
+      
+      // Save the session again to update the timestamp
+      saveSession();
+      
+      console.log('Session resumed successfully');
+      return true;
+    } catch (error) {
+      console.error('Error resuming session:', error);
+      setError('Failed to resume session. Creating a new one...');
+      clearSavedSession();
+      return false;
+    } finally {
+      setLoading(false);
+      setGlobalLoading(false);
+    }
+  };
   
   // Get screen dimensions and handle changes
   useEffect(() => {
@@ -153,6 +492,15 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
     return () => subscription.remove();
   }, []);
   
+  // Add a handleVideoEnd function to ensure voice recognition stays active
+  const handleVideoEnd = () => {
+    console.log('Video playback ended');
+    
+    // No need to restart the microphone as it should be continuously active
+    // Just log that avatar finished speaking
+    console.log('Avatar finished speaking - microphone remains active');
+  };
+
   // PanResponder for handling drag gestures
   const panResponder = useRef(
     PanResponder.create({
@@ -214,107 +562,109 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
   useEffect(() => {
     if (directInitSession && !connected && !loading) {
       // Auto-start session
-      createSession();
+      createSession().then(() => {
+        // After session is created, automatically enable continuous mode and start listening
+        setContinuousMode(true);
+        setConversationActive(true);
+        
+        console.log('Session created, will attempt to send greeting shortly');
+        // Don't do anything else here - we'll handle greeting in a separate effect
+      });
+      
       // Reset the flag after initiating
       setDirectInitSession(false);
     }
-  }, [directInitSession]);
+  }, [directInitSession, connected, loading]);
 
-  // Voice recognition setup
+  // Add a separate effect to monitor when connection is established
   useEffect(() => {
-    // Initialize voice recognition
-    Voice.onSpeechStart = () => {
-      console.log('Speech started');
-    };
+    // This will trigger when connected changes from false to true
+    if (connected && sessionId && sessionToken) {
+      console.log('Connection established, sending greeting...');
+      
+      // Give the session a moment to fully initialize
+      setTimeout(() => {
+        sendGreeting();
+      }, 2000);
+    }
+  }, [connected, sessionId, sessionToken]);
+
+  // Start voice recognition - should only be called once at session start
+  const startListening = async () => {
+    setError(null);
     
-    Voice.onSpeechRecognized = () => {
-      console.log('Speech recognized');
-    };
+    // Check if session is active before starting voice recognition
+    if (!connected || !sessionId || !sessionToken) {
+      console.log('No active session for voice recognition');
+      setError('No active session. Please restart the conversation.');
+      return;
+    }
     
-    Voice.onSpeechEnd = () => {
-      console.log('Speech ended');
-      setIsListening(false);
-    };
+    if (!micPermissionGranted) {
+      setError('Microphone permission not granted. Cannot use voice input.');
+      return;
+    }
     
-    Voice.onSpeechError = (error) => {
-      console.error('Speech error:', error);
-      setIsListening(false);
-      if (error.error?.message) {
-        setError(`Microphone error: ${error.error.message}`);
-      }
-    };
+    // Check if already listening - don't restart
+    if (isListening) {
+      console.log('Already listening, no need to start again');
+      return;
+    }
     
-    Voice.onSpeechResults = (result) => {
-      if (result.value && result.value.length > 0) {
-        const recognizedText = result.value[0];
-        console.log('Speech result:', recognizedText);
-        
-        // Don't auto-send if session is not valid
-        if (!sessionId || !sessionToken || !connected) {
-          console.log('Cannot process voice input - no active session');
-          setText(recognizedText); // Just update text input with recognized text
-          setError('Session not active. Please restart and try again.');
-          return;
+    try {
+      console.log('Starting continuous voice recognition that will remain active for the entire session...');
+      
+      // First ensure clean state
+      await Voice.destroy();
+      
+      // Enhanced Voice configuration for continuous listening
+      const optimizedOptions = {
+        locale: 'en_US',
+        continuous: true,
+        partialResults: true,
+        // Enhanced parameters to improve speech recognition quality
+        onDevice: true, 
+        showPopup: false,
+        showPartial: true,
+        maxResults: 10,
+        // Comprehensive Android speech recognition parameters
+        extra: {
+          "android.speech.extra.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS": "300",
+          "android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS": "2000",
+          "android.speech.extra.DICTATION_MODE": true,
+          "android.speech.extra.PARTIAL_RESULTS": true,
+          "android.speech.extra.CONFIDENCE_LEVEL": "0.5",
+          "android.speech.extra.NO_MATCH_THRESHOLD": "0.4",
+          "android.speech.extra.NO_MATCH_RETRY_COUNT": "3"
         }
-        
-        // Set the text in the input field
-        setText(recognizedText);
-        
-        // Automatically send text if we get a valid result
-        if (recognizedText.trim().length > 0) {
-          // Auto-send immediately when we get a result
-          console.log('Auto-sending recognized text');
-          // Double-check session validity right before sending
-          if (sessionId && sessionToken && connected) {
-            sendRecognizedText(recognizedText);
-          } else {
-            console.log('Session became invalid before sending');
-            setError('Session became inactive. Please restart and try again.');
-          }
-        }
+      };
+      
+      await Voice.start('en-US', optimizedOptions);
+      setIsListening(true);
+      setContinuousMode(true);
+      
+      // Reset error counter when starting fresh
+      setRecognitionErrorCount(0);
+      
+      console.log('Voice recognition started and will remain active for the entire session');
+    } catch (e) {
+      console.error('Error starting voice recognition with optimized settings:', e);
+      
+      // Try with simpler settings if optimized settings failed
+      try {
+        console.log('Trying simpler configuration after initial failure');
+        await Voice.start('en-US', { 
+          continuous: true,
+          partialResults: true
+        });
+        setIsListening(true);
+        setContinuousMode(true);
+      } catch (simpleError) {
+        console.error('Even simple configuration failed:', simpleError);
+        setError('Failed to start voice recognition. Please try again.');
       }
-    };
-    
-    // Request microphone permission on Android
-    const requestMicrophonePermission = async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-            {
-              title: 'Microphone Permission',
-              message: 'Recaps needs access to your microphone to enable voice chat.',
-              buttonNeutral: 'Ask Me Later',
-              buttonNegative: 'Cancel',
-              buttonPositive: 'OK',
-            }
-          );
-          
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log('Microphone permission granted');
-            setMicPermissionGranted(true);
-          } else {
-            console.log('Microphone permission denied');
-            setMicPermissionGranted(false);
-            setError('Microphone permission denied. Voice input unavailable.');
-          }
-        } catch (err) {
-          console.error('Error requesting microphone permission:', err);
-          setError('Error requesting microphone permission');
-        }
-      } else {
-        // iOS handles permissions differently
-        setMicPermissionGranted(true);
-      }
-    };
-    
-    requestMicrophonePermission();
-    
-    // Cleanup function
-    return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
-    };
-  }, [sessionId, sessionToken, connected]);
+    }
+  };
 
   // Get session token from HeyGen API
   const getSessionToken = async () => {
@@ -335,7 +685,7 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
       return data.data.token;
     } catch (error) {
       console.error('Error getting session token:', error);
-      setError('Failed to get session token. Please try again.');
+      if (setError) setError('Failed to get session token. Please try again.');
       throw error;
     }
   };
@@ -368,19 +718,283 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
       console.log('Streaming start response:', startData);
 
       if (startData) {
-        setConnected(true);
+        if (typeof setConnected === 'function') {
+          setConnected(true);
+        }
         return true;
       }
 
       return false;
     } catch (error) {
       console.error('Error starting streaming session:', error);
-      setError('Failed to start streaming session. Please try again.');
+      if (setError) setError('Failed to start streaming session. Please try again.');
       return false;
     }
   };
 
-  // Send recognized text to avatar
+  // Voice recognition setup
+  useEffect(() => {
+    // Initialize voice recognition
+    Voice.onSpeechStart = () => {
+      console.log('Speech started');
+      setLastSpeechTimestamp(Date.now());
+      
+      // Clear any existing timeout
+      if (speechTimeoutRef.current) {
+        clearTimeout(speechTimeoutRef.current);
+        speechTimeoutRef.current = null;
+      }
+
+      // If avatar is currently speaking, interrupt it
+      if (speaking) {
+        console.log('User started speaking while avatar was speaking - interrupting avatar');
+        // Interrupt avatar speech
+        if (webSocket) {
+          try {
+            // Send interrupt signal or close and reopen connection
+            const interruptMessage = JSON.stringify({ type: 'interrupt' });
+            webSocket.send(interruptMessage);
+          } catch (error) {
+            console.error('Error interrupting avatar speech:', error);
+          }
+        }
+        setSpeaking(false);
+        setWaitingForAIResponse(false);
+      }
+    };
+    
+    Voice.onSpeechRecognized = () => {
+      console.log('Speech recognized');
+      setLastSpeechTimestamp(Date.now());
+    };
+    
+    Voice.onSpeechEnd = () => {
+      console.log('Speech ended');
+      
+      // Set timeout to detect pause in speech - use 2000ms as requested
+      speechTimeoutRef.current = setTimeout(() => {
+        console.log('Speech pause detected (2000ms), processing...');
+        if (partialResults.trim().length > 0) {
+          sendRecognizedText(partialResults);
+          setPartialResults('');
+        } else {
+          // No results but speech ended - likely too quiet or not recognized
+          // Just restart listening in continuous mode
+          console.log('No speech detected, restarting listening...');
+          if (continuousMode) restartVoiceRecognition();
+        }
+      }, 2000); // 2000ms pause threshold as requested
+    };
+    
+    Voice.onSpeechError = (error) => {
+      console.log('[ERROR] Speech error:', error);
+      
+      // Special handling for "No match" errors (code 7)
+      if (error.error?.code === '7' || error.error?.message?.includes('No match')) {
+        console.log('No speech match detected (Error 7) - implementing recovery strategy');
+        
+        // Don't show this error to the user
+        setError(null);
+        
+        // Ensure microphone stays active regardless of errors
+        ensureMicrophoneActive();
+        
+        return;
+      }
+      
+      // For any error, ensure the microphone stays active
+      ensureMicrophoneActive();
+      
+      if (error.error?.message && !error.error?.message.includes('No match')) {
+        setError(`Microphone error: ${error.error.message}`);
+      }
+    };
+    
+    Voice.onSpeechResults = (result) => {
+      if (result.value && result.value.length > 0) {
+        const recognizedText = result.value[0];
+        console.log('Speech result:', recognizedText);
+        
+        // Reset error counter when we get successful results
+        setRecognitionErrorCount(0);
+        
+        // Don't auto-send if session is not valid
+        if (!sessionId || !sessionToken || !connected) {
+          console.log('Cannot process voice input - no active session');
+          setText(recognizedText); // Just update text input with recognized text
+          setError('Session not active. Please restart and try again.');
+          return;
+        }
+        
+        // Update last speech timestamp
+        setLastSpeechTimestamp(Date.now());
+        
+        // Store the results but don't immediately send
+        setPartialResults(recognizedText);
+        
+        // Clear any existing timeout and set a new one
+        if (speechTimeoutRef.current) {
+          clearTimeout(speechTimeoutRef.current);
+        }
+        
+        // Set timeout to detect pause in speech - always use 2000ms for final results
+        speechTimeoutRef.current = setTimeout(() => {
+          console.log('Speech pause detected after results (2000ms), processing...');
+          if (recognizedText.trim().length > 0) {
+            sendRecognizedText(recognizedText);
+            setPartialResults('');
+          }
+          // Ensure microphone stays active
+          ensureMicrophoneActive();
+        }, 2000); // 2000ms pause threshold as requested
+      }
+    };
+    
+    Voice.onSpeechPartialResults = (partialResult) => {
+      if (partialResult.value && partialResult.value.length > 0) {
+        const text = partialResult.value[0];
+        console.log('Partial result:', text);
+        
+        // Update timestamp to show active speech
+        setLastSpeechTimestamp(Date.now());
+        
+        // Update the partial results
+        setPartialResults(text);
+      }
+    };
+
+    // New function to ensure microphone always stays active
+    const ensureMicrophoneActive = async () => {
+      try {
+        // First check if we're already listening
+        if (isListening) {
+          console.log('Microphone already active, no need to restart');
+          return;
+        }
+
+        console.log('Ensuring microphone stays active');
+        // Make sure previous instance is fully destroyed
+        await Voice.destroy();
+        
+        // Start with enhanced options for continuous listening
+        const options = {
+          locale: 'en_US',
+          continuous: true,
+          partialResults: true,
+          onDevice: true,
+          showPopup: false,
+          showPartial: true,
+          maxResults: 10,
+          // Enhanced settings for continuous operation
+          extra: {
+            "android.speech.extra.SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS": "3000",
+            "android.speech.extra.SPEECH_INPUT_MINIMUM_LENGTH_MILLIS": "100", 
+            "android.speech.extra.SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS": "3000",
+            "android.speech.extra.DICTATION_MODE": true,
+            "android.speech.extra.PARTIAL_RESULTS": true,
+            "android.speech.extra.CONFIDENCE_LEVEL": "0.4",
+            "android.speech.extra.MAX_RESULTS": "15",
+            "android.speech.extra.NO_MATCH_THRESHOLD": "0.3",
+            "android.speech.extra.NO_MATCH_RETRY_COUNT": "5",
+            "android.speech.extra.PREFER_OFFLINE": true,
+            "android.speech.extra.LANGUAGE_MODEL": "free_form"
+          }
+        };
+        
+        await Voice.start('en-US', options);
+        setIsListening(true);
+        console.log('Microphone reactivated successfully');
+      } catch (error) {
+        console.error('Error ensuring microphone stays active:', error);
+        // Try with simpler settings if the enhanced settings failed
+        try {
+          await Voice.start('en-US', { continuous: true });
+          setIsListening(true);
+          console.log('Microphone reactivated with simple settings');
+        } catch (simpleError) {
+          console.error('Even simple microphone activation failed:', simpleError);
+          // Schedule another attempt after a delay
+          setTimeout(() => {
+            if (connected && sessionId) {
+              console.log('Retrying microphone activation after delay...');
+              startListening();
+            }
+          }, 1000);
+        }
+      }
+    };
+    
+    // Request microphone permission on Android and start continuous listening
+    const requestMicrophonePermission = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+            {
+              title: 'Microphone Permission',
+              message: 'Recaps needs access to your microphone to enable voice chat.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            }
+          );
+          
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('Microphone permission granted');
+            setMicPermissionGranted(true);
+            // Start continuous listening immediately after permission granted
+            if (connected && sessionId) {
+              setContinuousMode(true);
+              ensureMicrophoneActive();
+            }
+          } else {
+            console.log('Microphone permission denied');
+            setMicPermissionGranted(false);
+            setError('Microphone permission denied. Voice input unavailable.');
+          }
+        } catch (err) {
+          console.error('Error requesting microphone permission:', err);
+          setError('Error requesting microphone permission');
+        }
+      } else {
+        // iOS handles permissions differently
+        setMicPermissionGranted(true);
+        // Start continuous listening immediately 
+        if (connected && sessionId) {
+          setContinuousMode(true);
+          ensureMicrophoneActive();
+        }
+      }
+    };
+    
+    requestMicrophonePermission();
+
+    // Add an interval to constantly check if microphone is active
+    const microphoneCheckInterval = setInterval(() => {
+      if (connected && sessionId && !isListening && !loading) {
+        console.log('Detected microphone inactive, reactivating...');
+        ensureMicrophoneActive();
+      }
+    }, 5000); // Check every 5 seconds
+    
+    // Cleanup function
+    return () => {
+      clearInterval(microphoneCheckInterval);
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
+  }, [sessionId, sessionToken, connected, isListening, loading, speaking, webSocket]);
+
+  // Add an effect to auto-enable continuous mode after session starts
+  useEffect(() => {
+    if (connected && sessionId && !continuousMode) {
+      console.log('Session active, enabling continuous mode automatically');
+      setContinuousMode(true);
+      // Force continuous mode to be always on
+      setConversationActive(true);
+    }
+  }, [connected, sessionId, continuousMode]);
+
+  // Update the sendRecognizedText function for better avatar interruption
   const sendRecognizedText = async (recognizedText: string) => {
     if (!recognizedText.trim()) return;
     
@@ -397,7 +1011,11 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         return false;
       }
       
+      // We don't need to stop listening anymore - keep mic on continuously
+      // Indicate that AI is responding though
       setSpeaking(true);
+      setWaitingForAIResponse(true);
+      setConversationActive(true);
       setError(null);
 
       console.log('Sending recognized text to API:', {
@@ -431,17 +1049,29 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         setError(`Session error: ${data.message}. Please restart the conversation.`);
         // Mark session as disconnected to prevent further attempts
         setConnected(false);
+        setConversationActive(false);
         return false;
       }
       
       setText(''); // Clear input after sending
+      
       return true;
     } catch (error) {
       console.error('Error sending text:', error);
       setError('Failed to send text to avatar. Please try again.');
       return false;
     } finally {
-      setSpeaking(false);
+      // Wait until AI response finishes (with timeout safety)
+      const waitTime = Math.min(Math.floor(recognizedText.length / 5) * 1000, 8000);
+      console.log(`Setting response wait time: ${waitTime}ms based on message length`);
+      
+      setTimeout(() => {
+        console.log('Response wait time elapsed, finishing speaking state');
+        setSpeaking(false);
+        setWaitingForAIResponse(false);
+        
+        // No need to restart the microphone as it's continuously active
+      }, waitTime + 500);
     }
   };
 
@@ -538,7 +1168,7 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         },
         body: JSON.stringify({
           quality: 'high',
-          avatar_name: 'Katya_Black_Suit_public',
+          avatar_name: 'Thaddeus_Black_Suit_public',
           voice: {
             voice_id: '',
           },
@@ -599,6 +1229,9 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         }
         
         console.log('Session created and started successfully');
+        
+        // Save session for future use
+        await saveSession();
       } else {
         console.error('Failed to create session:', data.message || 'Unknown error');
         setError(`Failed to create session: ${data.message || 'Unknown error'}`);
@@ -612,32 +1245,6 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
     }
   };
 
-  // Start voice recognition
-  const startListening = async () => {
-    setError(null);
-    
-    // Check if session is active before starting voice recognition
-    if (!connected || !sessionId || !sessionToken) {
-      console.log('No active session for voice recognition');
-      setError('No active session. Please restart the conversation.');
-      return;
-    }
-    
-    if (!micPermissionGranted) {
-      setError('Microphone permission not granted. Cannot use voice input.');
-      return;
-    }
-    
-    try {
-      console.log('Starting voice recognition...');
-      await Voice.start('en-US');
-      setIsListening(true);
-    } catch (e) {
-      console.error('Error starting voice recognition:', e);
-      setError('Failed to start voice recognition. Please try again.');
-    }
-  };
-
   // Stop voice recognition
   const stopListening = async () => {
     try {
@@ -645,6 +1252,32 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
       setIsListening(false);
     } catch (e) {
       console.error('Error stopping voice recognition:', e);
+    }
+  };
+
+  // Toggle continuous voice recognition mode
+  const toggleContinuousMode = () => {
+    const newMode = !continuousMode;
+    setContinuousMode(newMode);
+    console.log(`Continuous mode ${newMode ? 'enabled' : 'disabled'}`);
+    
+    if (newMode) {
+      // Enable conversation mode
+      setConversationActive(true);
+      
+      // If turning on continuous mode and we're already listening, do nothing
+      // If turning on continuous mode and we're not listening, start listening
+      if (!isListening && connected) {
+        startListening();
+      }
+    } else {
+      // Disable conversation mode if turning off continuous listening
+      setConversationActive(false);
+      
+      // If turning off continuous mode and we're listening, stop listening
+      if (isListening) {
+        stopListening();
+      }
     }
   };
 
@@ -680,6 +1313,9 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         setWebSocket(null);
       }
 
+      // Clear saved session data
+      await clearSavedSession();
+
       // Reset all states
       setConnected(false);
       setSessionId('');
@@ -693,6 +1329,9 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
     } catch (error) {
       console.error('Error closing session:', error);
       setError('Failed to close session properly.');
+      
+      // Still clear saved session data even if there was an error
+      await clearSavedSession();
     } finally {
       setLoading(false);
       setGlobalLoading(false);
@@ -703,6 +1342,63 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
     // Make sure we reset the global loading state when dismissing
     setGlobalLoading(false);
     if (onDismiss) onDismiss();
+  };
+
+  // Send automated greeting when session starts
+  const sendGreeting = async () => {
+    try {
+      // Double-check that session is still valid
+      if (!sessionId || !sessionToken || !connected) {
+        console.log('Cannot send greeting - no active session');
+        return;
+      }
+      
+      console.log('Preparing to send greeting message');
+      setSpeaking(true);
+      setWaitingForAIResponse(true);
+      
+      const greetingMessage = "Hello! I'm your AI news assistant. Which news topic would you like me to tell you about today?";
+      
+      console.log('Sending automated greeting:', greetingMessage);
+      
+      // Send greeting message task
+      const response = await fetch(
+        `${API_CONFIG.serverUrl}/v1/streaming.task`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            text: greetingMessage,
+            task_type: 'talk',
+          }),
+        }
+      );
+
+      const data = await response.json();
+      console.log('Greeting response:', data);
+      
+      // Log if response indicates any issue
+      if (data.code !== 100) {
+        console.error('Greeting API error:', data);
+      }
+      
+      // After sending greeting, just set states appropriately - don't try to restart voice recognition
+      // as it should be continuously active
+      setTimeout(() => {
+        console.log('Finishing greeting response');
+        setSpeaking(false);
+        setWaitingForAIResponse(false);
+      }, 4000);
+      
+    } catch (error) {
+      console.error('Error sending greeting:', error);
+      setSpeaking(false);
+      setWaitingForAIResponse(false);
+    }
   };
 
   // If not connected, show the start session screen
@@ -725,6 +1421,26 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
           <Text style={[styles.heroSubtitle, { color: colors.text }]}>
             Interact with a virtual AI assistant
           </Text>
+          
+          {!loading && !globalLoading && (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.startButton, { backgroundColor: colors.theme }]}
+                onPress={createSession}
+                disabled={loading || globalLoading}
+              >
+                <Text style={styles.startButtonText}>Start New Session</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.startButton, { backgroundColor: colors.card }]}
+                onPress={loadSavedSession}
+                disabled={loading || globalLoading}
+              >
+                <Text style={[styles.startButtonText, { color: colors.text }]}>Resume Session</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           
           {error && (
             <View style={styles.errorContainer}>
@@ -812,6 +1528,12 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
           onMinimize={() => setMinimized(true)}
           onDismiss={handleDismiss}
           isDragging={isDragging}
+          continuousMode={continuousMode}
+          toggleContinuousMode={toggleContinuousMode}
+          partialResults={partialResults}
+          conversationActive={conversationActive}
+          waitingForAIResponse={waitingForAIResponse}
+          onVideoEnd={handleVideoEnd}
         />
       </LiveKitRoom>
     </Animated.View>
@@ -834,6 +1556,12 @@ interface RoomViewProps {
   onMinimize: () => void;
   onDismiss?: () => void;
   isDragging: boolean;
+  continuousMode: boolean;
+  toggleContinuousMode: () => void;
+  partialResults: string;
+  conversationActive: boolean;
+  waitingForAIResponse: boolean;
+  onVideoEnd: () => void;
 }
 
 const RoomView = ({
@@ -851,8 +1579,27 @@ const RoomView = ({
   onMinimize,
   onDismiss,
   isDragging,
+  continuousMode,
+  toggleContinuousMode,
+  partialResults,
+  conversationActive,
+  waitingForAIResponse,
+  onVideoEnd,
 }: RoomViewProps) => {
   const tracks = useTracks([Track.Source.Camera], { onlySubscribed: true });
+
+  // Add a useEffect to ensure microphone stays active during the session
+  useEffect(() => {
+    // If we have tracks (avatar is visible) but not listening, start listening
+    if (tracks.length > 0 && !isListening && !speaking && continuousMode) {
+      console.log('Ensuring voice recognition remains active');
+      const timer = setTimeout(() => {
+        onStartListening();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [tracks.length, isListening, speaking, continuousMode, onStartListening]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -872,7 +1619,13 @@ const RoomView = ({
           {tracks.map((track, idx) =>
             isTrackReference(track) ? (
               <View key={idx} style={styles.videoWrapper}>
-                <ChromaKeyVideoTrack trackRef={track} />
+                <ChromaKeyVideoTrack 
+                  trackRef={track} 
+                  onVideoEnd={() => {
+                    // Call onStartListening to make sure voice recognition is active
+                    onStartListening();
+                  }} 
+                />
               </View>
             ) : null
           )}
@@ -885,80 +1638,43 @@ const RoomView = ({
               </Text>
             </View>
           )}
+          
+          {/* Only show partial results in a minimal UI */}
+          {continuousMode && partialResults.trim().length > 0 && (
+            <View style={styles.partialResultsContainer}>
+              <Text style={styles.partialResultsText} numberOfLines={2} ellipsizeMode="tail">
+                {partialResults}
+              </Text>
+            </View>
+          )}
         </View>
 
+        {/* Only show the X button for closing */}
         {!isDragging && (
-          <View style={styles.headerButtons}>
-            {/* <TouchableOpacity
-              style={styles.minimizeButton}
-              onPress={onMinimize}
-              disabled={isDragging}
-            >
-              <Icon name="minimize" size={20} color="#FFF" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.minimizeButton}
-              onPress={onDismiss}
-              disabled={isDragging}
-            >
-              <Icon name="close" size={20} color="#FFF" />
-            </TouchableOpacity> */}
-            
-            <TouchableOpacity
-              style={[
-                styles.closeButton, 
-                (loading || isDragging) && styles.disabledButton
-              ]}
-              onPress={onClose}
-              disabled={loading || isDragging}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFF" size="small" />
-              ) : (
-                <Text style={styles.closeButtonText}>End</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[
+              styles.closeButton, 
+              (loading || isDragging) && styles.disabledButton
+            ]}
+            onPress={onClose}
+            disabled={loading || isDragging}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Icon name="close" size={18} color="#FFF" />
+            )}
+          </TouchableOpacity>
         )}
         
+        {/* Show error in a minimal way if needed */}
         {error && !isDragging && (
           <View style={styles.floatingError}>
-            <Icon name="error-outline" size={16} color="#FF5252" />
             <Text style={[styles.floatingErrorText, { color: "#FF5252" }]}>{error}</Text>
           </View>
         )}
         
-        {speaking && !isDragging && (
-          <View style={styles.speakingIndicator}>
-            <ActivityIndicator color={colors.theme} size="small" />
-            <Text style={[styles.speakingText, { color: colors.text }]}>
-              AI is speaking...
-            </Text>
-          </View>
-        )}
-        
-        {!isDragging && (
-          <View style={styles.micButtonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.centeredMicButton,
-                { backgroundColor: isListening ? "#FF4081" : colors.theme },
-                (speaking || loading || isDragging) && styles.disabledButton,
-              ]}
-              onPress={isListening ? onStopListening : onStartListening}
-              disabled={speaking || loading || isDragging}
-            >
-              <Icon name={isListening ? "mic" : "mic-none"} size={24} color="#FFF" />
-            </TouchableOpacity>
-            
-            {isListening && (
-              <Text style={[styles.recordingText, { color: colors.text }]}>
-                Listening...
-              </Text>
-            )}
-          </View>
-        )}
+        {/* Hide everything else */}
       </KeyboardAvoidingView>
     </View>
   );
@@ -982,6 +1698,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 10,
     zIndex: 1000,
+  },
+  buttonContainer: {
+    width: '100%',
+    marginVertical: 10,
   },
   minimizedButton: {
     position: 'absolute',
@@ -1083,8 +1803,7 @@ const styles = StyleSheet.create({
   },
   avatarBackground: {
     position: 'absolute',
-        backgroundColor: 'transparent',
-
+    backgroundColor: 'transparent',
     top: 0,
     left: 0,
     right: 0,
@@ -1098,7 +1817,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-
   },
   chromaKeyWrapper: {
     flex: 1,
@@ -1116,18 +1834,6 @@ const styles = StyleSheet.create({
     // Remove the green background by making it transparent
     opacity: 0.95,
   },
-  // vignette: {
-  //   position: 'absolute',
-  //   top: 0,
-  //   left: 0,
-  //   right: 0,
-  //   bottom: 0,
-  //   backgroundColor: 'rgba(0,0,0,0.5)',
-  //   borderRadius: 1000,
-  //   transform: [{ scaleX: 2 }],
-  //   opacity: 0.3,
-  //   zIndex: 5,
-  // },
   videoView: {
     position: 'absolute',
     top: 0,
@@ -1137,17 +1843,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   closeButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    backgroundColor: "#FF5252",
-    minWidth: 50,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(0,0,0,0.5)",
     alignItems: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontFamily: FONTS.Medium,
-    fontSize: 14,
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
   },
   micButtonContainer: {
     width: '100%',
@@ -1241,6 +1951,103 @@ const styles = StyleSheet.create({
     height: 400,
     width: 400,
     opacity: 1.0,
+  },
+  overlayMicButton: {
+    height: 44,
+    width: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4.65,
+    zIndex: 100,
+  },
+  listeningIndicator: {
+    position: 'absolute',
+    top: -24,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+  },
+  listeningIndicatorText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontFamily: FONTS.Medium,
+  },
+  audioControlsOverlay: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+  },
+  continuousModeButton: {
+    height: 36,
+    width: 36,
+    borderRadius: 18,
+    marginLeft: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4.65,
+  },
+  partialResultsContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    maxWidth: '90%',
+    alignSelf: 'center',
+  },
+  partialResultsText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: FONTS.Regular,
+  },
+  conversationIndicator: {
+    position: 'absolute',
+    top: 10,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 1000,
+  },
+  conversationIndicatorText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontFamily: FONTS.Medium,
+    textAlign: 'center',
+  },
+  buttonLabel: {
+    position: 'absolute',
+    bottom: -24,
+    left: -12,
+    right: -12,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 4,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonLabelText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontFamily: FONTS.Medium,
   },
 });
 

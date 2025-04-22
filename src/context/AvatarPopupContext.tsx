@@ -7,6 +7,8 @@ interface AvatarPopupContextProps {
   setIsLoading: (loading: boolean) => void;
   directInitSession: boolean;
   setDirectInitSession: (init: boolean) => void;
+  isInteractiveMode: boolean;
+  setInteractiveMode: (interactive: boolean) => void;
 }
 
 const AvatarPopupContext = createContext<AvatarPopupContextProps | undefined>(undefined);
@@ -15,6 +17,7 @@ export const AvatarPopupProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [showAIAvatar, setShowAIAvatar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [directInitSession, setDirectInitSession] = useState(false);
+  const [isInteractiveMode, setInteractiveMode] = useState(false);
 
   return (
     <AvatarPopupContext.Provider 
@@ -24,7 +27,9 @@ export const AvatarPopupProvider: React.FC<{ children: ReactNode }> = ({ childre
         isLoading, 
         setIsLoading,
         directInitSession,
-        setDirectInitSession
+        setDirectInitSession,
+        isInteractiveMode,
+        setInteractiveMode
       }}
     >
       {children}
@@ -32,10 +37,12 @@ export const AvatarPopupProvider: React.FC<{ children: ReactNode }> = ({ childre
   );
 };
 
-export const useAvatarPopup = (): AvatarPopupContextProps => {
+export const useAvatarPopup = () => {
   const context = useContext(AvatarPopupContext);
   if (context === undefined) {
     throw new Error('useAvatarPopup must be used within an AvatarPopupProvider');
   }
   return context;
-}; 
+};
+
+export default AvatarPopupContext; 

@@ -10,6 +10,7 @@ import ReelScrollScreen from '../screens/reel/ReelScrollScreen';
 import RemixScreen from '../screens/reel/RemixScreen';
 import UploadReelScreen from '../screens/reel/UploadReelScreen';
 import UploadRemixScreen from '../screens/reel/UploadRemixScreen';
+import WebViewScreen from '../screens/WebViewScreen';
 import BottomTab from './BottomTab';
 // Import commented out since we're showing HeyGenAvatarScreen as a popup now
 // import { HeyGenAvatarScreen } from '../components/HeyGenAvatar';
@@ -69,6 +70,10 @@ export const dashboardStack = [
   {
     name: 'ReedemScreen',
     component: ReedemScreen,
+  },
+  {
+    name: 'WebViewScreen',
+    component: WebViewScreen,
   },
   // HeyGenAvatarScreen route commented out since we're showing it as a popup now
   // {

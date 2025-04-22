@@ -1,6 +1,6 @@
 import {token_storage} from '../storage';
 import {appAxios} from '../apiConfig';
-import {setUser, updatePreferredLanguage} from '../reducers/userSlice';
+import {setUser, updatePreferredLanguage, setAdminStatus} from '../reducers/userSlice';
 import {persistor} from '../store';
 import {resetAndNavigate} from '../../utils/NavigationUtil';
 import {CHECK_USERNAME, REGISTER} from '../API';
@@ -231,5 +231,42 @@ export const updateUserLanguage = (languageCode: string) => async (dispatch: any
     console.error('Error updating language preference:', error);
     // Local update succeeded even if server failed
     return true;
+  }
+};
+
+export const checkAdminStatus = () => async (dispatch: any) => {
+  try {
+    console.log('Checking admin status...');
+    const res = await appAxios.get('/auth/check-admin');
+    console.log('Admin status response:', res.data);
+    dispatch(setAdminStatus(res.data.isAdmin));
+    console.log('Admin status set to:', res.data.isAdmin);
+    return res.data.isAdmin;
+  } catch (error: any) {
+    console.log('CHECK ADMIN STATUS ERROR ->', error);
+    console.log('Setting admin status to false due to error');
+    dispatch(setAdminStatus(false));
+    return false;
+  }
+};
+
+export const Login = (email: string, password: string) => async (dispatch: any) => {
+  try {
+    const res = await appAxios.post('/auth/login', {
+      email,
+      password,
+    });
+    await dispatch(setUser(res.data.user));
+    await token_storage.set('accessToken', res.data.accessToken);
+    await token_storage.set('refreshToken', res.data.refreshToken);
+
+    // Check if user is admin after successful login
+    dispatch(checkAdminStatus());
+
+    resetAndNavigate('BottomTab');
+    return res.data.user;
+  } catch (error: any) {
+    console.log('LOGIN ERROR ->', error);
+    throw error;
   }
 };

@@ -20,6 +20,7 @@ const UploadReelScreen: React.FC = () => {
   const data = useRoute();
   const item = data?.params as uriData;
   const [caption, setCaption] = useState<string>('');
+  const [url, setUrl] = useState<string>('');
   const {startUpload} = useUpload();
   const colors = useThemeColors();
   
@@ -50,6 +51,24 @@ const UploadReelScreen: React.FC = () => {
             placeholder="Enter your caption here..."
             multiline={true}
             numberOfLines={8}
+          />
+        </View>
+        
+        <View style={styles.urlSection}>
+          <CustomText 
+            style={{color: colors.text, marginBottom: 5}}
+            fontFamily={FONTS.Medium}
+          >
+            Optional URL Link:
+          </CustomText>
+          <TextInput
+            style={[styles.urlInput, {backgroundColor: colors.card, color: colors.text}]}
+            value={url}
+            placeholderTextColor={Colors.border}
+            onChangeText={setUrl}
+            placeholder="Enter an optional URL (e.g., website, profile)..."
+            autoCapitalize="none"
+            keyboardType="url"
           />
         </View>
         
@@ -103,7 +122,7 @@ const UploadReelScreen: React.FC = () => {
             textStyle={{textAlign: 'center', fontWeight: 'bold'}}
             onPress={() => {
               goBack();
-              startUpload(item?.thumb_uri, item?.file_uri, caption, language);
+              startUpload(item?.thumb_uri, item?.file_uri, caption, language, url);
             }}
           />
         </View>
@@ -145,9 +164,22 @@ const styles = StyleSheet.create({
     height: 150,
     textAlignVertical: 'top',
   },
+  urlSection: {
+    width: '95%',
+    marginTop: 5,
+    marginBottom: 10,
+  },
+  urlInput: {
+    height: 45,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 5,
+    fontFamily: FONTS.Medium,
+    padding: 10,
+  },
   languageSection: {
     width: '95%',
-    marginVertical: 15,
+    marginVertical: 10,
     zIndex: 1000,
     position: 'relative',
   },

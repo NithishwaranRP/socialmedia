@@ -81,6 +81,8 @@ import { useAppSelector } from "../redux/reduxHook";
 import { RootState } from "../redux/store";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAvatarPopup } from "../context/AvatarPopupContext";
+import { selectUser } from "../redux/reducers/userSlice";
+import FastImage from "react-native-fast-image";
 
 const Tab = createBottomTabNavigator();
 
@@ -88,6 +90,7 @@ const BottomTab = () => {
   const isDarkMode = useAppSelector((state: RootState) => state.theme.isDarkMode);
   const colors = useThemeColors();
   const { setShowAIAvatar, setIsLoading, setDirectInitSession } = useAvatarPopup();
+  const user = useAppSelector(selectUser);
 
   const handleAvatarButtonPress = () => {
     // Set loading state first
@@ -120,34 +123,66 @@ const BottomTab = () => {
         },
         tabBarShowLabel: false,
         tabBarIcon: ({ focused }) => {
-          let iconSource;
           if (route.name === "Home") {
-            iconSource = require("../assets/icons/home.png");
+            let iconSource = require("../assets/icons/home.png");
+            return (
+              <View style={[
+                styles.iconContainer, 
+                focused ? 
+                  isDarkMode ? styles.activeTabDark : styles.activeTabLight 
+                  : 
+                  isDarkMode ? styles.inactiveTabDark : styles.inactiveTabLight
+              ]}>
+                <Image 
+                  source={iconSource} 
+                  style={[
+                    styles.tabIcon, 
+                    focused ? 
+                      isDarkMode ? styles.activeIconDark : styles.activeIconLight 
+                      : 
+                      isDarkMode ? styles.inactiveIconDark : styles.inactiveIconLight
+                  ]} 
+                  resizeMode="contain" 
+                />
+              </View>
+            );
           } else if (route.name === "Profile") {
-            iconSource = require("../assets/icons/profile.png");
+            // For Profile tab, show user's profile image instead of icon
+            return (
+              <View style={[
+                styles.iconContainer, 
+                focused ? 
+                  isDarkMode ? styles.activeTabDark : styles.activeTabLight 
+                  : 
+                  isDarkMode ? styles.inactiveTabDark : styles.inactiveTabLight
+              ]}>
+                {user?.userImage ? (
+                  <FastImage 
+                    source={{ uri: user.userImage, priority: FastImage.priority.high }} 
+                    style={[
+                      styles.profileImage,
+                      focused ? 
+                        isDarkMode ? { borderColor: '#282A2D' } : { borderColor: '#FFFFFF' }
+                        : 
+                        isDarkMode ? { borderColor: '#FFFFFF' } : { borderColor: '#282A2D' }
+                    ]} 
+                  />
+                ) : (
+                  <Image 
+                    source={require("../assets/icons/profile.png")} 
+                    style={[
+                      styles.tabIcon, 
+                      focused ? 
+                        isDarkMode ? styles.activeIconDark : styles.activeIconLight 
+                        : 
+                        isDarkMode ? styles.inactiveIconDark : styles.inactiveIconLight
+                    ]} 
+                    resizeMode="contain" 
+                  />
+                )}
+              </View>
+            );
           }
-
-          return (
-            <View style={[
-              styles.iconContainer, 
-              focused ? 
-                isDarkMode ? styles.activeTabDark : styles.activeTabLight 
-                : 
-                isDarkMode ? styles.inactiveTabDark : styles.inactiveTabLight
-            ]}>
-              <Image 
-                source={iconSource} 
-                style={[
-                  styles.tabIcon, 
-                  focused ? 
-                    isDarkMode ? styles.activeIconDark : styles.activeIconLight 
-                    : 
-                    isDarkMode ? styles.inactiveIconDark : styles.inactiveIconLight
-                ]} 
-                resizeMode="contain" 
-              />
-            </View>
-          );
         },
       })}
     >
@@ -162,7 +197,11 @@ const BottomTab = () => {
               activeOpacity={0.8}
             >
               <View style={isDarkMode ? styles.postButtonContainerDark : styles.postButtonContainerLight}>
-                <Icon name="smart-toy" size={24} color={isDarkMode ? "#FFF" : "#282A2D"} />
+                <FastImage 
+                  source={require("../assets/animations/ai.gif")}
+                  style={styles.aiGif}
+                  resizeMode={FastImage.resizeMode.stretch}
+                />
               </View>
             </TouchableOpacity>
           ),
@@ -182,6 +221,12 @@ const styles = StyleSheet.create({
   tabIcon: {
     width: RFValue(24),
     height: RFValue(24),
+  },
+  profileImage: {
+    width: RFValue(24),
+    height: RFValue(24),
+    borderRadius: RFValue(12),
+    borderWidth: 1,
   },
   iconContainer: {
     borderRadius: 30,
@@ -206,9 +251,9 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   postButtonContainerDark: {
-    backgroundColor: "#282A2D",
+    // backgroundColor: "#282A2D",
     borderRadius: 30,
-    padding: RFValue(10),
+    // padding: RFValue(10),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -234,9 +279,9 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   postButtonContainerLight: {
-    backgroundColor: "#ffffff",
+    // backgroundColor: "#ffffff",
     borderRadius: 30,
-    padding: RFValue(10),
+    // padding: RFValue(10),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -244,6 +289,11 @@ const styles = StyleSheet.create({
     width: RFValue(30),
     height: RFValue(30),
     tintColor: "#282A2D",
+  },
+  aiGif: {
+    width: RFValue(40),
+    height: RFValue(40),
+    borderRadius: RFValue(100),
   },
 });
 

@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Button, StyleSheet, Text, Alert, TouchableOpacity, Clipboard } from 'react-native';
 import firebaseService from '../services/FirebaseService';
-import firebase from '@react-native-firebase/app';
+import { getApps } from '@react-native-firebase/app';
+import { logErrorToStorage } from '../utils/ReleaseErrorLogger';
 
-// Compatibility helper function to check if Firebase is initialized
+// Compatibility helper function to check if Firebase is initialized using modern API
 const isFirebaseInitialized = () => {
   try {
-    // Try the newer API first
-    if (typeof firebase.getApps === 'function') {
-      return firebase.getApps().length > 0;
-    }
-    // Fall back to the older API
-    if (firebase.apps && Array.isArray(firebase.apps)) {
-      return firebase.apps.length > 0;
-    }
-    // If neither is available, assume it's not initialized
-    return false;
+    // Use the modern API
+    return getApps().length > 0;
   } catch (error) {
     console.error('Error checking Firebase initialization:', error);
+    logErrorToStorage('NOTIFICATION_TEST_CHECK', `Error: ${error.message}`);
     return false;
   }
 };
@@ -29,17 +23,23 @@ const NotificationTest = () => {
   // Check Firebase initialization status and get FCM token
   useEffect(() => {
     const checkFirebase = async () => {
-      const appsInitialized = isFirebaseInitialized();
-      setIsFirebaseReady(appsInitialized);
-      
-      if (appsInitialized) {
-        try {
-          const token = await firebaseService.getFCMToken();
-          setFcmToken(token);
-          console.log('FCM Token:', token);
-        } catch (error) {
-          console.error('Error getting FCM token:', error);
+      try {
+        const appsInitialized = isFirebaseInitialized();
+        setIsFirebaseReady(appsInitialized);
+        
+        if (appsInitialized) {
+          try {
+            const token = await firebaseService.getFCMToken();
+            setFcmToken(token);
+            console.log('FCM Token:', token);
+          } catch (error) {
+            console.error('Error getting FCM token:', error);
+            logErrorToStorage('NOTIFICATION_FCM_ERROR', `Error: ${error.message}`);
+          }
         }
+      } catch (error) {
+        console.error('Error in checkFirebase:', error);
+        logErrorToStorage('NOTIFICATION_CHECK_ERROR', `Error: ${error.message}`);
       }
     };
     
@@ -52,18 +52,24 @@ const NotificationTest = () => {
   }, []);
 
   const checkFirebaseReady = () => {
-    const ready = isFirebaseInitialized();
-    setIsFirebaseReady(ready);
-    
-    if (!ready) {
-      Alert.alert(
-        "Firebase Not Initialized",
-        "Firebase has not been initialized yet. Please wait a moment and try again.",
-        [{ text: "OK" }]
-      );
+    try {
+      const ready = isFirebaseInitialized();
+      setIsFirebaseReady(ready);
+      
+      if (!ready) {
+        Alert.alert(
+          "Firebase Not Initialized",
+          "Firebase has not been initialized yet. Please wait a moment and try again.",
+          [{ text: "OK" }]
+        );
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error in checkFirebaseReady:', error);
+      logErrorToStorage('NOTIFICATION_READY_CHECK', `Error: ${error.message}`);
       return false;
     }
-    return true;
   };
 
   const copyTokenToClipboard = () => {

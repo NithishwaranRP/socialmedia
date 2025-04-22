@@ -8,12 +8,11 @@ import {
   Image,
   Text,
 } from 'react-native';
-import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import CustomView from '../../components/global/CustomView';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch } from '../../redux/reduxHook';
 import { screenHeight, screenWidth } from '../../utils/Scaling';
-import { debounce } from 'lodash';
 import { fetchFeedScrollReel } from '../../redux/actions/reelAction';
 import { ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -25,6 +24,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import VideoItem from '../../components/reel/VideoItem';
 import { ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import convertToProxyURL from 'react-native-video-cache';
 
 interface RouteProp {
   data: any[];
@@ -38,13 +38,18 @@ const FeedReelScrollScreen: FC = () => {
   const route = useRoute();
   const dispatch = useAppDispatch();
   const routeParams = route?.params as RouteProp;
+  const flatListRef = useRef<FlatList>(null);
+  const initialIndexRef = useRef<number>(routeParams?.initialIndex || 0);
+  const hasInitializedRef = useRef(false);
 
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const [data, setData] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
-  const [currentVisibleIndex, setCurrentVisibleIndex] = useState<number>(0);
+  const [currentVisibleIndex, setCurrentVisibleIndex] = useState<number>(routeParams?.initialIndex || 0);
+  const [readyToPlay, setReadyToPlay] = useState(false);
   const [selectedHashtag, setSelectedHashtag] = useState<string | null>(null);
+  const [videoLoadStates, setVideoLoadStates] = useState<Record<string, boolean>>({});
   const [processedHashtags, setProcessedHashtags] = useState<string[]>([]);
   const [videoIndices, setVideoIndices] = useState<Record<string, number>>({});
   const [allHashtags, setAllHashtags] = useState<string[]>([]);
@@ -52,99 +57,104 @@ const FeedReelScrollScreen: FC = () => {
   const [currentHashtagIndex, setCurrentHashtagIndex] = useState<number>(0);
   const originalCategoryIndexRef = useRef<number | null>(null);
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+    minimumViewTime: 300,
+  }).current;
 
-  const onViewableItemsChanged = useRef(
-    debounce(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
-      if (viewableItems.length > 0) {
-        setCurrentVisibleIndex(viewableItems[0].index || 0);
+  // Initialize data and setup when component mounts or route params change
+  useEffect(() => {
+    const initializeScreen = async () => {
+      if (!routeParams?.data || hasInitializedRef.current) return;
+
+      const initialData = [...routeParams.data];
+      const initialIndex = routeParams.initialIndex || 0;
         
-        // When a new video is viewed, check if we need to transition to the next hashtag
-        if (viewableItems[0].item && viewableItems[0].index !== null) {
-          checkHashtagTransition(viewableItems[0].item, viewableItems[0].index);
+      // Set initial states
+      setData(initialData);
+      setOffset(initialData.length);
+      setCurrentVisibleIndex(initialIndex);
+          
+      // Pre-cache videos
+      try {
+        // Preload current video
+        if (initialData[initialIndex]?.videoUri) {
+          const currentUri = convertToProxyURL(initialData[initialIndex].videoUri);
+          await fetch(currentUri, { 
+            method: 'HEAD',
+            headers: { 'Priority': 'high' }
+          });
         }
-      }
-    }, 100)
-  ).current;
 
-  // Function to check if we need to transition to the next hashtag
-  const checkHashtagTransition = (currentItem: any, index: number) => {
-    if (!currentItem || !allHashtags.length) return;
-    
-    // Extract hashtags from the current video
-    const videoHashtags = extractHashtags(currentItem.caption || '');
-    
-    // Find the hashtag that's currently playing
-    const currentPlayingHashtag = videoHashtags.find(tag => allHashtags.includes(tag)) || null;
-    
-    // Check if we're playing a hashtag different from the selected one
-    if (currentPlayingHashtag !== selectedHashtag) {
-      // If the hashtag changed, update the selected hashtag
-      setSelectedHashtag(currentPlayingHashtag);
-      
-      if (currentPlayingHashtag) {
-        const tagIndex = allHashtags.indexOf(currentPlayingHashtag);
-        if (tagIndex !== -1) {
-          setCurrentHashtagIndex(tagIndex);
+        // Preload next video if exists
+        if (initialData[initialIndex + 1]?.videoUri) {
+          const nextUri = convertToProxyURL(initialData[initialIndex + 1].videoUri);
+          await fetch(nextUri, { 
+            method: 'HEAD',
+            headers: { 'Priority': 'high' }
+          });
+        }
+
+        // Mark as ready to play
+        setReadyToPlay(true);
+        hasInitializedRef.current = true;
+
+        // Scroll to initial position
+        setTimeout(() => {
+          if (flatListRef.current && initialIndex > 0) {
+            flatListRef.current.scrollToIndex({
+              index: initialIndex,
+              animated: false,
+              viewPosition: 0
+            });
+          }
+        }, 100);
+      } catch (error) {
+        console.error('Error initializing videos:', error);
+        // Still mark as ready even if preloading fails
+        setReadyToPlay(true);
+        hasInitializedRef.current = true;
+        }
+    };
+
+    initializeScreen();
+  }, [routeParams]);
+  
+  // Reset initialization when screen loses focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        hasInitializedRef.current = false;
+        setReadyToPlay(false);
+      };
+    }, [])
+  );
+
+  const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<ViewToken> }) => {
+    if (viewableItems.length > 0) {
+      const visibleItem = viewableItems[0];
+      if (visibleItem.index !== null && visibleItem.isViewable) {
+        setCurrentVisibleIndex(visibleItem.index);
+        
+        // Preload next videos
+        const nextIndex = visibleItem.index + 1;
+        if (nextIndex < data.length && data[nextIndex]?.videoUri) {
+          const nextUri = convertToProxyURL(data[nextIndex].videoUri);
+          fetch(nextUri, { 
+            method: 'HEAD',
+            headers: { 'Priority': 'high' }
+          }).catch(() => {});
         }
       }
     }
-    
-    // Check if we need to find the next hashtag video
-    // This happens when we're at the last video of a hashtag group
-    const isLastVideoOfCurrentHashtag = isLastVideoForHashtag(currentItem, index);
-    
-    if (isLastVideoOfCurrentHashtag && currentPlayingHashtag) {
-      // Find the next hashtag in sequence
-      const currentTagIndex = allHashtags.indexOf(currentPlayingHashtag);
-      if (currentTagIndex !== -1 && currentTagIndex < allHashtags.length - 1) {
-        // Get the next hashtag
-        const nextHashtag = allHashtags[currentTagIndex + 1];
-        
-        // Find the index of the first video with the next hashtag
-        const nextVideoIndex = findFirstVideoWithHashtag(nextHashtag, index + 1);
-        
-        if (nextVideoIndex !== -1) {
-          // We found a video with the next hashtag, update the state
-          setSelectedHashtag(nextHashtag);
-          setCurrentHashtagIndex(currentTagIndex + 1);
-        }
-      }
-    }
-  };
-  
-  // Helper function to check if the current video is the last one for its hashtag
-  const isLastVideoForHashtag = (currentItem: any, currentIndex: number): boolean => {
-    if (!currentItem) return false;
-    
-    // Get the hashtags of the current video
-    const videoHashtags = extractHashtags(currentItem.caption || '');
-    
-    // Find the first matching hashtag that's in our sequence
-    const relevantHashtag = videoHashtags.find(tag => allHashtags.includes(tag));
-    if (!relevantHashtag) return false;
-    
-    // Check if there are any more videos with this hashtag after the current index
-    const hasMoreVideosWithSameHashtag = data.slice(currentIndex + 1).some(video => {
-      const nextVideoHashtags = extractHashtags(video.caption || '');
-      return nextVideoHashtags.includes(relevantHashtag);
-    });
-    
-    // If there are no more videos with this hashtag, it's the last one
-    return !hasMoreVideosWithSameHashtag;
-  };
-  
-  // Helper function to find the first video with a specific hashtag starting from a given index
-  const findFirstVideoWithHashtag = (hashtag: string, startIndex: number): number => {
-    const videoIndex = data.findIndex((video, idx) => {
-      if (idx < startIndex) return false; // Skip videos before the start index
-      
-      const videoHashtags = extractHashtags(video.caption || '');
-      return videoHashtags.includes(hashtag);
-    });
-    
-    return videoIndex;
-  };
+  }, [data]);
+
+  const handleVideoLoad = useCallback((videoId: string) => {
+    setVideoLoadStates(prev => ({
+      ...prev,
+      [videoId]: true
+    }));
+  }, []);
 
   const getItemLayout = useCallback(
     (_: any, index: number) => ({
@@ -183,191 +193,34 @@ const FeedReelScrollScreen: FC = () => {
     return hashtagMap;
   }, []);
 
-  // Function to fetch more reels
-  const fetchFeed = useCallback(
-    debounce(async (offset: number) => {
+  const fetchMoreVideos = useCallback(async () => {
       if (loading || !hasMore) return;
+    
       setLoading(true);
       try {
-        console.log(`Fetching feed at offset ${offset}`);
-        const newData = await dispatch(fetchFeedScrollReel(offset, 5)); // Fetch 5 videos at a time
-        setOffset(offset + 5);
-        if (newData?.length < 5) {
-          setHasMore(false);
-        }
-
-        if (newData && newData.length > 0) {
-          console.log(`Received ${newData.length} new videos`);
-          
-          // Add new videos to the data array
-          setData((prevData) => [...prevData, ...newData]);
-        } else {
-          console.log('No new videos received or empty array');
-        }
-      } catch (error) {
-        console.error('Error fetching feed:', error);
-      } finally {
-        setLoading(false);
-      }
-    }, 200),
-    [loading, hasMore, dispatch]
-  );
-
-  // Function to arrange videos by hashtag priority
-  const arrangeVideosByHashtagPriority = (videos: any[]): any[] => {
-    // Create a mapping of hashtags to videos
-    const videosByHashtag: Record<string, any[]> = {};
-    const noHashtagVideos: any[] = [];
-    const currentProcessedHashtags = [...processedHashtags];
-    
-    // Assign index to each video for sorting by position
-    videos.forEach((video, index) => {
-      if (!videoIndices[video._id]) {
-        setVideoIndices(prev => ({ ...prev, [video._id]: index }));
-      }
-    });
-
-    // Group videos by their hashtags
-    videos.forEach(video => {
-      const videoHashtags = extractHashtags(video.caption || '');
-      
-      if (videoHashtags.length === 0) {
-        noHashtagVideos.push(video);
-        return;
-      }
-      
-      // Check if this video has any hashtags that match current hashtag sequence
-      let matched = false;
-      
-      // First priority: Match the currently selected hashtag
-      if (selectedHashtag && videoHashtags.includes(selectedHashtag)) {
-        if (!videosByHashtag[selectedHashtag]) {
-          videosByHashtag[selectedHashtag] = [];
-        }
-        videosByHashtag[selectedHashtag].push(video);
-        matched = true;
-      }
-      
-      // If not matched with current hashtag, try the next hashtags in sequence
-      if (!matched) {
-        // Find where we are in the hashtag sequence
-        const currentIdx = selectedHashtag ? allHashtags.indexOf(selectedHashtag) : -1;
+      const newData = await dispatch(fetchFeedScrollReel(offset, 2));
+      if (newData?.length) {
+        setData(prevData => [...prevData, ...newData]);
+        setOffset(prev => prev + newData.length);
+        setHasMore(newData.length >= 2);
         
-        // Check each hashtag from the video against our sequence
-        for (const videoHashtag of videoHashtags) {
-          const tagIndex = allHashtags.indexOf(videoHashtag);
-          
-          // Only match hashtags that come after the current one in sequence
-          if (tagIndex > currentIdx) {
-            if (!videosByHashtag[videoHashtag]) {
-              videosByHashtag[videoHashtag] = [];
-            }
-            videosByHashtag[videoHashtag].push(video);
-            matched = true;
-            break; // Match with the first valid hashtag in sequence
-          }
+        // Preload first video from new batch
+        if (newData[0]?.videoUri) {
+          const nextUri = convertToProxyURL(newData[0].videoUri);
+          fetch(nextUri, { 
+            method: 'HEAD',
+            headers: { 'Priority': 'high' }
+          }).catch(() => {});
         }
-      }
-      
-      // If still not matched, use the first hashtag
-      if (!matched) {
-        const primaryHashtag = videoHashtags[0];
-        if (!videosByHashtag[primaryHashtag]) {
-          videosByHashtag[primaryHashtag] = [];
-        }
-        videosByHashtag[primaryHashtag].push(video);
-      }
-    });
-
-    // Sort videos within each hashtag group by their index in the original array
-    Object.keys(videosByHashtag).forEach(hashtag => {
-      videosByHashtag[hashtag].sort((a, b) => {
-        return (videoIndices[a._id] || 0) - (videoIndices[b._id] || 0);
-      });
-    });
-
-    // Create the final ordered array
-    let orderedVideos: any[] = [];
-    
-    // 1. First add videos with the selected hashtag (if not processed yet)
-    if (selectedHashtag && videosByHashtag[selectedHashtag] && !currentProcessedHashtags.includes(selectedHashtag)) {
-      orderedVideos = [...videosByHashtag[selectedHashtag]];
-      // Mark as processed
-      if (!currentProcessedHashtags.includes(selectedHashtag)) {
-        currentProcessedHashtags.push(selectedHashtag);
-      }
-    }
-    
-    // 2. Add videos from other hashtags based on hashtag sequence
-    // First get all remaining hashtags not yet processed
-    const remainingHashtags = allHashtags.filter(
-      tag => tag !== selectedHashtag && !currentProcessedHashtags.includes(tag)
-    );
-    
-    // Add them in order of the sequence
-    remainingHashtags.forEach(hashtag => {
-      if (videosByHashtag[hashtag]) {
-        orderedVideos = [...orderedVideos, ...videosByHashtag[hashtag]];
-        // Mark as processed
-        if (!currentProcessedHashtags.includes(hashtag)) {
-          currentProcessedHashtags.push(hashtag);
-        }
-      }
-    });
-    
-    // 3. Add videos from any other hashtags not in our sequence
-    Object.keys(videosByHashtag).forEach(hashtag => {
-      // Skip hashtags we've already processed
-      if (hashtag === selectedHashtag || remainingHashtags.includes(hashtag) || currentProcessedHashtags.includes(hashtag)) {
-        return;
-      }
-      
-      orderedVideos = [...orderedVideos, ...videosByHashtag[hashtag]];
-      // Mark as processed
-      if (!currentProcessedHashtags.includes(hashtag)) {
-        currentProcessedHashtags.push(hashtag);
-      }
-    });
-    
-    // 4. Add videos with no hashtags
-    orderedVideos = [...orderedVideos, ...noHashtagVideos];
-    
-    // Update processed hashtags
-    setProcessedHashtags(currentProcessedHashtags);
-    
-    return orderedVideos;
-  };
-
-  useEffect(() => {
-    // Initial data loading
-    const loadInitialData = async () => {
-      console.log('Loading initial data');
-      if (routeParams?.data && routeParams.data.length > 0) {
-        // Use data passed from the previous screen
-        console.log(`Setting ${routeParams.data.length} videos from params`);
-        setData(routeParams.data);
-        setCurrentVisibleIndex(routeParams.initialIndex || 0);
       } else {
-        // Fetch initial data if not provided
-        console.log('No initial data, fetching from API');
-        setLoading(true);
-        try {
-          const initialData = await dispatch(fetchFeedScrollReel(0, 10));
-          console.log(`Fetched ${initialData?.length || 0} initial videos`);
-          if (initialData && initialData.length > 0) {
-            setData(initialData);
-            setOffset(initialData.length);
+        setHasMore(false);
           }
         } catch (error) {
-          console.error('Error loading initial data:', error);
+      console.error('Error fetching more videos:', error);
         } finally {
           setLoading(false);
         }
-      }
-    };
-
-    loadInitialData();
-  }, [dispatch, routeParams]);
+  }, [loading, hasMore, offset, dispatch]);
 
   // Store the original category index from route params
   useEffect(() => {
@@ -387,27 +240,12 @@ const FeedReelScrollScreen: FC = () => {
   // Custom goBack function to preserve the original category index
   const handleGoBack = async () => {
     try {
-      // Get the original index that was passed from GlobalFeed
-      const currentIndex = originalCategoryIndexRef.current;
-      console.log('Navigating back - Original category index:', currentIndex);
-      
-      if (currentIndex !== null) {
-        // Save the index to AsyncStorage to make it available to GlobalFeed
-        await AsyncStorage.setItem('lastActiveCategoryIndex', String(currentIndex));
-        console.log('Saved category index to AsyncStorage:', currentIndex);
-        
-        // Additional check - read back what we just wrote to verify
-        const savedValue = await AsyncStorage.getItem('lastActiveCategoryIndex');
-        console.log('Verification - Read back saved index:', savedValue);
-      } else {
-        console.log('No original category index found to preserve');
+      if (routeParams?.originalCategoryIndex !== undefined) {
+        await AsyncStorage.setItem('lastActiveCategoryIndex', String(routeParams.originalCategoryIndex));
       }
-      
-      // Navigate back using the standard goBack function
       goBack();
     } catch (error) {
       console.error('Error in handleGoBack:', error);
-      // If there's an error, still go back but log the issue
       goBack();
     }
   };
@@ -440,66 +278,78 @@ const FeedReelScrollScreen: FC = () => {
     checkForClearedStorage();
   }, []);
 
-  // Render function for video items
   const renderVideoList = useCallback(
-    ({item, index}: {item: any; index: number}) => {
-      console.log(`Rendering video at index ${index}, ID: ${item?._id}`);
-      return (
+    ({ item, index }: { item: any; index: number }) => (
         <View style={styles.videoContainer}>
           <VideoItem
+          key={`${item._id}-${index}`}
+          isVisible={index === currentVisibleIndex && readyToPlay}
             item={item}
-            isVisible={index === currentVisibleIndex}
-            preload={
-              Math.abs(index - currentVisibleIndex) <= 1 && index !== currentVisibleIndex
+          preload={index >= currentVisibleIndex - 1 && index <= currentVisibleIndex + 2}
+          index={index}
+          currentIndex={currentVisibleIndex}
+          onVideoEnd={() => {
+            if (index < data.length - 1) {
+              // Update current index
+              setCurrentVisibleIndex(index + 1);
+              
+              // Scroll to next video
+              if (flatListRef.current) {
+                flatListRef.current.scrollToIndex({
+                  index: index + 1,
+                  animated: true,
+                  viewPosition: 0
+                });
+              }
+
+              // Preload next video
+              const nextIndex = index + 2;
+              if (nextIndex < data.length && data[nextIndex]?.videoUri) {
+                const nextUri = convertToProxyURL(data[nextIndex].videoUri);
+                fetch(nextUri, { 
+                  method: 'HEAD',
+                  headers: { 'Priority': 'high' }
+                }).catch(() => {});
+                      }
             }
-          />
-        </View>
-      );
-    },
-    [currentVisibleIndex]
+          }}
+            />
+            </View>
+    ),
+    [currentVisibleIndex, data.length, readyToPlay]
   );
 
   return (
     <CustomView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="black" translucent />
-      {data.length > 0 ? (
-        <FlatList
-          data={data}
-          keyExtractor={(item) => item._id.toString()}
-          renderItem={renderVideoList}
-          windowSize={3}
-          pagingEnabled
-          viewabilityConfig={viewabilityConfig}
-          disableIntervalMomentum
-          removeClippedSubviews={false}
-          maxToRenderPerBatch={3}
-          getItemLayout={getItemLayout}
-          onViewableItemsChanged={onViewableItemsChanged}
-          initialNumToRender={3}
-          initialScrollIndex={routeParams?.initialIndex || 0}
-          onEndReached={() => fetchFeed(offset)}
-          onEndReachedThreshold={0.5}
-          ListFooterComponent={() =>
-            loading ? (
-              <View style={styles.footer}>
-                <ActivityIndicator size="large" color={Colors.white} />
-              </View>
-            ) : null
-          }
-          decelerationRate={'normal'}
-          showsVerticalScrollIndicator={false}
-          scrollEventThrottle={16}
-        />
-      ) : loading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={Colors.white} />
-          <Text style={styles.loaderText}>Loading videos...</Text>
-        </View>
-      ) : (
-        <View style={styles.loaderContainer}>
-          <Text style={styles.loaderText}>Loading videos...</Text>
-        </View>
-      )}
+      <FlatList
+        ref={flatListRef}
+        data={data}
+        keyExtractor={(item, index) => `${item._id}-${index}`}
+        renderItem={renderVideoList}
+        windowSize={3}
+        pagingEnabled
+        viewabilityConfig={viewabilityConfig}
+        disableIntervalMomentum
+        removeClippedSubviews={false}
+        maxToRenderPerBatch={3}
+        getItemLayout={getItemLayout}
+        onViewableItemsChanged={onViewableItemsChanged}
+        initialNumToRender={3}
+        onEndReached={fetchMoreVideos}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          loading ? (
+            <View style={styles.footer}>
+              <ActivityIndicator size="small" color={Colors.white} />
+            </View>
+          ) : null
+        }
+        decelerationRate={'fast'}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        initialScrollIndex={initialIndexRef.current}
+      />
 
       <Image source={Loader} style={styles.thumbnail} />
 
@@ -542,16 +392,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     resizeMode: 'cover',
     top: 0,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loaderText: {
-    color: Colors.white,
-    marginTop: 10,
-    fontSize: RFValue(14),
   },
 });
 

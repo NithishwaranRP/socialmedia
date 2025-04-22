@@ -41,13 +41,13 @@ export const extractTypeAndId = (url: string): {type: string; id: string} => {
   // Regex patterns to match each type of URL
   // const reelPattern1 = /^http:\/\/reelzzzserverworking.vercel.app\/share\/reel\/([a-f\d]{24})$/;
   const reelPattern1 = /^http:\/\/recaps-backend-277610981315.asia-south1.run.app\/share\/reel\/([a-f\d]{24})$/;
-  // const reelPattern1 = /^http:\/\/192.168.128.133:8080\/share\/reel\/([a-f\d]{24})$/;
+  // const reelPattern1 = /^http:\/\/192.168.105.133:8080\/share\/reel\/([a-f\d]{24})$/;
   // const reelPattern1 = /^http:\/\/192.168.108.133:8080\/share\/reel\/([a-f\d]{24})$/;
   const reelPattern2 = /^reelzzz:\/\/share\/reel\/([a-f\d]{24})$/;
   const userPattern1 =
     /^http:\/\/recaps-backend-277610981315.asia-south1.run.app\/share\/user\/([a-zA-Z0-9_]+)$/;
     // /^http:\/\/reelzzzserverworking.vercel.app\/share\/user\/([a-zA-Z0-9_]+)$/;
-    // /^http:\/\/192.168.128.133:8080\/share\/user\/([a-zA-Z0-9_]+)$/;
+    // /^http:\/\/192.168.105.133:8080\/share\/user\/([a-zA-Z0-9_]+)$/;
     // /^http:\/\/192.168.222.133:8080\/share\/user\/([a-zA-Z0-9_]+)$/;
   const userPattern2 = /^reelzzz:\/\/share\/user\/([a-zA-Z0-9_]+)$/;
   // http://192.168.127.90:8080:3000

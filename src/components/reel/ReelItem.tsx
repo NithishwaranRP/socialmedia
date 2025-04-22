@@ -15,8 +15,12 @@ interface ReelItemProps {
   onShare: () => void;
   onReact: () => void;
   onAIAvatar?: () => void;
+  onDelete?: () => void;
+  canDelete?: boolean;
   onLongPressLike: () => void;
   isLiked: boolean;
+  hasUrl?: boolean;
+  onWebPress?: () => void;
 }
 
 const ReelItem: React.FC<ReelItemProps> = ({
@@ -30,13 +34,21 @@ const ReelItem: React.FC<ReelItemProps> = ({
   react,
   onReact,
   onAIAvatar,
+  onDelete,
+  canDelete = false,
   isLiked,
   onLongPressLike,
+  hasUrl = false,
+  onWebPress,
 }) => {
   return (
     <View style={styles.interactionContainer}>
       <View style={styles.userContainer}>
-        <UserDetails user={user} />
+        <UserDetails 
+          user={user} 
+          hasUrl={hasUrl}
+          onWebPress={onWebPress}
+        />
         <CustomText variant="h8" numberOfLines={2}>
           {description}
         </CustomText>
@@ -52,6 +64,8 @@ const ReelItem: React.FC<ReelItemProps> = ({
         onShare={onShare}
         onReact={onReact}
         onAIAvatar={onAIAvatar}
+        onDelete={onDelete}
+        showDelete={canDelete}
         isLiked={isLiked}
       />
     </View>

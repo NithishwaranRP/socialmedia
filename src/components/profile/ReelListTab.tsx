@@ -7,7 +7,7 @@ import {
   FlatList,
 } from 'react-native';
 import ProfileReelCard from '../feed/ProfileReelCard';
-import {useAppDispatch} from '../../redux/reduxHook';
+import {useAppDispatch, useAppSelector} from '../../redux/reduxHook';
 import {fetchReel} from '../../redux/actions/reelAction';
 import CustomText from '../global/CustomText';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -15,8 +15,11 @@ import {RFValue} from 'react-native-responsive-fontsize';
 import {Colors, useThemeColors} from '../../constants/Colors';
 import {FONTS} from '../../constants/Fonts';
 import {navigate} from '../../utils/NavigationUtil';
+import {useNavigation} from '@react-navigation/native';
 import {screenWidth} from '../../utils/Scaling';
 import {debounce} from 'lodash';
+import {selectUser} from '../../redux/reducers/userSlice';
+import {selectDeletedReelIds} from '../../redux/reducers/reelSlice';
 
 const ReelListTab: React.FC<{
   user: ProfileUser | undefined | User;
@@ -39,145 +42,44 @@ const ReelListTab: React.FC<{
   const initialLoadComplete = useRef(false);
 
   const dispatch = useAppDispatch();
+  const navigation = useNavigation();
 
-  // Prevent excessive re-renders
-  const memoizedData = useMemo(() => data, [data]);
+  // Get deleted reel IDs from Redux
+  const deletedReelIds = useAppSelector(selectDeletedReelIds);
+
+  // Filter out deleted reels from data
+  const filteredData = useMemo(() => {
+    return data.filter(item => !deletedReelIds.includes(item._id));
+  }, [data, deletedReelIds]);
+
+  // Prevent excessive re-renders by only updating when filteredData changes
+  const memoizedFilteredData = useMemo(() => filteredData, [filteredData]);
+
+  // Get current user at component level, not in renderItem
+  const currentUser = useAppSelector(selectUser);
 
   const renderItem = useCallback(({item, index}: {item: any; index: number}) => {
+    const handlePressReel = () => {
+      navigate('ReelScrollScreen', {
+        data: filteredData,
+        index,
+      });
+    };
+    
+    const handleDeleteSuccess = () => {
+      // No need to refresh the data immediately
+      // The Redux store will handle removing the item from the list
+    };
+
     return (
       <ProfileReelCard
-        onPressReel={() => {
-          if (data && data.length > 0) {
-            // Prepare data by ensuring the selected video only appears once
-            const currentVideo = data[index];
-            
-            // Create an array starting from the current video
-            // This ensures we only play videos that come after the current one
-            const forwardVideos = data.slice(index);
-            
-            // Extract hashtags from caption
-            const extractHashtags = (caption: string): string[] => {
-              if (!caption) return [];
-              return caption.split(' ').filter(word => word.startsWith('#'));
-            };
-            
-            // Get hashtags from the current video
-            const currentHashtags = extractHashtags(currentVideo.caption || '');
-            const currentMainHashtag = currentHashtags.length > 0 ? currentHashtags[0] : null;
-            
-            // Create a mapping of video IDs to their indices for sorting
-            const videoIndices: Record<string, number> = {};
-            data.forEach((video, idx) => {
-              if (video && video._id) {
-                videoIndices[video._id] = idx;
-              }
-            });
-            
-            // Group videos by hashtag
-            const videosByHashtag: Record<string, any[]> = {};
-            const noHashtagVideos: any[] = [];
-            
-            // Collect all hashtags to create a sequence
-            const allHashtagsSet = new Set<string>();
-            
-            // First gather all videos by hashtag
-            forwardVideos.forEach(video => {
-              const videoHashtags = extractHashtags(video.caption || '');
-              
-              // Add hashtags to our set
-              videoHashtags.forEach(tag => allHashtagsSet.add(tag));
-              
-              if (videoHashtags.length === 0) {
-                noHashtagVideos.push(video);
-                return;
-              }
-              
-              // Check if this video has the current hashtag
-              if (currentMainHashtag && videoHashtags.includes(currentMainHashtag)) {
-                if (!videosByHashtag[currentMainHashtag]) {
-                  videosByHashtag[currentMainHashtag] = [];
-                }
-                
-                // Avoid duplicating the current video
-                if (video._id !== currentVideo._id || videosByHashtag[currentMainHashtag].length === 0) {
-                  videosByHashtag[currentMainHashtag].push(video);
-                }
-                
-                return;
-              }
-              
-              // For videos with other hashtags
-              const videoHashtag = videoHashtags[0];
-              if (!videosByHashtag[videoHashtag]) {
-                videosByHashtag[videoHashtag] = [];
-              }
-              videosByHashtag[videoHashtag].push(video);
-            });
-            
-            // Convert the hashtag set to an array and prioritize the current hashtag
-            let allHashtags = Array.from(allHashtagsSet);
-            
-            // Ensure current hashtag is first in the sequence
-            if (currentMainHashtag && allHashtags.includes(currentMainHashtag)) {
-              allHashtags = [
-                currentMainHashtag,
-                ...allHashtags.filter(tag => tag !== currentMainHashtag)
-              ];
-            }
-            
-            // Sort videos within each hashtag by their index
-            Object.keys(videosByHashtag).forEach(hashtag => {
-              videosByHashtag[hashtag].sort((a, b) => {
-                const aIndex = videoIndices[a._id] || 0;
-                const bIndex = videoIndices[b._id] || 0;
-                return aIndex - bIndex;
-              });
-            });
-            
-            // Build the final ordered array
-            let orderedVideos: any[] = [];
-            
-            // Start with the selected video
-            if (currentVideo) {
-              orderedVideos.push(currentVideo);
-              
-              // If the video was part of hashtag groups, make sure we don't duplicate it
-              if (currentMainHashtag && videosByHashtag[currentMainHashtag]) {
-                videosByHashtag[currentMainHashtag] = videosByHashtag[currentMainHashtag].filter(
-                  video => video._id !== currentVideo._id
-                );
-              }
-            }
-            
-            // Add the remaining videos with the same hashtag
-            if (currentMainHashtag && videosByHashtag[currentMainHashtag]) {
-              orderedVideos = [...orderedVideos, ...videosByHashtag[currentMainHashtag]];
-            }
-            
-            // Add videos from other hashtags
-            Object.keys(videosByHashtag).forEach(hashtag => {
-              if (hashtag !== currentMainHashtag) {
-                orderedVideos = [...orderedVideos, ...videosByHashtag[hashtag]];
-              }
-            });
-            
-            // Add videos with no hashtags
-            orderedVideos = [...orderedVideos, ...noHashtagVideos];
-            
-            // Navigate to FeedReelScrollScreen with the ordered videos
-            navigate('FeedReelScrollScreen', {
-              data: orderedVideos,
-              initialIndex: 0, // Start at the current video
-              selectedHashtag: currentMainHashtag, // Pass the selected hashtag
-              allHashtags: allHashtags, // Pass the sequence of all hashtags
-            });
-          }
-        }}
         item={item}
-        loading={false} // Handle loading at the list level instead
+        onPressReel={handlePressReel}
+        loading={false}
+        onDeleteSuccess={handleDeleteSuccess}
       />
     );
-  }, [data]);
+  }, [filteredData]);
 
   const removeDuplicates = useCallback((inputData: any) => {
     const uniqueDataMap = new Map();
@@ -292,6 +194,32 @@ const ReelListTab: React.FC<{
     fetchReels(0, true);
   }, [fetchReels, refreshing]);
 
+  // Listen for navigation params changes that signal a refresh is needed
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Check if we need to refresh data
+      const parentNav = navigation.getParent();
+      if (parentNav) {
+        // Get current parent route params
+        const parentState = parentNav.getState();
+        const currentRouteIndex = parentState?.index ?? 0;
+        const currentRoute = parentState?.routes[currentRouteIndex];
+        // Access params safely with type assertion
+        const params = currentRoute?.params as { refreshData?: number } || {};
+        const refreshData = params.refreshData;
+        
+        if (refreshData) {
+          // Clear the refresh flag to prevent duplicate refreshes
+          parentNav.setParams({ refreshData: null });
+          // Refresh the data
+          handleRefresh();
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, handleRefresh]);
+
   const handleEndReached = useCallback(() => {
     if (hasMore && !offsetLoading && !loading && !refreshing) {
       fetchReels(offset, false);
@@ -331,43 +259,33 @@ const ReelListTab: React.FC<{
     );
   }, [loading, error, type, colors]);
 
-  const ListFooterComponent = useCallback(() => {
-    if (!offsetLoading || loading) {
-      return null;
-    }
-    return (
-      <View style={styles.loadingFooter}>
-        <ActivityIndicator color={colors.text} size="small" />
-      </View>
-    );
-  }, [offsetLoading, loading, colors]);
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={memoizedData}
+        data={memoizedFilteredData}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         numColumns={3}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
-        initialNumToRender={9} // Show 3 rows initially
-        maxToRenderPerBatch={9} // Render up to 3 rows at a time
-        windowSize={5} // Keep 5 "pages" in memory
-        updateCellsBatchingPeriod={100} // Increase batching period for better performance
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.1}
+        ListEmptyComponent={ListEmptyComponent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[colors.text]}
-            tintColor={colors.text}
+            colors={[colors.theme]}
+            tintColor={colors.theme}
           />
         }
-        ListEmptyComponent={ListEmptyComponent}
-        ListFooterComponent={ListFooterComponent}
-        contentContainerStyle={styles.flatlistContainer}
+        ListFooterComponent={
+          offsetLoading && hasMore ? (
+            <View style={styles.footer}>
+              <ActivityIndicator color={colors.text} size="small" />
+            </View>
+          ) : null
+        }
       />
     </View>
   );
@@ -377,7 +295,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  flatlistContainer: {
+  contentContainer: {
     paddingVertical: 20,
     paddingBottom: 80,
     flexGrow: 1,
@@ -388,7 +306,7 @@ const styles = StyleSheet.create({
     height: 200,
     width: '100%',
   },
-  loadingFooter: {
+  footer: {
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',

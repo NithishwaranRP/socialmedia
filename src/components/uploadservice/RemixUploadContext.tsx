@@ -24,7 +24,7 @@ interface RemixUploadContextType {
   loadingMessage: string | null;
   uploading: boolean;
   uploadProgress: number;
-  startUpload: (file_uri: string, caption: string) => void;
+  startUpload: (file_uri: string, caption: string, url?: string) => void;
   uploadAnimation: Animated.Value;
   showUpload: (value: boolean) => void;
 }
@@ -49,7 +49,7 @@ export const RemixUploadProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [uploading, setUploading] = useState<boolean>(false);
   const dispatch = useAppDispatch();
 
-  const startUpload = async (file_uri: string, caption: string) => {
+  const startUpload = async (file_uri: string, caption: string, url?: string) => {
     try {
       showUpload(true);
       setUploadProgress(0);
@@ -68,7 +68,14 @@ export const RemixUploadProvider: React.FC<{ children: ReactNode }> = ({ childre
       setUploadProgress(70);
       setLoadingMessage('Finishing Upload...✨');
 
-      await createReelAPI({ videoUri: videoResponse, caption });
+      const data: any = { videoUri: videoResponse, caption };
+      
+      // Add URL if provided
+      if (url && url.trim() !== '') {
+        data.url = url.trim();
+      }
+      
+      await createReelAPI(data);
       setUploading(false);
       setUploadProgress(100);
 

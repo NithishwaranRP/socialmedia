@@ -61,13 +61,15 @@ const ProfileScreen = () => {
   };
 
   const MyTabs = [
+    
     {
-      name: 'Reels',
+      name: 'History',
       component: hasValidUserData ? (
-        <ReelListTab user={user} type="post" key="post" />
+        <ReelListTab user={user} type="watched" key="watched" />
       ) : null,
-      icon: 'grid-outline',
+      icon: 'time-outline',
     },
+  
     {
       name: 'Liked',
       component: hasValidUserData ? (
@@ -75,12 +77,13 @@ const ProfileScreen = () => {
       ) : null,
       icon: 'heart-outline',
     },
+
     {
-      name: 'History',
+      name: 'Reels',
       component: hasValidUserData ? (
-        <ReelListTab user={user} type="watched" key="watched" />
+        <ReelListTab user={user} type="post" key="post" />
       ) : null,
-      icon: 'time-outline',
+      icon: 'grid-outline',
     },
   ];
 

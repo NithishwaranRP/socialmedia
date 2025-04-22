@@ -41,7 +41,7 @@ appAxios.interceptors.response.use(
 
     if (error.response && error.response.status !== 401) {
       const errorMessage = error.response.data?.msg || 'Something went wrong';
-      Alert.alert(errorMessage);
+      // Alert.alert(errorMessage);
     }
     return Promise.reject(error);
   }

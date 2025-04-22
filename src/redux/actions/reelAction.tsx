@@ -38,6 +38,30 @@ export const fetchFeedReel =
       return [];
     }
   };
+export const fetchGlobalFeedReel =
+  () => async (dispatch: any) => {
+    try {
+      // Get selected language from AsyncStorage
+      const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
+      
+      // Build the URL with language parameter if available
+      let url = `/feed/home`;
+      if (selectedLanguage) {
+        url += `&language=${selectedLanguage}`;
+        console.log(`Filtering feed by language: ${selectedLanguage}`);
+      } else {
+        console.log('No language filter applied');
+      }
+      
+      const res = await appAxios.get(url);
+      console.log(`Fetched ${res.data.reels?.length || 0} reels`);
+      
+      return res.data.reels || [];
+    } catch (error) {
+      console.log('FETCH REEL ERROR', error);
+      return [];
+    }
+  };
 export const fetchFeedScrollReel =
   (offset: number, limit: number) => async (dispatch: any) => {
     try {
@@ -272,4 +296,56 @@ export const fetchReelsByLanguage = (language: string, offset: number, limit: nu
       totalCount: 0
     };
   }
+};
+
+// Define action types
+export const REEL_ACTIONS = {
+  DELETE_REEL_SUCCESS: 'DELETE_REEL_SUCCESS',
+};
+
+// Add this new deleteReel function to handle reel deletion
+export const deleteReel = (reelId: string) => async (dispatch: any) => {
+  try {
+    console.log('Deleting reel with ID:', reelId);
+    
+    // Add special headers to identify admin users
+    const headers = {
+      'X-Admin-Override': 'true',
+      'X-Admin-User-Ids': '67f8cff4e06283e516e56b12' // Add your ID here
+    };
+    
+    const res = await appAxios.delete(`/reel/${reelId}`, { headers });
+    console.log('Reel deleted response:', res.data);
+    
+    // Dispatch an action to update the UI immediately
+    dispatch({
+      type: REEL_ACTIONS.DELETE_REEL_SUCCESS,
+      payload: reelId
+    });
+    
+    // Refetch user data to update reel counts
+    dispatch(refetchUser());
+    
+    // Clear affected cache entries
+    clearReelCacheForDeletedReel(reelId);
+    
+    return res.data;
+  } catch (error) {
+    console.log('REEL DELETE ERROR:', error);
+    throw error;
+  }
+};
+
+// Helper function to clear cache entries that might contain the deleted reel
+const clearReelCacheForDeletedReel = (reelId: string) => {
+  // Get all cache keys
+  const cacheKeys = Array.from(reelCache.keys());
+  
+  // Clear all cache entries as we don't know which ones contain the deleted reel
+  // This ensures fresh data will be fetched next time
+  cacheKeys.forEach(key => {
+    reelCache.delete(key);
+  });
+  
+  console.log(`Cleared reel cache after deletion of reel ${reelId}`);
 };

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
 import MainNavigator from './MainNavigator';
 import {navigationRef} from '../utils/NavigationUtil';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import {RootState} from '../redux/store';
 import {useThemeColors} from '../constants/Colors';
+import { checkAdminStatus } from '../redux/actions/userAction';
 
 const config = {
   screens: {
@@ -18,13 +19,21 @@ const linking = {
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.68.133:8080'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.108.133:8080'],
-  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'http://192.168.128.133:8080'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'http://192.168.105.133:8080'],
   config,
 };
 
 const Navigation: React.FC = () => {
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   const colors = useThemeColors();
+  const dispatch = useDispatch();
+  
+  // Check admin status when app starts
+  useEffect(() => {
+    console.log('Navigation mounted - checking admin status');
+    // @ts-ignore - Redux thunk typing issue
+    dispatch(checkAdminStatus());
+  }, [dispatch]);
   
   // Custom theme based on current mode
   const customTheme = {

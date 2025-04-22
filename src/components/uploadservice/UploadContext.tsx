@@ -27,7 +27,7 @@ interface UploadContextType {
   loadingMessage: string | null;
   uploading: boolean;
   uploadProgress: number;
-  startUpload: (thumb_uri: string, file_uri: string, caption: string, language?: string) => void;
+  startUpload: (thumb_uri: string, file_uri: string, caption: string, language?: string, url?: string) => void;
   uploadAnimation: Animated.Value;
   showUpload: (value: boolean) => void;
   thumbnailUri: string;
@@ -59,6 +59,7 @@ export const UploadProvider: React.FC<{children: ReactNode}> = ({children}) => {
     file_uri: string,
     caption: string,
     language: string = 'english',
+    url?: string,
   ) => {
     try {
       Animated.timing(uploadAnimation, {
@@ -88,12 +89,18 @@ export const UploadProvider: React.FC<{children: ReactNode}> = ({children}) => {
       }
       setUploadProgress(70);
       setLoadingMessage('Finishing Upload...✨');
-      const data = {
+      const data: any = {
         videoUri: videoResponse,
         thumbUri: thumbnailResponse,
         caption: caption,
         language: language,
       };
+      
+      // Add URL if provided
+      if (url && url.trim() !== '') {
+        data.url = url.trim();
+      }
+      
       console.log('Uploading reel with data:', JSON.stringify(data));
       await dispatch(createReel(data));
       setUploading(false);

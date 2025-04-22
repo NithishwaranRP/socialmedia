@@ -65,17 +65,30 @@ const SplashScreen: FC = () => {
       handleNoUrlCase(deepLinkType);
       return;
     }
+    
+    // Try to extract type and id from URL
     const {type, id} = extractTypeAndId(url);
-    switch (type) {
-      case 'reel':
-        await dispatch(getReelById(id, deepLinkType));
-        break;
-      case 'user':
-        handleUserCase(deepLinkType, id);
-        break;
-      default:
-        handleDefaultCase(deepLinkType);
-        break;
+    
+    // If we recognize the URL pattern
+    if (type && id) {
+      switch (type) {
+        case 'reel':
+          await dispatch(getReelById(id, deepLinkType));
+          break;
+        case 'user':
+          handleUserCase(deepLinkType, id);
+          break;
+        default:
+          handleDefaultCase(deepLinkType);
+          break;
+      }
+    } else {
+      // If URL doesn't match our known patterns, open it in WebView
+      if (deepLinkType !== 'RESUME') {
+        resetAndNavigate('BottomTab');
+      }
+      // Navigate to WebViewScreen with the URL
+      navigate('WebViewScreen', { url, title: 'Web Content' });
     }
   };
 

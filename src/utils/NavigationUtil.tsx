@@ -42,3 +42,7 @@ export async function push(routeName: string, params?: object) {
 export async function prepareNavigation() {
   await navigationRef.isReady();
 }
+
+export const openWebView = (url: string, title?: string) => {
+  navigate('WebViewScreen', { url, title: title || 'Web Content' });
+};

@@ -88,7 +88,7 @@ const UserProfileScreen: FC = () => {
     const profileUrl = `${
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
       // Platform.OS == 'android' ? 'http://192.168.68.133:8080' : 'reelzzz:/'
-      // Platform.OS == 'android' ? 'http://192.168.128.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'http://192.168.105.133:8080' : 'reelzzz:/'
     }/share/user/${user.username}`;
     
     const message = `Hey, Checkout this profile: ${profileUrl}`;
@@ -110,19 +110,21 @@ const UserProfileScreen: FC = () => {
 
   const MyTabs = [
     {
-      name: 'Reels',
-      component: loading ? <></> : <ReelListTab user={user} type="post" key="post" />,
-      icon: 'grid-outline',
+      name: 'History',
+      component: loading ? <></> : <ReelListTab user={user} type="watched" key="watched" />,
+      icon: 'time-outline',
     },
+    
     {
       name: 'Liked',
       component: loading ? <></> : <ReelListTab user={user} type="liked" key="liked" />,
       icon: 'heart-outline',
     },
+   
     {
-      name: 'History',
-      component: loading ? <></> : <ReelListTab user={user} type="watched" key="watched" />,
-      icon: 'time-outline',
+      name: 'Reels',
+      component: loading ? <></> : <ReelListTab user={user} type="post" key="post" />,
+      icon: 'grid-outline',
     },
   ];
 

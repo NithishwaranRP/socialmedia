@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {View, StyleSheet, TouchableOpacity, Modal, ToastAndroid} from 'react-native';
+import {View, StyleSheet, TouchableOpacity, Modal, ToastAndroid, Platform} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {RFValue} from 'react-native-responsive-fontsize';
 import {FONTS} from '../../constants/Fonts';
@@ -16,6 +16,7 @@ import {RootState} from '../../redux/store';
 import {LANGUAGES} from '../../constants/Languages';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {fetchFeedReel} from '../../redux/actions/reelAction';
+import { useAdminStatus } from '../../hooks/useAdminStatus';
 
 interface StatItemProps {
   label: string;
@@ -81,6 +82,9 @@ const MinimalProfileDetails: React.FC<MinimalProfileDetailsProps> = ({user}) => 
   const dispatch = useAppDispatch();
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
   const reduxUser = useSelector((state: RootState) => state.user.user);
+  
+  // Get admin status using our custom hook
+  const { isAdmin } = useAdminStatus();
 
   // Load selected language on component mount or when user changes
   useEffect(() => {
@@ -262,17 +266,19 @@ const MinimalProfileDetails: React.FC<MinimalProfileDetailsProps> = ({user}) => 
             />
           </View>
           
-          {/* Pick Reel button below stats (replaced Redeem) */}
-          <View style={styles.redeemButtonContainer}>
-            <MinimalButton
-              text="Pick Reel"
-              // iconName="video-library"
-              variant="default"
-              size="sm"
-              onPress={navigateToPickReelScreen}
-              fullWidth={true}
-            />
-          </View>
+          {/* Pick Reel button below stats - only visible for admins */}
+          {isAdmin && (
+            <View style={styles.redeemButtonContainer}>
+              <MinimalButton
+                text="Pick Reel"
+                // iconName="video-library"
+                variant="default"
+                size="sm"
+                onPress={navigateToPickReelScreen}
+                fullWidth={true}
+              />
+            </View>
+          )}
         </View>
       </View>
       
@@ -306,11 +312,11 @@ const MinimalProfileDetails: React.FC<MinimalProfileDetailsProps> = ({user}) => 
           onPress={() => setMenuVisible(false)}
         >
           <View style={[styles.menuContainer, {backgroundColor: colors.card}]}>
-            <MenuOption 
+            {/* <MenuOption 
               icon="create-outline" 
               text="Edit Profile" 
               onPress={handleEditProfile} 
-            />
+            /> */}
             <View style={[styles.menuDivider, {backgroundColor: colors.border}]} />
             
             {/* Redeem Option (moved from button) */}

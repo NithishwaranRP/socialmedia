@@ -14,7 +14,7 @@ import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { useRoute } from '@react-navigation/native';
 import GradientButton from '../../components/global/GradientButton';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useAppSelector} from '../../redux/reduxHook';
+import {useAppSelector, useAppDispatch} from '../../redux/reduxHook';
 import {selectUser} from '../../redux/reducers/userSlice';
 import { goBack, navigate } from '../../utils/NavigationUtil';
 import { useThemeColors } from '../../constants/Colors';
@@ -24,6 +24,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import RNFS from 'react-native-fs';
 import { FFmpegKit } from 'ffmpeg-kit-react-native';
 import convertToProxyURL from 'react-native-video-cache';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { uploadFile } from '../../redux/actions/fileAction';
+import { createReel } from '../../redux/actions/reelAction';
 
 const RemixScreen = () => {
     const colors = useThemeColors();
@@ -49,6 +52,7 @@ const RemixScreen = () => {
     const [showPreviewPopup, setShowPreviewPopup] = useState(false);
     const [isUploadInProgress, setIsUploadInProgress] = useState(false);
     const user = useAppSelector(selectUser);
+    const dispatch = useAppDispatch();
     const videoRef = useRef(null);
     const [countdown, setCountdown] = useState(null);
     const scaleValue = useRef(new Animated.Value(1)).current;
@@ -58,7 +62,15 @@ const RemixScreen = () => {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [thumbnailPath, setThumbnailPath] = useState(null);
-
+    const [url, setUrl] = useState(reelUri?.url || '');
+    const [open, setOpen] = useState(false);
+    const [language, setLanguage] = useState('english');
+    const [languages, setLanguages] = useState([
+        {label: 'English', value: 'english'},
+        {label: 'Tamil', value: 'tamil'},
+        {label: 'Hindi', value: 'hindi'},
+    ]);
+    
     // Define gradient colors as string values
     const gradientColors = useMemo(() => {
         return ['#000000', colors.isDark ? '#434343' : '#6B6B6B'];
@@ -317,52 +329,72 @@ const handleReRecord = async () => {
             return;
         }
 
-        const formData = new FormData();
-        formData.append('video', {
-            uri: Platform.OS === 'android' ? `file://${mergedVideoPath}` : mergedVideoPath,
-            type: 'video/mp4',
-            name: 'mergedVideo.mp4'
-        });
-
-        formData.append('thumbnail', {
-            uri: Platform.OS === 'android' ? `file://${thumbnailPath}` : thumbnailPath,
-            type: 'image/jpeg',
-            name: 'thumbnail.jpg'
-        });
-
-        formData.append('caption', reelUri.caption);
-        formData.append('userId', user?.id);
-
         try {
             setIsUploadInProgress(true);
-            // const response = await fetch('http://192.168.68.133:8080/uploadVideo', {
-            const response = await fetch('https://recaps-backend-277610981315.asia-south1.run.app/uploadVideo', {
-            // const response = await fetch('http://192.168.128.133:8080/uploadVideo', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorResult = await response.json();
-                Alert.alert('Upload Failed', errorResult.msg || 'Failed to upload video');
-                return;
+            
+            // Use the same upload approach as UploadReelScreen by leveraging Redux actions
+            console.log('Starting upload process for remixed video...');
+            
+            // Step 1: Upload the thumbnail
+            console.log('Uploading thumbnail...');
+            const thumbnailUri = Platform.OS === 'android' ? `file://${thumbnailPath}` : thumbnailPath;
+            const thumbnailResponse = await dispatch(uploadFile(thumbnailUri, 'reel_thumbnail'));
+            
+            if (!thumbnailResponse) {
+                throw new Error('Failed to upload thumbnail');
             }
-
-            const result = await response.json();
-            console.log('Upload Success:', result);
+            
+            // Step 2: Upload the video
+            console.log('Uploading video...');
+            const videoUri = Platform.OS === 'android' ? `file://${mergedVideoPath}` : mergedVideoPath;
+            const videoResponse = await dispatch(uploadFile(videoUri, 'reel_video'));
+            
+            if (!videoResponse) {
+                throw new Error('Failed to upload video');
+            }
+            
+            // Step 3: Create the reel in the backend
+            console.log('Creating reel with uploaded media...');
+            const reelData = {
+                videoUri: videoResponse,
+                thumbUri: thumbnailResponse,
+                caption: caption || reelUri.caption || '',
+                language: language || 'english'
+            };
+            
+            // Add URL - use manually entered URL first, then fall back to reelUri.url if available
+            if (url && url.trim() !== '') {
+                reelData.url = url.trim();
+            } else if (reelUri.url) {
+                reelData.url = reelUri.url;
+                console.log('Using original URL from reel:', reelUri.url);
+            }
+            
+            console.log('Creating reel with data:', JSON.stringify(reelData));
+            await dispatch(createReel(reelData));
+            
             Toast.show({
                 type: 'success',
                 text1: 'Success',
-                text2: result.msg,
+                text2: 'Video uploaded successfully',
                 position: 'bottom',
                 visibilityTime: 3000,
             });
+            
+            // Navigate back to home screen
+            setTimeout(() => {
+                navigate('BottomTab', { screen: 'Home' });
+            }, 1000);
+            
         } catch (error) {
             console.error('Upload error:', error);
+            Alert.alert(
+                'Upload Error', 
+                'Failed to upload the video. Please check your network connection and try again.'
+            );
         } finally {
             setIsUploadInProgress(false);
             setIsUploadPopupVisible(false);
-            navigate('BottomTab', { screen: 'Home' });
         }
     };
 
@@ -616,12 +648,46 @@ console.log('bgvideo', reelUri.videoUri);
                            <Image source={{uri: Platform.OS === 'android' ? `file://${thumbnailPath}` : thumbnailPath}} style={styles.img} />
                              <TextInput
                                style={[styles.input, styles.textArea, { borderColor: 'gray', color: colors.text }]}
-                               value={reelUri.caption}
+                               value={caption}
+                               placeholder="Enter your caption here..."
                                placeholderTextColor={colors.border}
                                onChangeText={setCaption}
                                multiline={true}
                                numberOfLines={8}
                              />
+                           </View>
+                           <View style={styles.urlSection}>
+                               <Text style={[styles.sectionTitle, { color: colors.text }]}>Optional URL Link:</Text>
+                               <TextInput
+                                   style={[styles.urlInput, { borderColor: 'gray', color: colors.text }]}
+                                   value={url}
+                                   placeholder="Enter an optional URL (e.g., website, profile)..."
+                                   placeholderTextColor={colors.border}
+                                   onChangeText={setUrl}
+                                   autoCapitalize="none"
+                                   keyboardType="url"
+                               />
+                           </View>
+                           <View style={styles.languageSection}>
+                               <Text style={[styles.sectionTitle, { color: colors.text }]}>Select Language:</Text>
+                               <DropDownPicker
+                                   open={open}
+                                   value={language}
+                                   items={languages}
+                                   setOpen={setOpen}
+                                   setValue={setLanguage}
+                                   setItems={setLanguages}
+                                   style={[styles.dropdown, { backgroundColor: colors.card }]}
+                                   dropDownContainerStyle={[styles.dropdownContainer, { backgroundColor: colors.card }]}
+                                   textStyle={{color: colors.text}}
+                                   listItemLabelStyle={{color: colors.text}}
+                                   zIndex={5000}
+                                   zIndexInverse={6000}
+                                   listMode="SCROLLVIEW"
+                                   scrollViewProps={{
+                                       nestedScrollEnabled: true,
+                                   }}
+                               />
                            </View>
                            <GradientButton
                              text={isUploadInProgress ? "Uploading..." : "Upload"}
@@ -632,13 +698,12 @@ console.log('bgvideo', reelUri.videoUri);
                            />
                            <GradientButton
                             text="Back"
-                            iconName="keyboard-backspace" // You can use another icon if needed
+                            iconName="keyboard-backspace"
                             onPress={() => {
-                                setIsPreview(true); // Show the preview again
-                                // Optionally, you can reset other states if needed:
-                                setIsUploadPopupVisible(false); // Close the upload popup
-                                setIsPlayingMerged(false); // Stop any playback on the merged video if it was playing
-                                videoRef.current?.seek(0); // Reset the video to the start position (optional)
+                                setIsPreview(true);
+                                setIsUploadPopupVisible(false);
+                                setIsPlayingMerged(false);
+                                videoRef.current?.seek(0);
                             }}
                         />
                          </ScrollView>
@@ -752,8 +817,9 @@ const styles = StyleSheet.create({
     },
     overlayCamera: {
         flex: 1,
-        width: '100%', // Make camera fill the wrapper container
+        // width: '60%',
         height: '100%',
+        // borderRadius: 10,
     },
     recordButton: {
         position: 'absolute',
@@ -934,14 +1000,58 @@ const styles = StyleSheet.create({
     },
     cameraWrapper: {
         position: 'absolute',
-        top: 'auto',
-        left: 'auto',
-        bottom: 45,
-        right: 20, // Keep at 20px from right edge
-        width: '10%', // Narrower width to match image proportions
-        height: 300, // Taller height for a more extreme portrait rectangle like in the image
+        bottom: 110,
+        right:-20,
+        width: 180,
+        height:280,
+        // borderRadius: 10,
         overflow: 'hidden',
-        borderRadius: 10,
+        // borderWidth:10,
+        // borderColor: 'white',
+        zIndex: 1000,
+       
+    },
+    urlSection: {
+        width: '95%',
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    languageSection: {
+        width: '95%',
+        marginVertical: 10,
+        zIndex: 1000,
+        position: 'relative',
+    },
+    sectionTitle: {
+        marginBottom: 5,
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    urlInput: {
+        height: 45,
+        borderWidth: 1,
+        borderRadius: 5,
+        padding: 10,
+        width: '100%',
+    },
+    dropdown: {
+        borderColor: 'gray',
+        borderWidth: 1,
+        borderRadius: 5,
+        marginBottom: Platform.OS === 'android' ? 20 : 0,
+    },
+    dropdownContainer: {
+        borderColor: 'gray',
+        borderWidth: 1,
+        borderRadius: 5,
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
 });
 

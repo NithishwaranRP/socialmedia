@@ -1,7 +1,8 @@
 import messaging from '@react-native-firebase/messaging';
 import {Platform} from 'react-native';
 import PushNotification, {Importance} from 'react-native-push-notification';
-import firebase from '@react-native-firebase/app';
+import { getApp, getApps, initializeApp } from '@react-native-firebase/app';
+import { logErrorToStorage } from '../utils/ReleaseErrorLogger';
 
 // Firebase configuration from google-services.json
 const firebaseConfig = {
@@ -14,21 +15,14 @@ const firebaseConfig = {
   databaseURL: "https://recaps-9fd10-default-rtdb.firebaseio.com"
 };
 
-// Compatibility helper function to check if Firebase is initialized
+// Compatibility helper function to check if Firebase is initialized using modern API
 const isFirebaseInitialized = () => {
   try {
-    // Try the newer API first
-    if (typeof firebase.getApps === 'function') {
-      return firebase.getApps().length > 0;
-    }
-    // Fall back to the older API
-    if (firebase.apps && Array.isArray(firebase.apps)) {
-      return firebase.apps.length > 0;
-    }
-    // If neither is available, assume it's not initialized
-    return false;
+    // Use the modern API
+    return getApps().length > 0;
   } catch (error) {
     console.error('Error checking Firebase initialization:', error);
+    logErrorToStorage('FIREBASE_SERVICE_CHECK', `Error: ${error.message}`);
     return false;
   }
 };
@@ -45,38 +39,73 @@ class FirebaseService {
     try {
       // Initialize Firebase if it's not already initialized
       if (!isFirebaseInitialized()) {
+        console.log('Firebase not initialized, initializing now with config...');
         // Initialize with explicit config to ensure API key is provided
-        await firebase.initializeApp(firebaseConfig);
-        console.log('Firebase app initialized successfully with config');
+        try {
+          // Make sure we're explicitly passing the config object
+          const app = initializeApp(firebaseConfig);
+          console.log('Firebase app initialized successfully with config');
+          logErrorToStorage('FIREBASE_INIT_SUCCESS', 'Firebase initialized with config');
+        } catch (initError) {
+          console.error('Error during Firebase initialization:', initError);
+          logErrorToStorage('FIREBASE_INIT_ERROR', `Error: ${initError.message}`);
+          return false;
+        }
       } else {
         console.log('Firebase app already initialized');
+        // Get the existing app
+        try {
+          getApp();
+        } catch (getAppError) {
+          console.error('Error getting existing Firebase app:', getAppError);
+          logErrorToStorage('FIREBASE_GETAPP_ERROR', `Error: ${getAppError.message}`);
+          
+          // Try to re-initialize if getting the app fails
+          try {
+            console.log('Attempting to re-initialize Firebase...');
+            const app = initializeApp(firebaseConfig);
+            console.log('Firebase re-initialized successfully');
+          } catch (reinitError) {
+            console.error('Error re-initializing Firebase:', reinitError);
+            logErrorToStorage('FIREBASE_REINIT_ERROR', `Error: ${reinitError.message}`);
+            return false;
+          }
+        }
       }
       
       // Check authorization status
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      try {
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-      if (enabled) {
-        console.log('Firebase Messaging authorization status:', authStatus);
-        
-        // Get FCM token
-        await this.getFCMToken();
-        
-        // Register foreground message handler
-        this.registerForegroundMessageHandler();
-        
-        // Register background message handler
-        messaging().setBackgroundMessageHandler(this.onMessageReceived);
-        
+        if (enabled) {
+          console.log('Firebase Messaging authorization status:', authStatus);
+          
+          // Get FCM token
+          await this.getFCMToken();
+          
+          // Register foreground message handler
+          this.registerForegroundMessageHandler();
+          
+          // Register background message handler
+          messaging().setBackgroundMessageHandler(this.onMessageReceived);
+          
+          return true;
+        } else {
+          console.log('Firebase Messaging authorization denied');
+          return false;
+        }
+      } catch (messagingError) {
+        console.error('Error setting up Firebase messaging:', messagingError);
+        logErrorToStorage('FIREBASE_MESSAGING_ERROR', `Error: ${messagingError.message}`);
+        // Continue with Firebase initialized even if messaging fails
         return true;
-      } else {
-        console.log('Firebase Messaging authorization denied');
-        return false;
       }
     } catch (error) {
       console.error('Firebase initialization error:', error);
+      logErrorToStorage('FIREBASE_SERVICE_INIT', `Error: ${error.message}`);
       return false;
     }
   }
