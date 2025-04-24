@@ -6,12 +6,14 @@ import {
     Alert,
     Platform,
     Text,Modal,ScrollView,TextInput,ProgressBarAndroid,
-    Animated,NativeModules,Image
+    Animated,NativeModules,Image,
+    AppState,
+    InteractionManager
 } from 'react-native';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
 import Video from 'react-native-video';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
 import GradientButton from '../../components/global/GradientButton';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useAppSelector, useAppDispatch} from '../../redux/reduxHook';
@@ -27,6 +29,7 @@ import convertToProxyURL from 'react-native-video-cache';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { uploadFile } from '../../redux/actions/fileAction';
 import { createReel } from '../../redux/actions/reelAction';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RemixScreen = () => {
     const colors = useThemeColors();
@@ -39,8 +42,8 @@ const RemixScreen = () => {
     const [mergedVideoPath, setMergedVideoPath] = useState(null);
     const [isPlayingMerged, setIsPlayingMerged] = useState(false);
     const [playBgVideo, setPlayBgVideo] = useState(false);
-    const [playRecordedVideo, setPlayRecordedVideo] = useState(false); // For controlling the recorded video playback
-    const [isMuted, setIsMuted] = useState(false);
+    const [playRecordedVideo, setPlayRecordedVideo] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const cameraRef = useRef(null);
     const devices = useCameraDevices();
     const route = useRoute();
@@ -180,8 +183,9 @@ const RemixScreen = () => {
                 console.error('Error parsing duration:', error);
             }
             
-            // Simplify the audio mapping
-            const audioOption = isMuted ? '-an' : '';
+            // Configure audio options based on user selection
+            // Always use the original recorded audio, not the background video audio
+            const audioOption = '-map 1:a'; // Use the audio from the recorded video (1:a)
             
             // Use the explicit duration to trim the background video
             const command = `-i ${reelUri.videoUri} -i ${recordedVideo} -t ${duration} -filter_complex "[1:v]scale=iw*0.25:ih*0.25[overlayed];[0:v][overlayed]overlay=W-w-45:H-h-45" ${audioOption} -c:v mpeg4 -q:v 5 -c:a aac -strict experimental ${outputFilePath}`;
@@ -250,7 +254,10 @@ const RemixScreen = () => {
         if (cameraRef.current) {
             try {
                 setIsRecording(true);
-                setPlayBgVideo(true); // Start the background video during recording
+                
+                // Start the background video but keep it muted during recording
+                setPlayBgVideo(true);
+                setIsMuted(true); // Keep background video muted during recording
     
                 await cameraRef.current.startRecording({
                     onRecordingFinished: async (video) => {
@@ -262,10 +269,13 @@ const RemixScreen = () => {
                     onRecordingError: (error) => {
                         console.error('Recording error:', error);
                         setIsRecording(false);
+                        setPlayBgVideo(false);
                     },
                 });
             } catch (error) {
                 console.error('Error starting video recording:', error);
+                setIsRecording(false);
+                setPlayBgVideo(false);
             }
         }
     };
@@ -435,10 +445,212 @@ const handleReRecord = async () => {
 const previewVideo = response?.reel?.videoUri;
 console.log('bgvideo', reelUri.videoUri);
 
+    // Use useFocusEffect to forcefully clean up any background videos when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            // Function to stop any background videos
+            const stopBackgroundVideos = async () => {
+                console.log('RemixScreen focused: Stopping any background videos');
+                
+                // Force any previous videos to stop by setting a global flag in AsyncStorage
+                // This will be read by FeedReelScrollScreen to force stop videos
+                try {
+                    await AsyncStorage.setItem('force_stop_all_videos', 'true');
+                    
+                    // Reset the flag after a delay
+                    setTimeout(async () => {
+                        await AsyncStorage.removeItem('force_stop_all_videos');
+                    }, 500);
+                } catch (error) {
+                    console.error('Error setting force stop flag:', error);
+                }
+                
+                // Set local state
+                setPlayBgVideo(false);
+                setIsMuted(true);
+            };
+            
+            // Execute with slight delay to ensure proper timing after navigation
+            InteractionManager.runAfterInteractions(stopBackgroundVideos);
+            
+            return () => {
+                // This runs when the screen loses focus
+                console.log('RemixScreen unfocused');
+            };
+        }, [])
+    );
+    
+    // Enhanced initialization effect
+    useEffect(() => {
+        // Function to initialize the screen properly
+        const initializeScreen = async () => {
+            console.log('RemixScreen mounted: Setting up screen');
+            
+            // Ensure the video is paused when the screen loads
+            setPlayBgVideo(false);
+            
+            // Ensure audio is muted by default
+            setIsMuted(true);
+            
+            // Force any previous videos to stop by setting a global flag
+            try {
+                await AsyncStorage.setItem('force_stop_all_videos', 'true');
+                
+                // Reset the flag after a delay
+                setTimeout(async () => {
+                    await AsyncStorage.removeItem('force_stop_all_videos');
+                }, 500);
+            } catch (error) {
+                console.error('Error setting force stop flag:', error);
+            }
+            
+            // Listen for app state changes to handle background/foreground transitions
+            const appStateSubscription = AppState.addEventListener('change', nextAppState => {
+                if (nextAppState === 'active') {
+                    // App came to foreground
+                    console.log('App active in RemixScreen: Ensuring videos are stopped');
+                    setPlayBgVideo(false);
+                    setIsMuted(true);
+                }
+            });
+            
+            // Return cleanup function
+            return () => {
+                appStateSubscription.remove();
+            };
+        };
+        
+        // Call initialization
+        const cleanup = initializeScreen();
+        
+        // Cleanup function
+        return () => {
+            cleanup?.then?.(() => console.log('RemixScreen init cleanup complete'));
+        };
+    }, []);
+
+    // Add comprehensive cleanup effect when unmounting
+    useEffect(() => {
+        // Return cleanup function that runs when component unmounts
+        return () => {
+            console.log('RemixScreen unmounting: performing full cleanup');
+            
+            // Ensure any active recording is stopped
+            if (isRecording && cameraRef.current) {
+                try {
+                    cameraRef.current.stopRecording();
+                } catch (error) {
+                    console.error('Error stopping recording during cleanup:', error);
+                }
+            }
+            
+            // Clear any persisting videos
+            setRecordedVideo(null);
+            setMergedVideoPath(null);
+            
+            // Stop any video playback
+            setPlayBgVideo(false);
+            setIsPlayingMerged(false);
+            
+            // Reset recording state
+            setIsRecording(false);
+            setCountdown(null);
+            setIsTimerRunning(false);
+            
+            // Force cleanup any remaining video resources
+            if (videoRef.current) {
+                try {
+                    // Clear video resource
+                    videoRef.current.seek(0);
+                } catch (error) {
+                    console.error('Error cleaning up video ref:', error);
+                }
+            }
+            
+            // Cleanup FFmpeg if needed
+            try {
+                FFmpegKit.cancel();
+            } catch (error) {
+                console.error('Error cancelling FFmpeg processes:', error);
+            }
+            
+            // Clean up any temporary files
+            const cleanupFiles = async () => {
+                try {
+                    if (recordedVideo) {
+                        const exists = await RNFS.exists(recordedVideo);
+                        if (exists) {
+                            await RNFS.unlink(recordedVideo);
+                            console.log('Cleaned up recorded video file');
+                        }
+                    }
+                    
+                    if (mergedVideoPath) {
+                        const exists = await RNFS.exists(mergedVideoPath);
+                        if (exists) {
+                            await RNFS.unlink(mergedVideoPath);
+                            console.log('Cleaned up merged video file');
+                        }
+                    }
+                    
+                    if (thumbnailPath) {
+                        const exists = await RNFS.exists(thumbnailPath);
+                        if (exists) {
+                            await RNFS.unlink(thumbnailPath);
+                            console.log('Cleaned up thumbnail file');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cleaning up files:', error);
+                }
+            };
+            
+            // Execute file cleanup
+            cleanupFiles();
+            
+            console.log('RemixScreen unmount cleanup completed');
+        };
+    }, [isRecording, recordedVideo, mergedVideoPath, thumbnailPath]);
+
+    // Add custom back handler
+    const handleBackNavigation = useCallback(async () => {
+        console.log('Custom back navigation triggered');
+        
+        // Force stop all videos first
+        setPlayBgVideo(false);
+        setIsMuted(true);
+        
+        try {
+            // Signal to background screens that videos should be stopped
+            await AsyncStorage.setItem('force_stop_all_videos', 'true');
+            
+            // Wait a moment for the flag to be processed
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Navigate back
+            goBack();
+            
+            // Set a timeout to clear the flag after navigation
+            setTimeout(async () => {
+                await AsyncStorage.removeItem('force_stop_all_videos');
+            }, 500);
+        } catch (error) {
+            console.error('Error in back navigation:', error);
+            goBack(); // Fallback to regular back navigation
+        }
+    }, []);
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-           
-             {!isPreview && !isMerging && (
+            {/* Add back button */}
+            <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleBackNavigation}
+            >
+                <Icon name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+            
+            {!isPreview && !isMerging && (
                 <Video
                     ref={videoRef}
                     poster={reelUri.thumbUri}
@@ -462,10 +674,9 @@ console.log('bgvideo', reelUri.videoUri);
                     hideShutterView
                     minLoadRetryCount={5}
                     shutterColor="transparent"
-                    onBuffer={this.onBuffer} // Handle buffering
-                    onError={this.videoError} // Handle errors
-                    onEnd={() => setPlayBgVideo(false)} // Restart playback
-                
+                    onBuffer={this.onBuffer}
+                    onError={this.videoError}
+                    onEnd={() => setPlayBgVideo(false)}
                 />
             )}
             {hasPermission && device && !isPreview && !isMerging && (
@@ -497,7 +708,17 @@ console.log('bgvideo', reelUri.videoUri);
             {!isRecording && !isPreview && !isMerging &&(
                 <View style={styles.iconContainer}>
                     <View style={[styles.iconBackground, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
-                        <TouchableOpacity onPress={() => setIsMuted(prev => !prev)} style={styles.iconButton}>
+                        <TouchableOpacity 
+                            onPress={() => {
+                                const newMuted = !isMuted;
+                                setIsMuted(newMuted);
+                                // If unmuting, also start playing
+                                if (!newMuted) {
+                                    setPlayBgVideo(true);
+                                }
+                            }} 
+                            style={styles.iconButton}
+                        >
                             <Icon name={isMuted ? "volume-mute-outline" : "volume-high-outline"} size={30} color={'white'} />
                         </TouchableOpacity>
                         <TouchableOpacity onPress={onTimerPress}>
@@ -1052,6 +1273,15 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
+    },
+    backButton: {
+        position: 'absolute',
+        top: 40,
+        left: 20,
+        padding: 10,
+        borderRadius: 50,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        zIndex: 9999, // Ensure it's above all other elements
     },
 });
 

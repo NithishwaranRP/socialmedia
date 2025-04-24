@@ -31,6 +31,7 @@ import Voice from '@react-native-voice/voice';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAvatarPopup } from '../../context/AvatarPopupContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { StreamingAvatar } from '@heygen/streaming-avatar';
 
 // Safely register LiveKit globals with error handling
 const safeRegisterGlobals = () => {
@@ -71,13 +72,13 @@ const SESSION_TIMESTAMP_KEY = `${SESSION_STORAGE_PREFIX}timestamp`;
 // Session validity in milliseconds (30 minutes)
 const SESSION_VALIDITY_DURATION = 30 * 60 * 1000;
 
-// Custom ChromaKey Video Track component
-interface ChromaKeyVideoProps {
+// Custom StreamingAvatar Video Track component
+interface StreamingAvatarProps {
   trackRef: any;
   onVideoEnd?: () => void;
 }
 
-const ChromaKeyVideoTrack: React.FC<ChromaKeyVideoProps> = ({ trackRef, onVideoEnd }) => {
+const CustomStreamingAvatar: React.FC<StreamingAvatarProps> = ({ trackRef, onVideoEnd }) => {
   // Use an effect to detect when video track changes or ends
   useEffect(() => {
     if (trackRef && onVideoEnd) {
@@ -112,15 +113,12 @@ const ChromaKeyVideoTrack: React.FC<ChromaKeyVideoProps> = ({ trackRef, onVideoE
   }, [trackRef, onVideoEnd]);
   
   return (
-    <View style={styles.chromaKeyWrapper}>
-      {/* We're removing the vignette overlay since it's not defined in styles */}
-      
-      {/* Custom styled video track for chroma key effect */}
+    <View style={styles.avatarWrapper}>
+      {/* Using VideoTrack for backward compatibility */}
       <VideoTrack
-        style={styles.chromaKeyVideo}
+        style={styles.streamingAvatar}
         trackRef={trackRef}
         objectFit="cover"
-        // Remove onEnded as it's not supported
       />
     </View>
   );
@@ -1153,43 +1151,38 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         await closeSession();
       }
       
-      console.log('Creating new HeyGen session with voice capabilities...');
+      console.log('Creating new HeyGen session with StreamingAvatar SDK...');
       
-      // Get new session token
-      const newSessionToken = await getSessionToken();
-      console.log('Got session token:', newSessionToken ? 'success' : 'failed');
-      setSessionToken(newSessionToken);
-
-      const response = await fetch(`${API_CONFIG.serverUrl}/v1/streaming.new`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${newSessionToken}`,
-        },
-        body: JSON.stringify({
-          quality: 'high',
-          avatar_name: 'Thaddeus_Black_Suit_public',
-          voice: {
-            voice_id: '',
-          },
-          version: 'v2',
-          video_encoding: 'H264',
-        }),
+      // Get new session token using the SDK
+      const streamingAvatarSdk = new StreamingAvatar({
+        apiKey: API_CONFIG.apiKey,
+        baseUrl: API_CONFIG.serverUrl
       });
-
-      const data = await response.json();
-      console.log('Streaming new response:', data);
-
-      if (data.data) {
-        const newSessionId = data.data.session_id;
+      
+      // Initialize the StreamingAvatar session
+      const avatarSession = await streamingAvatarSdk.createSession({
+        avatarName: 'Thaddeus_Black_Suit_public',
+        quality: 'high',
+        videoEncoding: 'H264',
+        version: 'v2'
+      });
+      
+      if (avatarSession) {
+        // Extract session data
+        const newSessionId = avatarSession.sessionId;
+        const newSessionToken = avatarSession.sessionToken;
+        const newWsUrl = avatarSession.wsUrl;
+        const newAccessToken = avatarSession.accessToken;
+        
         console.log('New session created with ID:', newSessionId);
         
         // Set all session data
         setSessionId(newSessionId);
-        setWsUrl(data.data.url);
-        setToken(data.data.access_token);
+        setSessionToken(newSessionToken);
+        setWsUrl(newWsUrl);
+        setToken(newAccessToken);
 
-        // Connect WebSocket
+        // Connect WebSocket using the WebSocket URL returned from the SDK
         const params = new URLSearchParams({
           session_id: newSessionId,
           session_token: newSessionToken,
@@ -1197,7 +1190,7 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
           stt_language: 'en',
         });
 
-        const wsUrl = `wss://${
+        const wsUrl = avatarSession.wsUrl || `wss://${
           new URL(API_CONFIG.serverUrl).hostname
         }/v1/ws/streaming.chat?${params}`;
 
@@ -1218,9 +1211,9 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         
         setWebSocket(ws);
 
-        // Start streaming session with the new IDs
+        // Start streaming session
         console.log('Starting streaming session...');
-        const success = await startStreamingSession(newSessionId, newSessionToken);
+        const success = await streamingAvatarSdk.startSession(newSessionId, newSessionToken);
         
         if (!success) {
           console.error('Failed to start streaming session');
@@ -1232,9 +1225,10 @@ const HeyGenAvatarScreen: React.FC<HeyGenAvatarScreenProps> = ({ onDismiss }) =>
         
         // Save session for future use
         await saveSession();
+        setConnected(true);
       } else {
-        console.error('Failed to create session:', data.message || 'Unknown error');
-        setError(`Failed to create session: ${data.message || 'Unknown error'}`);
+        console.error('Failed to create session');
+        setError('Failed to create session. Please try again.');
       }
     } catch (error) {
       console.error('Error creating session:', error);
@@ -1619,12 +1613,9 @@ const RoomView = ({
           {tracks.map((track, idx) =>
             isTrackReference(track) ? (
               <View key={idx} style={styles.videoWrapper}>
-                <ChromaKeyVideoTrack 
+                <CustomStreamingAvatar 
                   trackRef={track} 
-                  onVideoEnd={() => {
-                    // Call onStartListening to make sure voice recognition is active
-                    onStartListening();
-                  }} 
+                  onVideoEnd={onVideoEnd}
                 />
               </View>
             ) : null
@@ -1818,7 +1809,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  chromaKeyWrapper: {
+  avatarWrapper: {
     flex: 1,
     width: '100%',
     height: '100%',
@@ -1827,11 +1818,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  chromaKeyVideo: {
+  streamingAvatar: {
     width: '100%',
     height: '100%',
     backgroundColor: 'transparent',
-    // Remove the green background by making it transparent
     opacity: 0.95,
   },
   videoView: {

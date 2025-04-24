@@ -2193,10 +2193,10 @@
   dependencies:
     "@hapi/hoek" "^9.0.0"
 
-"@heygen/streaming-avatar@^2.0.12":
-  version "2.0.12"
-  resolved "https://registry.npmjs.org/@heygen/streaming-avatar/-/streaming-avatar-2.0.12.tgz"
-  integrity sha512-xTUXr39UKAQwV/JCaJXLmuhYw2E4yJbRL8kXCoic6h2fhD9lFwiJYAOznU++kUC9jgJvBu3AZJLdcPwNHP0k9A==
+"@heygen/streaming-avatar@^2.0.13":
+  version "2.0.13"
+  resolved "https://registry.npmjs.org/@heygen/streaming-avatar/-/streaming-avatar-2.0.13.tgz"
+  integrity sha512-XToZH+QgMGTS4xB4G9Paa2PjJfM85LUby+edaWccoKcegoN+bgnwkYQ50tPHrDt7Bkdy0j7IB4HkOAfKZ8qXTg==
   dependencies:
     livekit-client "^2.4.2"
     protobufjs "^7.4.0"

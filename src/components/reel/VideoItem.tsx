@@ -49,6 +49,7 @@ interface VideoItemProps {
   index: number;
   currentIndex: number;
   onVideoEnd?: () => void;
+  forceStop?: boolean;
 }
 
 const VideoItem: FC<VideoItemProps> = ({
@@ -57,7 +58,8 @@ const VideoItem: FC<VideoItemProps> = ({
   preload,
   index,
   currentIndex,
-  onVideoEnd
+  onVideoEnd,
+  forceStop = false,
 }) => {
   const dispatch = useAppDispatch();
   const likedReels = useAppSelector(selectLikedReel);
@@ -526,6 +528,102 @@ const VideoItem: FC<VideoItemProps> = ({
     Gesture.Exclusive(doubleTap, singleTap)
   );
 
+  // Handle video playback based on visibility
+  useEffect(() => {
+    if (isVisible && !forceStop) {
+      // Video is visible and not forced to stop
+      setPaused(null);
+      setIsPaused(false);
+    } else {
+      // Video is not visible or forced to stop
+      setPaused('paused');
+      setIsPaused(true);
+    }
+  }, [isVisible, forceStop]);
+  
+  // Effect to force stop videos
+  useEffect(() => {
+    if (forceStop) {
+      // If force stop is activated, use 'paused' string
+      setPaused('paused');
+      setIsPaused(true);
+      
+      // Additional cleanup when force stopping
+      if (videoRef.current) {
+        try {
+          // Try to seek to beginning to fully reset video state
+          videoRef.current.seek(0);
+          
+          // Some players support additional methods
+          if (typeof videoRef.current.stop === 'function') {
+            videoRef.current.stop();
+          }
+        } catch (error) {
+          console.log('Error resetting video:', error);
+        }
+      }
+      
+      // Reset all timers
+      if (watchTimeout) {
+        clearTimeout(watchTimeout);
+        setWatchTimeout(null);
+      }
+      
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
+      
+      // Reset playback state
+      setCurrentTime(0);
+      setSliderValue(0);
+      console.log(`Force stopped video ${item._id}`);
+    }
+  }, [forceStop, item._id, watchTimeout]);
+
+  // Add effect to completely reset video when visibility changes
+  useEffect(() => {
+    if (!isVisible) {
+      // When video becomes invisible, do a complete reset
+      // Use 'paused' string instead of true boolean
+      setPaused('paused');
+      setIsPaused(true);
+      
+      // Reset video player
+      if (videoRef.current) {
+        try {
+          videoRef.current.seek(0);
+        } catch (error) {
+          console.log('Error resetting invisible video:', error);
+        }
+      }
+      
+      // Reset timers
+      if (watchTimeout) {
+        clearTimeout(watchTimeout);
+        setWatchTimeout(null);
+      }
+      
+      // Reset state for when video becomes visible again
+      setCurrentTime(0);
+      setSliderValue(0);
+      console.log(`Reset invisible video ${item._id}`);
+    } else if (isVisible && videoRef.current) {
+      // When video becomes visible again
+      console.log(`Video ${item._id} now visible`);
+      setIsPaused(false);
+      // Use null for paused state instead of false
+      setPaused(null);
+      
+      // Make sure we're at the beginning of the video
+      try {
+        videoRef.current.seek(0);
+      } catch (error) {
+        console.log('Error seeking to beginning of video:', error);
+      }
+    }
+  }, [isVisible, item._id, watchTimeout]);
+
   return (
     <View style={styles.container}>
       <GestureHandlerRootView style={{flex: 1}}>
@@ -696,7 +794,8 @@ const areEqual = (prevProps: VideoItemProps, nextProps: VideoItemProps) => {
   return (
     prevProps?.item?._id === nextProps?.item?._id &&
     prevProps?.isVisible === nextProps?.isVisible &&
-    prevProps?.preload === nextProps?.preload
+    prevProps?.preload === nextProps?.preload &&
+    prevProps?.forceStop === nextProps?.forceStop
   );
 };
 
@@ -786,3 +885,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
