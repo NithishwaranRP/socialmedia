@@ -87,7 +87,7 @@ const UserProfileScreen: FC = () => {
     
     const profileUrl = `${
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
-      // Platform.OS == 'android' ? 'http://192.168.68.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'http://192.168.88.133:8080' : 'reelzzz:/'
       // Platform.OS == 'android' ? 'http://192.168.105.133:8080' : 'reelzzz:/'
     }/share/user/${user.username}`;
     

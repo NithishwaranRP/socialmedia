@@ -62,7 +62,7 @@ const UserProfileDetails: React.FC<{
       // Platform.OS == 'android' ? 'https://192.168.68.133:8080' : 'reelzzz:/'
       // Platform.OS == 'android' ? 'https://reelzzzserverworking.vercel.app' : 'reelzzz:/'
       Platform.OS == 'android' ? 'https://recaps-backend-277610981315.asia-south1.run.app' : 'reelzzz:/'
-      // Platform.OS == 'android' ? 'http://192.168.105.133:8080' : 'reelzzz:/'
+      // Platform.OS == 'android' ? 'http://192.168.88.133:8080' : 'reelzzz:/'
     }/share/user/${user.username}`;
     
     const message = `Hey, Checkout this profile: ${profileUrl}`;

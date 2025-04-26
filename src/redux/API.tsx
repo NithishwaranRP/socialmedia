@@ -5,7 +5,7 @@ import {Platform} from 'react-native';
 export const BASE_URL = "https://recaps-backend-277610981315.asia-south1.run.app";
 
 // Be sure your backend is running on this IP and port
-// export const BASE_URL = "http://192.168.105.133:8080";
+// export const BASE_URL = "http://192.168.88.133:8080";
 
 // FOR LOCAL DEVELOPMENT (Uncomment when needed)
 // export const BASE_URL = "http://192.168.105.133:8080";

@@ -31,7 +31,7 @@ import { fetchUserByUsername } from '../../redux/actions/userAction';
 import { navigate } from '../../utils/NavigationUtil';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import Video from 'react-native-video';
-import { debounce } from 'lodash';
+import { debounce, result } from 'lodash';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import convertToProxyURL from 'react-native-video-cache';
@@ -144,7 +144,8 @@ const GlobalFeed = () => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const result = await dispatch(fetchFeedReel(0, 200));
+      // const result = await dispatch(fetchFeedReel(0, 200));
+      const result = await dispatch(fetchGlobalFeedReel());
       setAllData(result);
       await saveData(result);
     } catch (error) {
@@ -254,7 +255,8 @@ const GlobalFeed = () => {
           try {
 
      if (allData.length === 0) {
-          const result = await dispatch(fetchFeedReel(0, 200));
+          // const result = await dispatch(fetchFeedReel(0, 200));
+          const result = await dispatch(fetchGlobalFeedReel());
           setAllData(result);
           await saveData(result); // Save fetched data to AsyncStorage
         }
@@ -309,101 +311,64 @@ const GlobalFeed = () => {
     {length: normalizeWidth(350), offset: normalizeWidth(350) * index, index}
   );
 
- 
+  // Helper function to extract hashtags from a caption
+  const extractHashtagsFromCaption = (caption: string): string[] => {
+    if (!caption) return [];
+    return caption.split(" ").filter(tag => tag.startsWith("#"));
+  };
   
-
   const handleNewsPress = useCallback(async (item: any, index: number, idx?: React.Key | null | undefined) => {
     // Pause current video before navigating
-    // setCurrentVideoIndex(-1);
-    
     const copyArray = Array.from(allData);
     
-    // Find the hashtag of the selected video
-    const currentHashtag = allHashtags[index];
-    
-    // Find the actual index of the selected video in the main data array
-    let selectedVideoIndex;
-    if (item && item._id) {
-      selectedVideoIndex = copyArray.findIndex((data) => data._id === item._id);
-      if (selectedVideoIndex === -1) {
-        // If not found, use the provided index as fallback
-        selectedVideoIndex = Number(index);
-      }
-    } else {
-      // Calculate the index based on idx parameter
-      const intIndex = Number(index);
-      const intIdx = idx !== undefined ? Number(idx) : 0;
-      
-      if (intIdx === 0) {
-        selectedVideoIndex = intIndex;
-      } else {
-        selectedVideoIndex = intIndex + intIdx;
-      }
+    // Find the clicked video in the data array
+    const clickedVideo = copyArray.find(video => video._id === item._id);
+    if (!clickedVideo) {
+      console.error('Selected video not found in data');
+      return;
     }
     
-    // Ensure index is within bounds
-    if (selectedVideoIndex < 0) {
-      selectedVideoIndex = 0;
-    } else if (selectedVideoIndex >= copyArray.length) {
-      selectedVideoIndex = copyArray.length - 1;
-    }
+    // Extract hashtags from the clicked video
+    const selectedVideoHashtags = extractHashtagsFromCaption(clickedVideo.caption);
+    const currentHashtag = selectedVideoHashtags.length > 0 ? selectedVideoHashtags[0] : '';
     
-    // Extract the selected video
-    const selectedVideo = copyArray[selectedVideoIndex];
-    
-    // Get all hashtags in the selected video's caption
-    const selectedVideoHashtags = (selectedVideo.caption || "").split(" ")
-      .filter((tag: string) => tag.startsWith("#"));
-    
-    // Create a new reordered array
-    const newOrderedArray: any[] = [];
-    
-    // 1. Add the selected video first
-    newOrderedArray.push(selectedVideo);
-    
-    // 2. Find videos with the same hashtag (excluding the selected video)
-    const sameHashtagVideos = copyArray.filter((video) => {
-      // Don't include the selected video again
-      if (video._id === selectedVideo._id) return false;
-      
-      // Check if this video has the current hashtag
-      const videoHashtags = (video.caption || "").split(" ")
-        .filter((tag: string) => tag.startsWith("#"));
-      
-      return videoHashtags.includes(currentHashtag);
+    // Get all videos with the same hashtag
+    const sameHashtagVideos = copyArray.filter(video => {
+      const hashtags = extractHashtagsFromCaption(video.caption);
+      return hashtags.includes(currentHashtag);
     });
     
-    // Add videos with the same hashtag
-    newOrderedArray.push(...sameHashtagVideos);
+    // Sort the hashtag videos by upload date (oldest first)
+    const sortedHashtagVideos = [...sameHashtagVideos].sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateA - dateB; // Ascending order (oldest first)
+    });
     
-    // 3. Get all unique hashtags in the order they appear in allHashtags
-    const orderedHashtags = allHashtags.filter(tag => tag !== currentHashtag);
+    // Get all other videos (not in this hashtag)
+    const otherHashtagVideos = copyArray.filter(video => {
+      const hashtags = extractHashtagsFromCaption(video.caption);
+      return !hashtags.includes(currentHashtag);
+    });
     
-    // 4. For each hashtag, add all videos with that hashtag that aren't already in the array
-    for (const hashtag of orderedHashtags) {
-      const hashtagVideos = copyArray.filter((video) => {
-        // Skip if this video is already in newOrderedArray
-        if (newOrderedArray.some(v => v._id === video._id)) return false;
-        
-        // Check if this video has the current hashtag being processed
-        const videoHashtags = (video.caption || "").split(" ")
-          .filter((tag: string) => tag.startsWith("#"));
-        
-        return videoHashtags.includes(hashtag);
-      });
-      
-      // Add videos for this hashtag
-      newOrderedArray.push(...hashtagVideos);
-    }
+    // Sort other videos by upload date too
+    const sortedOtherVideos = [...otherHashtagVideos].sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateA - dateB; // Ascending order (oldest first)
+    });
     
-    // 5. Finally, add any remaining videos not yet included
-    const remainingVideos = copyArray.filter(video => 
-      !newOrderedArray.some(v => v._id === video._id)
-    );
+    // Create the final ordered array
+    const newOrderedArray = [...sortedHashtagVideos, ...sortedOtherVideos];
     
-    newOrderedArray.push(...remainingVideos);
+    // Find the exact index of the clicked video in the sorted array
+    const clickedVideoIndex = sortedHashtagVideos.findIndex(video => video._id === clickedVideo._id);
     
-    // Pre-cache videos before navigation
+    console.log('Clicked video index in sorted array:', clickedVideoIndex);
+    console.log('Same hashtag videos count:', sortedHashtagVideos.length);
+    console.log('Total videos:', newOrderedArray.length);
+    
+    // Preload a few videos for smoother experience
     const preloadCount = 2;
     for (let i = 0; i <= preloadCount && i < newOrderedArray.length; i++) {
       if (newOrderedArray[i] && newOrderedArray[i].videoUri) {
@@ -412,16 +377,12 @@ const GlobalFeed = () => {
       }
     }
     
-    console.log('Selected video hashtags:', selectedVideoHashtags);
-    console.log('Same hashtag videos count:', sameHashtagVideos.length);
-    console.log('Total ordered videos:', newOrderedArray.length);
-    
-    // Navigate to FeedReelScrollScreen with the reordered data
+    // Navigate to FeedReelScrollScreen with the sorted data and correct index
     navigate('FeedReelScrollScreen', {
       data: newOrderedArray,
-      initialIndex: 0, // Always start at the first video, which is the selected one
-      selectedHashtag: currentHashtag, // Pass the selected hashtag
-      allHashtags: allHashtags, // Pass all hashtags for sequencing
+      initialIndex: clickedVideoIndex, // Pass the exact index of the clicked video in the sorted array
+      selectedHashtag: currentHashtag,
+      allHashtags: allHashtags,
     });
   }, [allData, allHashtags]);
 
@@ -979,7 +940,7 @@ const currentHashtag = endlessHashtags || allHashtags;
             return (
               <TouchableOpacity 
                 key={idx} 
-                onPress={() => handleRenderItemPress(videoItem, index, idx)}
+                onPress={() => handleNewsPress(videoItem, index, idx)}
                 style={styles.thumbnailWrapper1} 
               >
                 <Image

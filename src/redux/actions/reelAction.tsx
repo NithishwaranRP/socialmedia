@@ -45,16 +45,17 @@ export const fetchGlobalFeedReel =
       const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
       
       // Build the URL with language parameter if available
-      let url = `/feed/home`;
+      let url = `/feed/globalhome`;
       if (selectedLanguage) {
-        url += `&language=${selectedLanguage}`;
-        console.log(`Filtering feed by language: ${selectedLanguage}`);
+        url += `?language=${selectedLanguage}`;
+        console.log(`Filtering global feed by language: ${selectedLanguage}`);
       } else {
-        console.log('No language filter applied');
+        console.log('No language filter applied for global feed');
       }
       
+      console.log(`Fetching global feed reels with URL: ${url}`);
       const res = await appAxios.get(url);
-      console.log(`Fetched ${res.data.reels?.length || 0} reels`);
+      console.log(`Fetched ${res.data.reels?.length || 0} global feed reels`);
       
       return res.data.reels || [];
     } catch (error) {

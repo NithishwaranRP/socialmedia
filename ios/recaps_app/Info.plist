@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Reelzzz</string>
+	<string>Recaps</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,10 +33,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>reelzzz</string>
+			<string>recaps</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>reelzzz</string>
+				<string>recaps</string>
 			</array>
 		</dict>
 	</array>
@@ -45,7 +45,7 @@
 	<key>FacebookAppID</key>
 	<string>YOUR_FB_APP_ID</string>
 	<key>FacebookDisplayName</key>
-	<string>Reelzzz</string>
+	<string>Recaps</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

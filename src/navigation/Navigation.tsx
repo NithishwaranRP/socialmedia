@@ -17,7 +17,7 @@ const config = {
 const linking = {
   prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://recaps-backend-277610981315.asia-south1.run.app'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://reelzzzserverworking.vercel.app'],
-  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.68.133:8080'],
+  // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.88.133:8080'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'https://192.168.108.133:8080'],
   // prefixes: ['reelzzz://', 'https://reelzzz.com', 'http://192.168.105.133:8080'],
   config,
