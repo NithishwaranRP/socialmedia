@@ -11,7 +11,7 @@ import {
   ScrollView,
   AppState,
 } from 'react-native';
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import CustomView from '../../components/global/CustomView';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useAppDispatch } from '../../redux/reduxHook';
@@ -82,16 +82,16 @@ const FeedReelScrollScreen: FC = () => {
   const originalCategoryIndexRef = useRef<number | null>(null);
   const allowBackScrolling = !routeParams?.preventBackSwiping;
 
-  // Viewability configs for vertical and horizontal scrolling
-  const verticalViewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-    minimumViewTime: 300,
-  }).current;
+  // Define viewability configurations with stricter thresholds to ensure immediate pausing
+  const horizontalViewabilityConfig = useMemo(() => ({
+    itemVisiblePercentThreshold: 95, // Only consider items viewable if they're 95% or more visible
+    minimumViewTime: 100, // Reduced time to ensure faster response
+  }), []);
 
-  const horizontalViewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-    minimumViewTime: 300,
-  }).current;
+  const verticalViewabilityConfig = useMemo(() => ({
+    itemVisiblePercentThreshold: 95, // Only consider items viewable if they're 95% or more visible
+    minimumViewTime: 100, // Reduced time to ensure faster response
+  }), []);
 
   // Add app state tracking
   const appState = useRef(AppState.currentState);
@@ -102,6 +102,66 @@ const FeedReelScrollScreen: FC = () => {
   
   // Add a flag to force pause/stop all videos
   const [forceStopAllVideos, setForceStopAllVideos] = useState(false);
+
+  // Track if user is currently scrolling
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to handle scroll start
+  const handleScrollBegin = useCallback(() => {
+    setIsScrolling(true);
+    // Immediately pause all videos when scrolling starts
+    setForceStopAllVideos(true);
+    
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+      scrollTimeoutRef.current = null;
+    }
+  }, []);
+
+  // Function to handle scroll end
+  const handleScrollEnd = useCallback(() => {
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Set a short timeout to ensure scrolling has truly stopped
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+      // Resume video playback (if appropriate)
+      setForceStopAllVideos(false);
+    }, 150); // Short delay to ensure scrolling has stopped
+  }, []);
+
+  // Add a separate more reliable handler for horizontal scroll end
+  const handleHorizontalScrollEnd = useCallback((hashtag: string, event: any) => {
+    // Calculate which video is now visible based on scroll position
+    const contentOffsetX = event.nativeEvent.contentOffset.x;
+    const width = event.nativeEvent.layoutMeasurement.width;
+    const currentIndex = Math.round(contentOffsetX / width);
+    
+    console.log(`Horizontal scroll ended for ${hashtag}. New index: ${currentIndex}`);
+    
+    // Update current video index for this hashtag
+    setCurrentVideoIndexes(prev => ({
+      ...prev,
+      [hashtag]: currentIndex
+    }));
+    
+    // Regular scroll end handling
+    handleScrollEnd();
+  }, [handleScrollEnd]);
+
+  // Cleanup for scroll timeout
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Add a function to clear all video playback state
   const clearAllVideoState = useCallback(() => {
@@ -432,6 +492,32 @@ const FeedReelScrollScreen: FC = () => {
     })).filter(item => item.videos.length > 0); // Remove empty hashtags
   };
 
+  // Mark videos as read when viewed
+  const markVideoAsRead = useCallback(async (videoId: string) => {
+    try {
+      // Update local state
+      setData(prevData => prevData.map(item => 
+        item._id === videoId ? { ...item, isRead: true } : item
+      ));
+      
+      // No need to update the server here as this is handled by the API
+      console.log('Marked video as read:', videoId);
+      
+      // Update the hashtagData to reflect this change
+      setHashtagData(prev => prev.map(hashtag => ({
+        ...hashtag,
+        videos: hashtag.videos.map(video => 
+          video._id === videoId ? { ...video, isRead: true } : video
+        ),
+        unreadCount: hashtag.videos.some(v => v._id === videoId && !v.isRead) 
+          ? hashtag.unreadCount - 1 
+          : hashtag.unreadCount
+      })));
+    } catch (error) {
+      console.error('Error marking video as read:', error);
+    }
+  }, []);
+
   // Function to preload adjacent videos (with deduplication)
   const preloadAdjacentVideos = useCallback(async (videos: VideoData[], currentIndex: number) => {
     // Define which videos to preload (previous, next, next+1)
@@ -491,6 +577,79 @@ const FeedReelScrollScreen: FC = () => {
       }
     }
   }, []);
+
+  // Handle when a horizontal item becomes visible (changing video within hashtag)
+  const onHorizontalViewableItemsChanged = useCallback((hashtag: string) => ({ viewableItems, changed }: { viewableItems: Array<ViewToken>, changed: Array<ViewToken> }) => {
+    // If currently scrolling, track items but don't update visibility
+    // but collect data about what's becoming visible for when scrolling stops
+    const fullyVisibleItems = viewableItems.filter(item => {
+      if (typeof item.isViewable === 'number') {
+        return item.isViewable >= 0.90; // 90% threshold
+      }
+      return item.isViewable === true;
+    });
+    
+    if (fullyVisibleItems.length > 0) {
+      const visibleItem = fullyVisibleItems[0];
+      if (visibleItem.index !== null) {
+        const newIndex = visibleItem.index as number;
+        
+        // Set the current video index in state for proper rendering
+        // but don't allow new videos to play until scrolling stops
+        setCurrentVideoIndexes(prev => {
+          // Only update if different to avoid unnecessary re-renders
+          if (prev[hashtag] !== newIndex) {
+            console.log(`Updating video index for ${hashtag} from ${prev[hashtag]} to ${newIndex}`);
+            return {
+              ...prev,
+              [hashtag]: newIndex
+            };
+          }
+          return prev;
+        });
+        
+        // Mark the current video as watched if not scrolling
+        if (!isScrolling) {
+          const currentVideo = visibleItem.item as VideoData;
+          if (currentVideo && !currentVideo.isRead) {
+            markVideoAsRead(currentVideo._id);
+          }
+          
+          // Preload adjacent videos for smooth playback if not scrolling
+          const hashtagItem = hashtagData.find(h => h.hashtag === hashtag);
+          if (hashtagItem) {
+            preloadAdjacentVideos(hashtagItem.videos, newIndex);
+          }
+        }
+      }
+    }
+    
+    // Handle videos that are no longer fully visible
+    changed.forEach(item => {
+      if (item.index !== null) {
+        const video = item.item as VideoData;
+        
+        // Even a slight change in visibility should mark as read and trigger pause
+        if (!item.isViewable || (typeof item.isViewable === 'number' && item.isViewable < 0.90)) {
+          // If it's an unread video, mark it as read
+          if (video && !video.isRead) {
+            markVideoAsRead(video._id);
+          }
+        }
+      }
+    });
+  }, [hashtagData, preloadAdjacentVideos, markVideoAsRead, isScrolling]);
+
+  // Handler for when a video ends - mark it as watched
+  const handleVideoEnd = useCallback((hashtag: string, index: number) => {
+    const hashtagItem = hashtagData.find(h => h.hashtag === hashtag);
+    if (!hashtagItem) return;
+    
+    const video = hashtagItem.videos[index];
+    if (video && !video.isRead) {
+      markVideoAsRead(video._id);
+    }
+  }, [hashtagData, markVideoAsRead]);
 
   // Fetch more videos
   const fetchMoreVideos = useCallback(async () => {
@@ -589,72 +748,6 @@ const FeedReelScrollScreen: FC = () => {
     checkForClearedStorage();
   }, []);
 
-  // Mark videos as read when viewed
-  const markVideoAsRead = useCallback(async (videoId: string) => {
-    try {
-      // Update local state
-      setData(prevData => prevData.map(item => 
-        item._id === videoId ? { ...item, isRead: true } : item
-      ));
-      
-      // No need to update the server here as this is handled by the API
-      console.log('Marked video as read:', videoId);
-      
-      // Update the hashtagData to reflect this change
-      setHashtagData(prev => prev.map(hashtag => ({
-        ...hashtag,
-        videos: hashtag.videos.map(video => 
-          video._id === videoId ? { ...video, isRead: true } : video
-        ),
-        unreadCount: hashtag.videos.some(v => v._id === videoId && !v.isRead) 
-          ? hashtag.unreadCount - 1 
-          : hashtag.unreadCount
-      })));
-    } catch (error) {
-      console.error('Error marking video as read:', error);
-    }
-  }, []);
-
-  // Handle when a horizontal item becomes visible (changing video within hashtag)
-  const onHorizontalViewableItemsChanged = useCallback((hashtag: string) => ({ viewableItems, changed }: { viewableItems: Array<ViewToken>, changed: Array<ViewToken> }) => {
-    if (viewableItems.length > 0) {
-      const visibleItem = viewableItems[0];
-      if (visibleItem.index !== null && visibleItem.isViewable) {
-        const newIndex = visibleItem.index as number;
-        console.log(`Horizontal scroll in hashtag ${hashtag}: now showing video at index ${newIndex}`);
-        
-        // Update the current video index for this hashtag
-        setCurrentVideoIndexes(prev => ({
-          ...prev,
-          [hashtag]: newIndex
-        }));
-        
-        // Mark the video as read
-        const videoData = viewableItems[0].item as VideoData;
-        if (videoData && videoData._id) {
-          markVideoAsRead(videoData._id);
-        }
-        
-        // Forcefully stop any previously playing videos to prevent audio overlap
-        const hashtagIdx = hashtagData.findIndex(h => h.hashtag === hashtag);
-        if (hashtagIdx === currentHashtagIndex) {
-          // Only temporarily force stop if this is the currently visible hashtag
-          setForceStopAllVideos(true);
-          setTimeout(() => {
-            // Re-enable videos after a short delay
-            setForceStopAllVideos(false);
-          }, 50);
-        }
-        
-        // Preload adjacent videos based on the new visible video
-        const hashtagItem = hashtagData.find(h => h.hashtag === hashtag);
-        if (hashtagItem) {
-          preloadAdjacentVideos(hashtagItem.videos, newIndex);
-        }
-      }
-    }
-  }, [markVideoAsRead, hashtagData, preloadAdjacentVideos, currentHashtagIndex]);
-
   // Handle when a vertical item becomes visible (changing hashtag)
   const onVerticalViewableItemsChanged = useCallback(({ viewableItems, changed }: { viewableItems: Array<ViewToken>, changed: Array<ViewToken> }) => {
     if (viewableItems.length > 0) {
@@ -713,39 +806,6 @@ const FeedReelScrollScreen: FC = () => {
     []
   );
 
-  // Handler for when a video ends - auto-scroll to next video
-  const handleVideoEnd = useCallback((hashtag: string, index: number) => {
-    const hashtagItem = hashtagData.find(h => h.hashtag === hashtag);
-    if (!hashtagItem) return;
-    
-    const videos = hashtagItem.videos;
-    
-    if (index < videos.length - 1) {
-      // Scroll to next video horizontally
-      const horizontalRef = horizontalScrollRefs.current[hashtag];
-      if (horizontalRef) {
-        horizontalRef.scrollToIndex({
-                  index: index + 1,
-                  animated: true,
-                  viewPosition: 0
-                });
-              }
-    } else {
-      // We've reached the end of this hashtag's videos
-      // Scroll to next hashtag vertically
-      const currentHashtagIdx = hashtagData.findIndex(h => h.hashtag === hashtag);
-      if (currentHashtagIdx < hashtagData.length - 1) {
-        if (verticalFlatListRef.current) {
-          verticalFlatListRef.current.scrollToIndex({
-            index: currentHashtagIdx + 1,
-            animated: true,
-            viewPosition: 0
-          });
-        }
-      }
-    }
-  }, [hashtagData]);
-
   // Render a single vertical item (hashtag group)
   const renderHashtagItem = useCallback(({ item, index }: { item: HashtagData; index: number }) => {
     const isCurrentHashtag = index === currentHashtagIndex;
@@ -785,6 +845,11 @@ const FeedReelScrollScreen: FC = () => {
           getItemLayout={getHorizontalItemLayout}
           onViewableItemsChanged={onHorizontalViewableItemsChanged(hashtag)}
           viewabilityConfig={horizontalViewabilityConfig}
+          onScrollBeginDrag={handleScrollBegin}
+          onScrollEndDrag={(event) => handleHorizontalScrollEnd(hashtag, event)}
+          onMomentumScrollBegin={handleScrollBegin}
+          onMomentumScrollEnd={(event) => handleHorizontalScrollEnd(hashtag, event)}
+          scrollEventThrottle={16}
           onScrollToIndexFailed={(info) => {
             console.warn('Failed to scroll to index', info, videos.length);
             // Try to recover by scrolling to a safe index
@@ -803,13 +868,19 @@ const FeedReelScrollScreen: FC = () => {
             <View style={styles.videoContainer}>
               <VideoItem
                 key={`${video._id}-${videoIndex}-${screenInstanceId}`}
-                isVisible={isCurrentHashtag && videoIndex === (currentVideoIndexes[hashtag] || 0) && readyToPlay && appActive}
+                isVisible={
+                  isCurrentHashtag && 
+                  videoIndex === (currentVideoIndexes[hashtag] || 0) && 
+                  readyToPlay && 
+                  appActive &&
+                  !isScrolling // Only visible if not scrolling
+                }
                 item={video}
                 preload={isCurrentHashtag && Math.abs(videoIndex - (currentVideoIndexes[hashtag] || 0)) <= 1}
                 index={videoIndex}
                 currentIndex={currentVideoIndexes[hashtag] || 0}
                 onVideoEnd={() => handleVideoEnd(hashtag, videoIndex)}
-                forceStop={forceStopAllVideos}
+                forceStop={forceStopAllVideos || isScrolling || videoIndex !== (currentVideoIndexes[hashtag] || 0)}
               />
               
               {/* Video not read indicator */}
@@ -820,7 +891,7 @@ const FeedReelScrollScreen: FC = () => {
               )}
               
               {/* Render video position indicator */}
-              <View style={styles.videoPositionIndicator}>
+              <View style={styles.videoPositionIndicatorCustom}>
                 <Text style={styles.videoPositionText}>
                   {videoIndex + 1} / {videos.length}
                 </Text>
@@ -852,7 +923,11 @@ const FeedReelScrollScreen: FC = () => {
     handleVideoEnd,
     appActive,
     forceStopAllVideos,
-    screenInstanceId
+    screenInstanceId,
+    isScrolling,
+    handleScrollBegin,
+    handleScrollEnd,
+    handleHorizontalScrollEnd
   ]);
 
   // Handle vertical list reaching its end
@@ -940,6 +1015,21 @@ const FeedReelScrollScreen: FC = () => {
     };
   }, []);
 
+  // Add cleanup effect to mark current video as watched when unmounting
+  useEffect(() => {
+    return () => {
+      // Mark the current video as watched when component unmounts
+      const currentHashtag = hashtagData[currentHashtagIndex];
+      if (currentHashtag) {
+        const currentVideoIndex = currentVideoIndexes[currentHashtag.hashtag] || 0;
+        const currentVideo = currentHashtag.videos[currentVideoIndex];
+        if (currentVideo && !currentVideo.isRead) {
+          markVideoAsRead(currentVideo._id);
+        }
+      }
+    };
+  }, [currentHashtagIndex, hashtagData, currentVideoIndexes, markVideoAsRead]);
+
   return (
     <CustomView 
       style={styles.container} 
@@ -966,6 +1056,10 @@ const FeedReelScrollScreen: FC = () => {
         removeClippedSubviews={false}
         decelerationRate={'fast'}
         scrollEventThrottle={16}
+        onScrollBeginDrag={handleScrollBegin}
+        onScrollEndDrag={handleScrollEnd}
+        onMomentumScrollBegin={handleScrollBegin}
+        onMomentumScrollEnd={handleScrollEnd}
         ListFooterComponent={() =>
           loading ? (
             <View style={styles.footer}>
@@ -1053,8 +1147,8 @@ const styles = StyleSheet.create({
   },
   hashtagHeader: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 70 : 40,
-    right: 30,
+    top: Platform.OS === 'ios' ? 70 : 70,
+    right: 20,
     zIndex: 99,
     backgroundColor: 'rgba(0,0,0,0.5)',
     borderRadius: 10,
@@ -1137,15 +1231,19 @@ const styles = StyleSheet.create({
     fontSize: RFValue(10),
     marginHorizontal: 5,
   },
-  videoPositionIndicator: {
+  videoPositionIndicatorCustom: {
     position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    top: 30,
+    right: 15,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     borderRadius: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     zIndex: 99,
+    // Center horizontally with right edge aligned to unread indicator
+    transform: [{ translateX: 0 }],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   videoPositionText: {
     color: 'white',

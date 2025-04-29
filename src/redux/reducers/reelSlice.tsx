@@ -4,11 +4,13 @@ import { REEL_ACTIONS } from '../actions/reelAction';
 interface ReelState {
   deletedReelIds: string[];
   reelListCache: Record<string, any[]>;
+  globalFeedData: any[];
 }
 
 const initialState: ReelState = {
   deletedReelIds: [],
-  reelListCache: {}
+  reelListCache: {},
+  globalFeedData: []
 };
 
 export const reelSlice = createSlice({
@@ -23,6 +25,9 @@ export const reelSlice = createSlice({
     },
     clearReelListCache: (state) => {
       state.reelListCache = {};
+    },
+    setGlobalFeedData: (state, action: PayloadAction<any[]>) => {
+      state.globalFeedData = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -42,9 +47,10 @@ export const reelSlice = createSlice({
   }
 });
 
-export const { resetDeletedReels, setReelListCache, clearReelListCache } = reelSlice.actions;
+export const { resetDeletedReels, setReelListCache, clearReelListCache, setGlobalFeedData } = reelSlice.actions;
 
 export const selectDeletedReelIds = (state: any) => state.reel.deletedReelIds;
 export const selectReelListCache = (state: any) => state.reel.reelListCache;
+export const selectGlobalFeedData = (state: any) => state.reel.globalFeedData;
 
 export default reelSlice.reducer; 

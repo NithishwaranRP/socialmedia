@@ -52,7 +52,7 @@ const UserDetails: React.FC<UserDetailsProps> = React.memo(({user, hasUrl = fals
               variant="h9" 
               style={styles.webButtonText}
             >
-              Web
+              Source
             </CustomText>
           </TouchableOpacity>
         )}

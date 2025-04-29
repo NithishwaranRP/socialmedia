@@ -11,6 +11,7 @@ import {RFValue} from 'react-native-responsive-fontsize';
 import {Colors} from '../../constants/Colors';
 import CustomText from '../global/CustomText';
 import {FONTS} from '../../constants/Fonts';
+import FastImage from 'react-native-fast-image';
 
 interface InteractionButtonProps {
   likes: number;
@@ -84,7 +85,11 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={onAIAvatar}>
-        <MaterialIcon name={'smart-toy'} size={RFValue(22)} color={Colors.text} />
+        <FastImage
+          source={require('../../assets/animations/ai.gif')}
+          style={styles.aiGif}
+          resizeMode={FastImage.resizeMode.stretch}
+        />
         <CustomText variant="h9" fontFamily={FONTS.Medium}>
           AI Chat
         </CustomText>
@@ -92,11 +97,11 @@ const InteractionButtons: React.FC<InteractionButtonProps> = ({
       
       {showDelete && onDelete && (
         <TouchableOpacity style={styles.button} onPress={onDelete}>
-          <MaterialIcon name={'delete'} size={RFValue(22)} color={Colors.error || '#FF0000'} />
+          <MaterialIcon name={'delete'} size={RFValue(22)} color={'#FF0000'} />
           <CustomText 
             variant="h9" 
             fontFamily={FONTS.Medium} 
-            style={{color: Colors.error || '#FF0000'}}
+            style={{color: '#FF0000'}}
           >
             Delete
           </CustomText>
@@ -116,6 +121,12 @@ const styles = StyleSheet.create({
     width: RFValue(22),
     height: RFValue(22),
     resizeMode: 'contain',
+  },
+  aiGif: {
+    width: RFValue(28),
+    height: RFValue(28),
+    borderRadius: RFValue(14),
+    marginBottom: 2,
   },
 });
 

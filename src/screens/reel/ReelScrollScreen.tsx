@@ -110,7 +110,7 @@ const ReelScrollScreen: FC = () => {
   }, [currentVisibleIndex, currentReel]);
 
   const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 80,
+    itemVisiblePercentThreshold: 70,
   }).current;
 
   // Add state to track video initialization
@@ -433,7 +433,7 @@ const ReelScrollScreen: FC = () => {
 
   // Horizontal viewability config
   const horizontalViewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
+    itemVisiblePercentThreshold: 70,
   }).current;
 
   // Horizontal pagination indicator dots

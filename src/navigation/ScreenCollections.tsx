@@ -12,6 +12,7 @@ import UploadReelScreen from '../screens/reel/UploadReelScreen';
 import UploadRemixScreen from '../screens/reel/UploadRemixScreen';
 import WebViewScreen from '../screens/WebViewScreen';
 import BottomTab from './BottomTab';
+import ChatbotScreen from '../components/Chatbot/ChatbotScreen';
 // Import commented out since we're showing HeyGenAvatarScreen as a popup now
 // import { HeyGenAvatarScreen } from '../components/HeyGenAvatar';
 
@@ -34,6 +35,10 @@ export const dashboardStack = [
   {
     name: 'BottomTab',
     component: BottomTab,
+  },
+  {
+    name: 'ChatbotScreen',
+    component: ChatbotScreen,
   },
   {
     name: 'PickReelScreen',

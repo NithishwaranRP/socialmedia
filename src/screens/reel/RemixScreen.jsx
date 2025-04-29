@@ -257,7 +257,7 @@ const RemixScreen = () => {
                 
                 // Start the background video but keep it muted during recording
                 setPlayBgVideo(true);
-                setIsMuted(true); // Keep background video muted during recording
+                // setIsMuted(true); // Keep background video muted during recording
     
                 await cameraRef.current.startRecording({
                     onRecordingFinished: async (video) => {
@@ -445,172 +445,6 @@ const handleReRecord = async () => {
 const previewVideo = response?.reel?.videoUri;
 console.log('bgvideo', reelUri.videoUri);
 
-    // Use useFocusEffect to forcefully clean up any background videos when screen comes into focus
-    useFocusEffect(
-        useCallback(() => {
-            // Function to stop any background videos
-            const stopBackgroundVideos = async () => {
-                console.log('RemixScreen focused: Stopping any background videos');
-                
-                // Force any previous videos to stop by setting a global flag in AsyncStorage
-                // This will be read by FeedReelScrollScreen to force stop videos
-                try {
-                    await AsyncStorage.setItem('force_stop_all_videos', 'true');
-                    
-                    // Reset the flag after a delay
-                    setTimeout(async () => {
-                        await AsyncStorage.removeItem('force_stop_all_videos');
-                    }, 500);
-                } catch (error) {
-                    console.error('Error setting force stop flag:', error);
-                }
-                
-                // Set local state
-                setPlayBgVideo(false);
-                setIsMuted(true);
-            };
-            
-            // Execute with slight delay to ensure proper timing after navigation
-            InteractionManager.runAfterInteractions(stopBackgroundVideos);
-            
-            return () => {
-                // This runs when the screen loses focus
-                console.log('RemixScreen unfocused');
-            };
-        }, [])
-    );
-    
-    // Enhanced initialization effect
-    useEffect(() => {
-        // Function to initialize the screen properly
-        const initializeScreen = async () => {
-            console.log('RemixScreen mounted: Setting up screen');
-            
-            // Ensure the video is paused when the screen loads
-            setPlayBgVideo(false);
-            
-            // Ensure audio is muted by default
-            setIsMuted(true);
-            
-            // Force any previous videos to stop by setting a global flag
-            try {
-                await AsyncStorage.setItem('force_stop_all_videos', 'true');
-                
-                // Reset the flag after a delay
-                setTimeout(async () => {
-                    await AsyncStorage.removeItem('force_stop_all_videos');
-                }, 500);
-            } catch (error) {
-                console.error('Error setting force stop flag:', error);
-            }
-            
-            // Listen for app state changes to handle background/foreground transitions
-            const appStateSubscription = AppState.addEventListener('change', nextAppState => {
-                if (nextAppState === 'active') {
-                    // App came to foreground
-                    console.log('App active in RemixScreen: Ensuring videos are stopped');
-                    setPlayBgVideo(false);
-                    setIsMuted(true);
-                }
-            });
-            
-            // Return cleanup function
-            return () => {
-                appStateSubscription.remove();
-            };
-        };
-        
-        // Call initialization
-        const cleanup = initializeScreen();
-        
-        // Cleanup function
-        return () => {
-            cleanup?.then?.(() => console.log('RemixScreen init cleanup complete'));
-        };
-    }, []);
-
-    // Add comprehensive cleanup effect when unmounting
-    useEffect(() => {
-        // Return cleanup function that runs when component unmounts
-        return () => {
-            console.log('RemixScreen unmounting: performing full cleanup');
-            
-            // Ensure any active recording is stopped
-            if (isRecording && cameraRef.current) {
-                try {
-                    cameraRef.current.stopRecording();
-                } catch (error) {
-                    console.error('Error stopping recording during cleanup:', error);
-                }
-            }
-            
-            // Clear any persisting videos
-            setRecordedVideo(null);
-            setMergedVideoPath(null);
-            
-            // Stop any video playback
-            setPlayBgVideo(false);
-            setIsPlayingMerged(false);
-            
-            // Reset recording state
-            setIsRecording(false);
-            setCountdown(null);
-            setIsTimerRunning(false);
-            
-            // Force cleanup any remaining video resources
-            if (videoRef.current) {
-                try {
-                    // Clear video resource
-                    videoRef.current.seek(0);
-                } catch (error) {
-                    console.error('Error cleaning up video ref:', error);
-                }
-            }
-            
-            // Cleanup FFmpeg if needed
-            try {
-                FFmpegKit.cancel();
-            } catch (error) {
-                console.error('Error cancelling FFmpeg processes:', error);
-            }
-            
-            // Clean up any temporary files
-            const cleanupFiles = async () => {
-                try {
-                    if (recordedVideo) {
-                        const exists = await RNFS.exists(recordedVideo);
-                        if (exists) {
-                            await RNFS.unlink(recordedVideo);
-                            console.log('Cleaned up recorded video file');
-                        }
-                    }
-                    
-                    if (mergedVideoPath) {
-                        const exists = await RNFS.exists(mergedVideoPath);
-                        if (exists) {
-                            await RNFS.unlink(mergedVideoPath);
-                            console.log('Cleaned up merged video file');
-                        }
-                    }
-                    
-                    if (thumbnailPath) {
-                        const exists = await RNFS.exists(thumbnailPath);
-                        if (exists) {
-                            await RNFS.unlink(thumbnailPath);
-                            console.log('Cleaned up thumbnail file');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error cleaning up files:', error);
-                }
-            };
-            
-            // Execute file cleanup
-            cleanupFiles();
-            
-            console.log('RemixScreen unmount cleanup completed');
-        };
-    }, [isRecording, recordedVideo, mergedVideoPath, thumbnailPath]);
 
     // Add custom back handler
     const handleBackNavigation = useCallback(async () => {
@@ -713,9 +547,9 @@ console.log('bgvideo', reelUri.videoUri);
                                 const newMuted = !isMuted;
                                 setIsMuted(newMuted);
                                 // If unmuting, also start playing
-                                if (!newMuted) {
-                                    setPlayBgVideo(true);
-                                }
+                                // if (!newMuted) {
+                                //     setPlayBgVideo(true);
+                                // }
                             }} 
                             style={styles.iconButton}
                         >

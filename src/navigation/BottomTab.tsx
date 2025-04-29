@@ -93,12 +93,7 @@ const BottomTab = () => {
   const user = useAppSelector(selectUser);
 
   const handleAvatarButtonPress = () => {
-    // Set loading state first
-    setIsLoading(true);
-    // Tell the avatar component to directly initiate a session
-    setDirectInitSession(true);
-    // Show the avatar popup
-    setShowAIAvatar(true);
+    navigate('ChatbotScreen');
   };
 
   return (

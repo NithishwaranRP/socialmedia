@@ -232,7 +232,11 @@ const VideoItem: FC<VideoItemProps> = ({
   };
   
   const handleReactReel = async () => {
-   navigate('RemixScreen', { reelUri: item});
+    // Pause the current video
+    setIsPaused(true);
+    
+    // Navigate to RemixScreen with the reel item
+    navigate('RemixScreen', { reelUri: item });
   };
 
   // Add WebView handler for URL links
@@ -245,44 +249,77 @@ const VideoItem: FC<VideoItemProps> = ({
     }
   };
 
-  const handleVideoProgress = useCallback(
-    ({ currentTime }: { currentTime: number }) => {
-      setCurrentTime(currentTime); // Update the current time
-      setSliderValue(currentTime); // Update the slider value
-  
-      // If the video is visible and has been played for 3 seconds, mark it as watched
-      if (isVisible && currentTime >= 3 && item && item._id && !item.isRead && userId) {
-        if (watchTimeout) {
-          clearTimeout(watchTimeout); // Clear any existing timeout
-        }
-  
-        const timeout = setTimeout(() => {
-          console.log("Marking reel as watched:", item._id); // Debug log
-          dispatch(markReelAsWatched(item._id, userId)); // Dispatch the action to mark as watched
-          item.isRead = true; // Update the local item state
-        }, 0); // Trigger immediately after 3 seconds
-  
-        setWatchTimeout(timeout);
-      }
+  // Handle video visibility changes
+  useEffect(() => {
+    if (isVisible) {
+      setIsRestarting(false);
+      setPaused(null);
+      setCurrentTime(0);
+      setSliderValue(0);
+    } else {
+      setPaused('paused');
+      setIsRestarting(false);
+    }
+  }, [isVisible]);
+
+  // Handle video progress
+  const handleVideoProgress = useCallback(({ currentTime, seekableDuration }: { currentTime: number, seekableDuration: number }) => {
+    // Only update progress if video is visible and not paused
+    if (isVisible && !isPaused) {
+      // Update current time
+      setCurrentTime(currentTime);
       
-      // Add intelligent buffer monitoring to prevent stalling
-      if (currentTime > 0 && videoDuration > 0) {
-        // If we're 80% through the video, make sure the next video is ready
-        if (currentTime >= videoDuration * 0.8) {
-          // This would be a good time to ensure next video is preloading
-          console.log(`Video ${item._id} at 80% - next video should be preloading`);
-        }
-        
-        // Handle end of video approach
-        if (currentTime >= videoDuration - 0.5) {
-          // Video is about to end
-          console.log(`Video ${item._id} reaching end`);
-        }
+      // Update slider value
+      setSliderValue(currentTime);
+      
+      // Update video duration if it changed or isn't set
+      if (seekableDuration && (!videoDuration || Math.abs(seekableDuration - videoDuration) > 0.5)) {
+        console.log(`Setting video duration for ${item._id} to ${seekableDuration}`);
+        setVideoDuration(seekableDuration);
       }
-    },
-    [isVisible, item, dispatch, userId, watchTimeout, videoDuration]
-  );
-  
+    }
+  }, [isVisible, isPaused, item._id, videoDuration]);
+
+  // Handle video load with duration
+  const handleVideoLoad = useCallback(({ duration }: { duration: number }) => {
+    console.log(`Video ${item._id} loaded with duration: ${duration}`);
+    setIsRestarting(false);
+    setPaused(null);
+    
+    // Set video duration from load event
+    if (duration && duration > 0) {
+      setVideoDuration(duration);
+    }
+  }, [item._id]);
+
+  // Separate effect for tracking read status
+  useEffect(() => {
+    let watchTimeout: NodeJS.Timeout | null = null;
+    
+    if (isVisible && !isPaused && currentTime >= 3 && !item.isRead) {
+      watchTimeout = setTimeout(() => {
+        if (!item.isRead) {
+          dispatch(markReelAsWatched(item._id, userId));
+        }
+      }, 0);
+    }
+    
+    return () => {
+      if (watchTimeout) {
+        clearTimeout(watchTimeout);
+      }
+    };
+  }, [isVisible, isPaused, currentTime, item.isRead, item._id, userId, dispatch]);
+
+  // Handle video end
+  const handleVideoEnd = useCallback(() => {
+    setCurrentTime(0);
+    setSliderValue(0);
+    setPaused('paused');
+    setIsRestarting(false);
+    onVideoEnd?.();
+  }, [onVideoEnd]);
+
   const handleTogglePlay = useCallback(() => {
     let currentState = !paused ? 'paused' : 'play';
     setIsPaused(!isPaused);
@@ -335,80 +372,6 @@ const VideoItem: FC<VideoItemProps> = ({
     };
   }, [watchTimeout, isVisible, item._id, videoLoaded, cachedVideoUri]);
 
-  // Update the video end handler to avoid excessive restarting
-  const handleVideoEnd = useCallback(() => {
-    // Reset video state
-    setVideoLoaded(false);
-    setVideoInitialized(false);
-    
-    // Call the parent's onVideoEnd handler if provided
-    if (onVideoEnd) {
-      onVideoEnd();
-    }
-    
-    // If video should loop, seek to beginning
-    if (videoRef.current) {
-      videoRef.current.seek(0);
-    }
-  }, [onVideoEnd]);
-
-  // Cleanup timeouts on unmount or visibility change
-  useEffect(() => {
-    return () => {
-      if (watchTimeout) {
-        clearTimeout(watchTimeout);
-      }
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-    };
-  }, [watchTimeout]);
-
-  useEffect(() => {
-    // Only adjust pause state when visibility changes
-    if (isVisible) {
-      setIsPaused(false);
-      console.log(`Playing video: ${item._id}`);
-    } else {
-      setIsPaused(true);
-      setPaused(null);
-      
-      // Clear timeouts
-      if (watchTimeout) {
-        clearTimeout(watchTimeout);
-      }
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-    }
-    
-    // Reset restarting flag when visibility changes
-    setIsRestarting(false);
-  }, [isVisible, watchTimeout, item._id]);
-
-  useEffect(() => {
-    if (!isFocused) {
-      setIsPaused(true);
-    }
-    if (isFocused && isVisible) {
-      setIsPaused(false);
-    }
-  }, [isFocused, isVisible]);
-
-  const handleVideoLoad = ({ duration }: { duration: number }) => {
-    try {
-      setVideoLoaded(true);
-      setVideoDuration(duration);
-      // Don't reset slider value on load - this prevents restarting
-      console.log(`Video loaded successfully, ID: ${item._id}, duration: ${duration}`);
-      
-      // Reset retry count once loaded successfully
-      setLoadRetries(0);
-    } catch (error) {
-      console.error('Error in handleVideoLoad:', error);
-    }
-  };
-
   // Add error handler for videos
   const handleVideoError = useCallback((error: any) => {
     console.error(`Video error for ${item._id}:`, error);
@@ -443,15 +406,24 @@ const VideoItem: FC<VideoItemProps> = ({
 
   // Handle AI Avatar button press
   const handleAIAvatar = () => {
-    console.log("Opening AI Avatar for reel:", item._id);
+    console.log("Opening AI Chat for reel:", item._id);
     // Pause the video
     setIsPaused(true);
     // Set avatar open state to true
     setIsAvatarOpen(true);
-    // Open the AI Avatar popup and initialize session
-    setIsLoading(true);
-    setDirectInitSession(true);
-    setShowAIAvatar(true);
+    
+    // Navigate to ChatbotScreen with reel context
+    navigate('ChatbotScreen', {
+      reelContext: {
+        id: item._id,
+        caption: item.caption,
+        videoUri: item.videoUri,
+        shareUrl: `${Platform.OS === 'android' 
+          ? 'https://recaps-backend-277610981315.asia-south1.run.app' 
+          : 'reelzzz:/'
+        }/share/reel/${item._id}`
+      }
+    });
   };
 
   // Add effect to listen for avatar popup closing
@@ -528,16 +500,15 @@ const VideoItem: FC<VideoItemProps> = ({
     Gesture.Exclusive(doubleTap, singleTap)
   );
 
-  // Handle video playback based on visibility
+  // Add effect to handle video playback state
   useEffect(() => {
     if (isVisible && !forceStop) {
-      // Video is visible and not forced to stop
-      setPaused(null);
       setIsPaused(false);
+      setPaused(null);
+      setIsRestarting(false);
     } else {
-      // Video is not visible or forced to stop
-      setPaused('paused');
       setIsPaused(true);
+      setPaused('paused');
     }
   }, [isVisible, forceStop]);
   
@@ -662,7 +633,7 @@ const VideoItem: FC<VideoItemProps> = ({
                 controls={false}
                 disableFocus={true}
                 style={styles.videoContainer}
-                paused={!isVisible || isPaused || isRestarting}
+                paused={!isVisible || isPaused}
                 repeat={false}
                 onProgress={handleVideoProgress}
                 onLoad={handleVideoLoad}
@@ -676,7 +647,7 @@ const VideoItem: FC<VideoItemProps> = ({
                   setVideoInitialized(true);
                 }}
                 maxBitRate={2000000}
-                progressUpdateInterval={250}
+                progressUpdateInterval={100} // More frequent updates
                 shutterColor="transparent"
                 muted={isAvatarOpen}
                 volume={isAvatarOpen ? 0 : 1.0}
@@ -692,17 +663,22 @@ const VideoItem: FC<VideoItemProps> = ({
       <Slider
         style={styles.progressBar}
         minimumValue={0}
-        maximumValue={videoDuration}
+        maximumValue={videoDuration || 100} // Fallback to 100 if duration not available
         value={sliderValue}
         onValueChange={handleSliderValueChange}
         onSlidingComplete={(value) => {
           // Seek video when sliding completed
           if (videoRef.current) {
             videoRef.current.seek(value);
+            
+            // Update current time after seeking
+            setCurrentTime(value);
+            setSliderValue(value);
           }
         }}
         minimumTrackTintColor="#FFFFFF"
-        maximumTrackTintColor="#000000"
+        maximumTrackTintColor="rgba(0, 0, 0, 0.5)" // Slightly more visible track
+        thumbTintColor="#FFFFFF" // White thumb for better visibility
       />
       
       {showLikeAnim && (

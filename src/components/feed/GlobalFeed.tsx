@@ -40,6 +40,7 @@ import { useTheme } from '@react-navigation/native';
 import { Colors, useThemeColors } from '../../constants/Colors';
 import { RootState } from '../../redux/store';
 import { useAvatarPopup } from '../../context/AvatarPopupContext';
+import { setGlobalFeedData } from '../../redux/reducers/reelSlice';
 
 const normalizeWidth = (size: number) => PixelRatio.roundToNearestPixel(scale(size));
 const normalizeHeight = (size: number) => PixelRatio.roundToNearestPixel(verticalScale(size));
@@ -249,30 +250,23 @@ const GlobalFeed = () => {
   }, []);
 
   useEffect(() => {
-      const fetchNews = async () => {
-        // if (activeCategory) {
-          setLoading(true); 
-          try {
-
-     if (allData.length === 0) {
-          // const result = await dispatch(fetchFeedReel(0, 200));
+    const fetchNews = async () => {
+      setLoading(true); 
+      try {
+        if (allData.length === 0) {
           const result = await dispatch(fetchGlobalFeedReel());
           setAllData(result);
-          await saveData(result); // Save fetched data to AsyncStorage
+          dispatch(setGlobalFeedData(result)); // Set the global feed data in Redux
+          await saveData(result);
         }
-
-          } catch (error) {
-            console.error('Fetch error: ', error);
-          } finally {
-            // await loadData();
-
-            setLoading(false);
-
-          }
-        // }
-      };
-      fetchNews();
-    }, [dispatch]);
+      } catch (error) {
+        console.error('Fetch error: ', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, [dispatch]);
 
   useEffect(() => {
     if (user && user.username) {
@@ -628,6 +622,22 @@ const GlobalFeed = () => {
 
   // Monitor scroll events to detect visibility
   const handleScrollForVisibility = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // Stop auto-scroll when user is scrolling vertically
+    stopAutoScroll();
+    
+    // Clear any existing resume timer
+    if (autoScrollResumeTimerRef.current) {
+      clearTimeout(autoScrollResumeTimerRef.current);
+    }
+    
+    // Set a timer to resume auto-scrolling after 2 seconds of no vertical scrolling
+    autoScrollResumeTimerRef.current = setTimeout(() => {
+      if (isBreakingNewsVisible) {
+        startAutoScroll();
+      }
+      autoScrollResumeTimerRef.current = null;
+    }, 2000);
+    
     // Update scroll position
     if (event && event.nativeEvent && event.nativeEvent.contentOffset) {
       const contentOffsetX = event.nativeEvent.contentOffset.x;
@@ -636,7 +646,7 @@ const GlobalFeed = () => {
     
     // Check visibility
     checkBreakingNewsVisibility();
-  }, [checkBreakingNewsVisibility]);
+  }, [checkBreakingNewsVisibility, isBreakingNewsVisible]);
 
   // Run visibility check when the component mounts and on layout changes
   useEffect(() => {
@@ -1046,18 +1056,40 @@ const currentHashtag = endlessHashtags || allHashtags;
           }, 3000);
         };
 
-        // Start auto-scrolling on component mount
+        // Start auto-scrolling on component mount with a 2-second delay
         useEffect(() => {
-          startAutoScroll();
+          // Add a 2-second delay before starting auto-scroll
+          const startupDelay = setTimeout(() => {
+            // Only start auto-scroll if component is in view
+            if (isBreakingNewsVisible) {
+              startAutoScroll();
+            }
+          }, 2000);
 
           return () => {
+            clearTimeout(startupDelay);
             stopAutoScroll(); // Cleanup on unmount
             // Also clean up the resume timer
             if (autoScrollResumeTimerRef.current) {
               clearTimeout(autoScrollResumeTimerRef.current);
             }
           };
-        }, [allHashtags, endlessHashtags]);
+        }, [allHashtags, endlessHashtags, isBreakingNewsVisible]);
+
+        // Add effect to stop auto-scroll when component is not visible
+        useEffect(() => {
+          if (isBreakingNewsVisible) {
+            // Resume auto-scroll when component becomes visible again (with a delay)
+            const resumeTimer = setTimeout(() => {
+              startAutoScroll();
+            }, 500);
+            
+            return () => clearTimeout(resumeTimer);
+          } else {
+            // Stop auto-scroll when component is not visible
+            stopAutoScroll();
+          }
+        }, [isBreakingNewsVisible]);
 
         useEffect(() => {
           if (allData.length > 0) {
@@ -1186,15 +1218,16 @@ const currentHashtag = endlessHashtags || allHashtags;
       },
       muteButton: {
         position: 'absolute',
-        bottom: 10,
         right: 10,
-        backgroundColor: colors.card,
+        top: '50%',
+        transform: [{ translateY: -28 }], // Half of the button height (approx)
+        backgroundColor: 'rgba(0,0,0,0.3)',
         borderRadius: 20,
         padding: 8,
       },
       muteIcon: {
-        width: 15,
-        height: 15,
+        width: 50,
+        height: 50,
       },
       thumbnailWrapper1: {
         width: '48%',
@@ -1304,7 +1337,7 @@ const currentHashtag = endlessHashtags || allHashtags;
         position: 'absolute',
         top: -10,
         right: -10,
-        backgroundColor: isDarkMode ? '#a9c2eb' : '#4a6da7',
+        backgroundColor: '#339cfa',
         borderRadius: 15,
         minWidth: 28,
         height: 28,
@@ -1320,7 +1353,7 @@ const currentHashtag = endlessHashtags || allHashtags;
         shadowRadius: 3.84,
         elevation: 10,
         borderWidth: 1,
-        borderColor: isDarkMode ? '#a9c2eb' : '#4a6da7',
+        borderColor: isDarkMode ? '#000' : '#fff',
       },
       badgeText: {
         color: '#fff',
@@ -1342,14 +1375,15 @@ const currentHashtag = endlessHashtags || allHashtags;
       numberDisplay: {
         position: 'absolute',
         left: -30,
-        top: 30,
-        fontSize: 50,
+        // top: 10,
+        // bottom: 5,
+        fontSize: 80,
         fontWeight: 'bold',
-        color:  isDarkMode ? '#a9c2eb' : '#4a6da7',
-        zIndex: 1,
+        color:  isDarkMode ? '#ddf' : '#000',
+        // zIndex: 1,
       },
       activeNumberDisplay: {
-        color: isDarkMode ? '#a9c2eb' : '#4a6da7',
+        color: isDarkMode ? '#ddf' : '#000',
         fontWeight: '900',
       },
       categoryScrollWrapper: {
@@ -1385,7 +1419,7 @@ const currentHashtag = endlessHashtags || allHashtags;
         backgroundColor: 'rgba(255, 255, 255, 0.4)',
       },
       activeDot: {
-        backgroundColor:  isDarkMode ? '#a9c2eb' : '#4a6da7',
+        backgroundColor:  isDarkMode ? '#ddf' : '#000',
       },
       breakingNewsContainer: {
         // Padding for the breaking news container
@@ -1575,13 +1609,13 @@ const currentHashtag = endlessHashtags || allHashtags;
       },
       carouselDot: {
         width: 8,
-        height: 8,
+        height: 8,  
         borderRadius: 4,
         backgroundColor: colors.lightText,
         marginHorizontal: 5,
       },
       activeCarouselDot: {
-        backgroundColor:  isDarkMode ? '#a9c2eb' : '#4a6da7',
+        backgroundColor:  isDarkMode ? '#ddf' : '#000',
         width: 10,
         height: 10,
         borderRadius: 5,
@@ -1594,6 +1628,10 @@ const currentHashtag = endlessHashtags || allHashtags;
         color: colors.lightText,
       },
     });
+
+    if (loading) {
+      return null;
+    }
 
     return (
       <ScrollView 

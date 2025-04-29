@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import { useAvatarPopup } from '../context/AvatarPopupContext';
-import HeyGenAvatarScreen from './HeyGenAvatar/HeyGenAvatarScreen';
+// import HeyGenAvatarScreen from './HeyGenAvatar/HeyGenAvatarScreen';
 import { InteractiveAvatarScreen } from './HeyGenAvatar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { FONTS } from '../constants/Fonts';
@@ -26,12 +26,6 @@ const AppContainer: React.FC<AppContainerProps> = ({ children }) => {
   return (
     <View style={styles.container}>
       {children}
-      {/* Regular AI Avatar popup */}
-      {showAIAvatar && (
-        <HeyGenAvatarScreen onDismiss={handleDismiss} />
-      )}
-      
-      {/* Interactive Avatar popup */}
       {showInteractiveAvatar && (
         <InteractiveAvatarScreen onDismiss={handleInteractiveDismiss} />
       )}
